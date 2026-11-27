@@ -1,5 +1,6 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -39,10 +40,13 @@ TESTS = [
     "gain_buffering3",
     "gcd_resize",
     "insert_buffer",
+    "insert_buffer_grt",
     "insert_buffer_hier",
     "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
+    "remove_buffers_duplicate",
+    "repair_timing_deprecated_libraries",
     "swap_pins_constant_output",
     "swap_pins_dont_touch",
     "pin_swap1",
@@ -57,6 +61,7 @@ TESTS = [
     "remove_buffers3",
     "remove_buffers_dont_touch_rejected",
     "remove_buffers_disconnected_input_rejected",
+    "remove_buffers_sdc_instance",
     "remove_buffers4",
     "remove_buffers4_hier",
     "remove_buffers5",
@@ -68,6 +73,17 @@ TESTS = [
     "repair_cap2",
     "repair_cap3",
     "repair_clk_inverters1",
+    "repair_clk_inverters10_floating",
+    "repair_clk_inverters11_hier_sdc",
+    "repair_clk_inverters12_inv_pin_sdc",
+    "repair_clk_inverters2_hier",
+    "repair_clk_inverters3_hier",
+    "repair_clk_inverters4_hier",
+    "repair_clk_inverters5_hier",
+    "repair_clk_inverters6_hier",
+    "repair_clk_inverters7",
+    "repair_clk_inverters8_hier",
+    "repair_clk_inverters9_flat_link",
     "repair_clk_nets1",
     "repair_design1",
     "repair_design2",
@@ -202,6 +218,7 @@ TESTS = [
     "repair_timing_path_group4",
     "repair_timing_path_group5",
     "repair_timing_path_group6",
+    "repair_timing_sequence_error",
     "repair_slew1",
     "repair_slew10",
     "repair_slew11",
@@ -263,6 +280,7 @@ TESTS = [
     "report_delay_estimator_rebuffer_steiner",
     "report_delay_estimator_sizing_accuracy",
     "report_design_area",
+    "report_placement_density",
     "report_dont_touch",
     "report_dont_use",
     "report_dont_use_corners",
@@ -294,6 +312,7 @@ TESTS = [
     "repair_setup_parallel_eval",
     "repair_setup_parallel_eval_vt_swap",
     "repair_setup_parallel_eval_vt_swap_corners",
+    "repair_setup_parallel_eval_vt_swap_dont_use",
     "repair_setup_parallel_eval_default_sequence",
     "repair_setup_parallel_eval_all_moves",
     "repair_setup_parallel_eval_effort",
@@ -304,6 +323,9 @@ TESTS = [
     "repair_setup_parallel_eval_reference_period_modes",
     "repair_setup_parallel_eval_fanin_max_cap",
     "repair_setup_vt_swap2",
+    "repair_setup_vt_swap_dont_use",
+    "repair_setup_vt_swap_unset_dont_use",
+    "repair_setup_vt_swap_unset_dont_use_no_pruning",
     "global_sizing",
     "global_sizing_threads",
     "global_sizing_presize",
@@ -317,11 +339,17 @@ TESTS = [
 
 PASSFAIL_TESTS = [
     "remove_buffers_nomatch",
+    "repair_setup_capture_vt_parallel_eval",
+    "repair_setup_crit_vt_capture",
+    "repair_slew_clk_data_path_vt",
+    "repair_slew_clk_load_wire",
     "repair_timing_fixed",
     "repair_design_fixed_driver",
+    "repair_slew_clk_data_path",
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
     "repair_setup_crit_vt_clock_gate",
+    "report_vt_usage",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -332,6 +360,7 @@ SELF_CHECKING_TESTS = [
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
     "repair_setup_crit_vt_clock_gate",
+    "report_vt_usage",
 ]
 
 # Hierarchical Verilog netlists reused as corpus input by
@@ -404,6 +433,7 @@ test_suite(
     name = "cpp_tests",
     tests = [
         ":TestBufRem1",
+        ":TestPlacementDensityGrid",
         ":TestResizer",
         ":TestSkewBudget",
     ],
@@ -556,6 +586,18 @@ cc_test(
 )
 
 cc_test(
+    name = "TestPlacementDensityGrid",
+    srcs = ["cpp/TestPlacementDensityGrid.cc"],
+    deps = [
+        "//openroad/odb/src/db",
+        "//openroad/rsz",
+        "//openroad/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestPreChecks",
     srcs = ["cpp/TestPreChecks.cc"],
     copts = ["-Iopenroad/rsz/src"],
@@ -680,6 +722,7 @@ cc_test(
         "cpp/TestResizerMt.cc",
         "cpp/TestResizerMtFixture.hh",
         "cpp/TestSplitLoadMt.cc",
+        "cpp/TestStatetableRegister.cc",
         "cpp/TestUnbufferMt.cc",
     ],
     data = [
@@ -689,6 +732,8 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestResizerMt_DelayEstimator.v",
         "cpp/TestSplitLoadMt.v",
+        "statetable_dff.lef",
+        "statetable_dff.lib",
     ],
     deps = [
         "//openroad/dbSta",
@@ -805,15 +850,9 @@ py_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "rsz_man_tcl_check",
-    srcs = ["rsz_man_tcl_check.py"],
-    data = ["//openroad/rsz:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "rsz",
 )
 
 doc_check_test(

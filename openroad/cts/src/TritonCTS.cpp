@@ -140,12 +140,7 @@ TreeBuilder* TritonCTS::addBuilder(CtsOptions* options,
                                    utl::Logger* logger,
                                    odb::dbDatabase* db)
 {
-  net.forEachSink([this](ClockInst& sink) {
-    odb::dbITerm* pin = sink.getDbInputPin();
-    if (pin && clockGateSinks_.contains(pin->getInst())) {
-      sink.setClockGateSink();
-    }
-  });
+  markClockGateSinks(net);
   auto builder
       = std::make_unique<HTreeBuilder>(options, net, parent, logger, db);
 
@@ -306,6 +301,185 @@ void TritonCTS::checkCharacterization()
                 97,
                 "Characterization used {} buffer(s) types.",
                 visitedMasters.size());
+}
+
+// Sink clustering settings from set_cts_config
+struct TritonCTS::ClusteringContext
+{
+  std::unique_ptr<CtsOptions> options;
+  std::unique_ptr<TechChar> techChar;
+  std::unordered_set<odb::dbMaster*> bufferMasters;
+};
+
+bool TritonCTS::setupSinkClustering(ClusteringContext& ctx)
+{
+  std::vector<std::string> buffers = options_->getBufferList();
+  bool inferred = options_->isBufferListInferred();
+  if (buffers.empty()) {
+    inferBufferList(buffers);
+    if (buffers.empty()) {
+      return false;
+    }
+    inferred = true;
+  }
+  auto findBuffer = [this](const std::string& name) -> odb::dbMaster* {
+    odb::dbMaster* master = db_->findMaster(name.c_str());
+    if (master == nullptr
+        || network_->libertyCell(network_->dbToSta(master)) == nullptr) {
+      return nullptr;
+    }
+    return master;
+  };
+  for (const std::string& name : buffers) {
+    odb::dbMaster* master = findBuffer(name);
+    if (master == nullptr) {
+      return false;
+    }
+    ctx.bufferMasters.insert(master);
+  }
+  std::vector<std::string> roots
+      = rootBuffers_.empty() ? buffers : rootBuffers_;
+  std::vector<std::string> sinks
+      = sinkBuffers_.empty() ? buffers : sinkBuffers_;
+  const std::string rootBuffer = selectRootBuffer(roots);
+  const std::string sinkBuffer = selectSinkBuffer(sinks);
+  odb::dbMaster* rootMaster = findBuffer(rootBuffer);
+  if (rootMaster == nullptr || findBuffer(sinkBuffer) == nullptr) {
+    return false;
+  }
+  ctx.bufferMasters.insert(rootMaster);
+
+  // computeInsertionDelay reads block_ before runTritonCts sets it.
+  block_ = db_->getChip()->getBlock();
+  const int dbUnits = block_->getDbUnitsPerMicron();
+  ctx.options
+      = std::make_unique<CtsOptions>(logger_, options_->getSttBuilder());
+  CtsOptions& options = *ctx.options;
+  options.setDbUnits(dbUnits);
+  options.setBufferListInferred(inferred);
+  options.setRootBuffer(rootBuffer);
+  options.setSinkBuffer(sinkBuffer);
+  if (options_->isSinkClusteringSizeSet()) {
+    options.setSinkClusteringSize(options_->getSinkClusteringSize());
+  }
+  if (const int sinkMaxFanout = getBufferFanoutLimit(sinkBuffer)) {
+    options.limitSinkClusteringSizes(sinkMaxFanout);
+  }
+  if (options_->isMaxDiameterSet()) {
+    options.setMaxDiameter(options_->getMaxDiameter());
+  }
+  options.setMaxCharSlew(options_->getMaxCharSlew());
+  options.setMaxCharCap(options_->getMaxCharCap());
+  options.setSinkBufferInputCap(options_->getSinkBufferInputCap());
+
+  ctx.techChar = std::make_unique<TechChar>(&options,
+                                            db_,
+                                            openSta_,
+                                            resizer_,
+                                            estimate_parasitics_,
+                                            network_,
+                                            logger_);
+  ctx.techChar->initClockLayerResCap(dbUnits);
+  ctx.techChar->trimSortBufferList(buffers);
+  if (!ctx.techChar->initCharBuffer(buffers).empty()) {
+    return false;
+  }
+  ctx.techChar->initSinkBufferInputCap();
+  return ctx.techChar->getLengthUnit() > 0;
+}
+
+std::vector<std::vector<odb::dbITerm*>> TritonCTS::predictSinkClusters(
+    const std::vector<odb::dbNet*>& nets)
+{
+  std::vector<std::vector<odb::dbITerm*>> clusters;
+  ClusteringContext ctx;
+  if (!setupSinkClustering(ctx)) {
+    return clusters;
+  }
+  // As splitClockGatesToClusters, without cloning: each part of a clock gate
+  // sink is a leaf net of its own, and the gate a sink of its parent tree.
+  odb::PtrSet<odb::dbNet> gateNets;
+  for (odb::dbNet* net : nets) {
+    if (!options_->getSinkClustering() || isFrozenClockNet(net)) {
+      continue;
+    }
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      if (!iterm->isInputSignal() || isSink(iterm)) {
+        continue;
+      }
+      ClockPins clockPins = registerClockPins(iterm);
+      if (clockPins.empty()) {
+        continue;
+      }
+      const std::vector<ClockPinPart> parts
+          = partitionClockPins(clockPins, *ctx.options);
+      if (parts.empty()) {
+        continue;
+      }
+      odb::dbInst* gate = iterm->getInst();
+      odb::dbITerm* out = gate->getFirstOutput();
+      clockGateSinks_.insert(gate);
+      gateNets.insert(out->getNet());
+      for (const ClockPinPart& part : parts) {
+        std::vector<odb::dbITerm*>& pins = clusters.emplace_back();
+        pins.push_back(out);
+        for (size_t i = part.begin; i < part.end; i++) {
+          pins.push_back(clockPins[i].second);
+        }
+      }
+    }
+  }
+  const std::vector<odb::dbNet*> skipNets = options_->getSkipNets();
+  for (odb::dbNet* net : nets) {
+    if (!net->isSpecial() && !gateNets.contains(net)
+        && std::ranges::find(skipNets, net) == skipNets.end()) {
+      predictSinkClusters(net, ctx, clusters);
+    }
+  }
+  clockGateSinks_.clear();
+  return clusters;
+}
+
+void TritonCTS::markClockGateSinks(Clock& clockNet)
+{
+  clockNet.forEachSink([this](ClockInst& sink) {
+    odb::dbITerm* pin = sink.getDbInputPin();
+    if (pin && clockGateSinks_.contains(pin->getInst())) {
+      sink.setClockGateSink();
+    }
+  });
+}
+
+void TritonCTS::predictSinkClusters(
+    odb::dbNet* net,
+    const ClusteringContext& ctx,
+    std::vector<std::vector<odb::dbITerm*>>& clusters)
+{
+  Clock clockNet(net->getConstName(), "", "", 0, 0);
+  std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> macroSinks;
+  std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> registerSinks;
+  if (!separateMacroRegSinks(
+          net, clockNet, ctx.bufferMasters, registerSinks, macroSinks)) {
+    return;
+  }
+  if (needsSeparateTrees(macroSinks, registerSinks)) {
+    for (const auto& [inst, mterm] : registerSinks) {
+      addClockSink(clockNet, inst->getITerm(mterm));
+    }
+  } else {
+    addNetSinks(clockNet, net);
+  }
+  markClockGateSinks(clockNet);
+
+  HTreeBuilder tree(ctx.options.get(), clockNet, nullptr, logger_, db_);
+  tree.setTechChar(*ctx.techChar);
+  for (const std::vector<const ClockInst*>& cluster :
+       tree.predictSinkClusters()) {
+    std::vector<odb::dbITerm*>& pins = clusters.emplace_back();
+    for (const ClockInst* sink : cluster) {
+      pins.push_back(sink->getDbInputPin());
+    }
+  }
 }
 
 void TritonCTS::findClockRoots()
@@ -715,9 +889,7 @@ void TritonCTS::setBufferList(const char* buffers)
   std::vector<std::string> bufferList(begin, end);
   // If the vector is empty, then the buffers are inferred
   if (bufferList.empty()) {
-    const char* lib_name
-        = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
-    resizer_->inferClockBufferList(lib_name, bufferList);
+    inferBufferList(bufferList);
     options_->setBufferListInferred(true);
   } else {
     // Iterate the user-defined buffer list
@@ -740,6 +912,13 @@ void TritonCTS::setBufferList(const char* buffers)
     resizer_->setClockBuffersList(selected_buffers);
   }
   options_->setBufferList(bufferList);
+}
+
+void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
+{
+  const char* lib_name
+      = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
+  resizer_->inferClockBufferList(lib_name, buffers);
 }
 
 std::string TritonCTS::getRootBufferToString()
@@ -1483,21 +1662,9 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     return nullptr;
   }
 
-  if (!options_->insertionDelayEnabled() || macroSinks.empty()
-      || registerSinks.empty()) {
+  if (!needsSeparateTrees(macroSinks, registerSinks)) {
     // There is no need for separate clock trees
-    for (odb::dbITerm* iterm : firstNet->getITerms()) {
-      odb::dbInst* inst = iterm->getInst();
-      if (iterm->isInputSignal() && inst->isPlaced()) {
-        odb::dbMTerm* mterm = iterm->getMTerm();
-        std::string name = std::string(inst->getConstName()) + "/"
-                           + std::string(mterm->getConstName());
-        int x, y;
-        computeITermPosition(iterm, x, y);
-        float insDelay = computeInsertionDelay(name, inst, mterm);
-        clockNet.addSink(name, x, y, iterm, getInputPinCap(iterm), insDelay);
-      }
-    }
+    addNetSinks(clockNet, firstNet);
     if (clockNet.getNumSinks() < 2) {
       logger_->warn(CTS,
                     41,
@@ -1658,16 +1825,8 @@ TreeBuilder* TritonCTS::addClockSinks(
     TreeBuilder* parentBuilder,
     const std::string& macrosOrRegs)
 {
-  for (auto elem : sinks) {
-    odb::dbInst* inst = elem.first;
-    odb::dbMTerm* mterm = elem.second;
-    std::string name = std::string(inst->getConstName()) + "/"
-                       + std::string(mterm->getConstName());
-    int x, y;
-    odb::dbITerm* iterm = inst->getITerm(mterm);
-    computeITermPosition(iterm, x, y);
-    float insDelay = computeInsertionDelay(name, inst, mterm);
-    clockNet.addSink(name, x, y, iterm, getInputPinCap(iterm), insDelay);
+  for (const auto& [inst, mterm] : sinks) {
+    addClockSink(clockNet, inst->getITerm(mterm));
   }
   logger_->info(CTS,
                 11,
@@ -1681,6 +1840,37 @@ TreeBuilder* TritonCTS::addClockSinks(
   clockNet.setNetObj(physicalNet);
   return addBuilder(
       options_, clockNet, topInputNet, parentBuilder, logger_, db_);
+}
+
+// Registers get their own tree when macros carry insertion delays.
+bool TritonCTS::needsSeparateTrees(
+    const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks,
+    const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks)
+    const
+{
+  return options_->insertionDelayEnabled() && !macroSinks.empty()
+         && !registerSinks.empty();
+}
+
+void TritonCTS::addNetSinks(Clock& clockNet, odb::dbNet* net)
+{
+  for (odb::dbITerm* iterm : net->getITerms()) {
+    if (iterm->isInputSignal() && iterm->getInst()->isPlaced()) {
+      addClockSink(clockNet, iterm);
+    }
+  }
+}
+
+void TritonCTS::addClockSink(Clock& clockNet, odb::dbITerm* iterm)
+{
+  odb::dbInst* inst = iterm->getInst();
+  odb::dbMTerm* mterm = iterm->getMTerm();
+  std::string name = std::string(inst->getConstName()) + "/"
+                     + std::string(mterm->getConstName());
+  int x, y;
+  computeITermPosition(iterm, x, y);
+  float insDelay = computeInsertionDelay(name, inst, mterm);
+  clockNet.addSink(name, x, y, iterm, getInputPinCap(iterm), insDelay);
 }
 
 Clock TritonCTS::forkRegisterClockNetwork(
@@ -2457,11 +2647,48 @@ odb::Rect TritonCTS::boundingBox(const ClockPins& clockPins,
   return bbox;
 }
 
-bool TritonCTS::fitsSinkCluster(size_t count, const odb::Rect& bbox) const
+bool TritonCTS::fitsSinkCluster(const CtsOptions& options,
+                                size_t count,
+                                const odb::Rect& bbox) const
 {
-  return count <= options_->getSinkClusteringSize()
+  return count <= options.getSinkClusteringSize()
          && bbox.dx() + bbox.dy()
-                <= options_->getMaxDiameter() * block_->getDbUnitsPerMicron();
+                <= options.getMaxDiameter() * block_->getDbUnitsPerMicron();
+}
+
+// Halves the register clock pins along the longer bbox side until each part
+// fits a sink cluster. Empty when a single pin does not fit.
+std::vector<TritonCTS::ClockPinPart> TritonCTS::partitionClockPins(
+    ClockPins& clockPins,
+    const CtsOptions& options) const
+{
+  std::vector<ClockPinPart> parts;
+  std::vector<std::pair<size_t, size_t>> todo{{0, clockPins.size()}};
+  while (!todo.empty()) {
+    const auto [lo, hi] = todo.back();
+    todo.pop_back();
+    const odb::Rect bbox = boundingBox(clockPins, lo, hi);
+    if (fitsSinkCluster(options, hi - lo, bbox)) {
+      parts.push_back({.begin = lo, .end = hi, .box = bbox});
+      continue;
+    }
+    // Only a cluster size of 0 rejects a single pin.
+    if (hi - lo == 1) {
+      return {};
+    }
+    const bool byX = bbox.dx() >= bbox.dy();
+    const size_t mid = lo + (hi - lo) / 2;
+    std::nth_element(clockPins.begin() + lo,
+                     clockPins.begin() + mid,
+                     clockPins.begin() + hi,
+                     [byX](const auto& a, const auto& b) {
+                       return byX ? a.first.x() < b.first.x()
+                                  : a.first.y() < b.first.y();
+                     });
+    todo.emplace_back(lo, mid);
+    todo.emplace_back(mid, hi);
+  }
+  return parts;
 }
 
 // A placed clock gate that fits one sink cluster with its register clock pins
@@ -2475,7 +2702,7 @@ bool TritonCTS::isClockGateSink(odb::dbITerm* gateClockPin)
   }
   odb::Rect bbox = boundingBox(clockPins, 0, clockPins.size());
   bbox.merge(gateClockPin->getInst()->getLocation());
-  return fitsSinkCluster(clockPins.size(), bbox);
+  return fitsSinkCluster(*options_, clockPins.size(), bbox);
 }
 
 bool TritonCTS::isFrozenClockNet(odb::dbNet* net)
@@ -2527,10 +2754,8 @@ void TritonCTS::splitClockGatesToClusters(
   }
 }
 
-// Halves the register clock pins along the longer bbox side until each part
-// fits a sink cluster. The gate keeps the part nearest to it, moving to its
-// center when out of reach, and a clone at the center of each other part
-// drives that part.
+// The gate keeps the part nearest to it, moving to its center when out of
+// reach, and a clone at the center of each other part drives that part.
 void TritonCTS::splitClockGateToClusters(
     odb::dbITerm* gateClockPin,
     std::set<odb::Point>& occupiedPositions)
@@ -2552,47 +2777,20 @@ void TritonCTS::splitClockGateToClusters(
     }
   }
 
-  struct Part
-  {
-    size_t begin;
-    size_t end;
-    odb::Rect box;
-  };
-  std::vector<Part> parts;
-  std::vector<std::pair<size_t, size_t>> todo{{0, clockPins.size()}};
-  while (!todo.empty()) {
-    const auto [lo, hi] = todo.back();
-    todo.pop_back();
-    const odb::Rect bbox = boundingBox(clockPins, lo, hi);
-    if (fitsSinkCluster(hi - lo, bbox)) {
-      parts.push_back({.begin = lo, .end = hi, .box = bbox});
-      continue;
-    }
-    // Only a cluster size of 0 rejects a single pin.
-    if (hi - lo == 1) {
-      return;
-    }
-    const bool byX = bbox.dx() >= bbox.dy();
-    const size_t mid = lo + (hi - lo) / 2;
-    std::nth_element(clockPins.begin() + lo,
-                     clockPins.begin() + mid,
-                     clockPins.begin() + hi,
-                     [byX](const auto& a, const auto& b) {
-                       return byX ? a.first.x() < b.first.x()
-                                  : a.first.y() < b.first.y();
-                     });
-    todo.emplace_back(lo, mid);
-    todo.emplace_back(mid, hi);
+  const std::vector<ClockPinPart> parts
+      = partitionClockPins(clockPins, *options_);
+  if (parts.empty()) {
+    return;
   }
 
   const odb::Point gatePos = gate->getLocation();
-  const Part& kept
-      = *std::ranges::min_element(parts, {}, [gatePos](const Part& part) {
-          return odb::Point::manhattanDistance(part.box.center(), gatePos);
-        });
+  const ClockPinPart& kept = *std::ranges::min_element(
+      parts, {}, [gatePos](const ClockPinPart& part) {
+        return odb::Point::manhattanDistance(part.box.center(), gatePos);
+      });
   odb::Rect reach = kept.box;
   reach.merge(gatePos);
-  if (!fitsSinkCluster(kept.end - kept.begin, reach)) {
+  if (!fitsSinkCluster(*options_, kept.end - kept.begin, reach)) {
     resolveLocationCollision(gate, kept.box.center(), occupiedPositions);
   }
   if (parts.size() < 2) {
@@ -2606,7 +2804,7 @@ void TritonCTS::splitClockGateToClusters(
   const std::string localName = network_->name(network_->dbToSta(gate));
   const odb::dbNameUniquifyType uniquify
       = odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE;
-  for (const Part& part : parts) {
+  for (const ClockPinPart& part : parts) {
     if (&part == &kept) {
       continue;
     }

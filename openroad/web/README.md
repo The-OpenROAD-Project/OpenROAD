@@ -189,31 +189,42 @@ save_image
 | `-width` | Output image width in pixels. Cannot be used with `-resolution`. |
 | `-resolution` | Resolution in microns per pixel. Minimum: 1 DBU per pixel. Cannot be used with `-width`. |
 | `-display_option` | Repeatable visibility overrides as `{control value}` pairs. See [Display option keys](#display-option-keys) below. |
-| `path` | Output PNG file path. |
+| `path` | Output PNG file path. With `-web`, a path that does not end in `.png` gets `.png` added. |
 
 When using `-web`, if neither `-width` nor `-resolution` is specified, the
 image defaults to 1024 pixels wide. The maximum image dimension is 16384
 pixels; larger requests are clamped automatically.
 
-The image is opaque: it is painted on the Background color of the browser that
-last synced its display state, and on black — the default of both GUIs — when
-none has, as with a plain headless run.
+With no Qt window open, `-web` draws what the `gui::set_display_controls`
+calls have chosen, with the same paths and defaults as the Qt display controls.
+That is how one script, such as ORFS's `save_images.tcl`, can save the same
+views with either renderer.
+
+The image is opaque: it is painted on the `Misc/Background` color a script has
+set, else on the Background color of the browser that last synced its display
+state, and on black — the default of both GUIs — when neither has, as with a
+plain headless run.
 
 #### Display option keys (web mode)
 
-Display options control which elements are rendered when using `-web`.
-Each option is a `{key value}` pair where the key matches a visibility
-field and the value is a Tcl boolean (`true`/`false`, `1`/`0`, `yes`/`no`,
-`on`/`off`); any other value is an error.
+Display options control which elements are rendered when using `-web`, for
+that image only. Each option is a `{key value}` pair where the value is a Tcl
+boolean (`true`/`false`, `1`/`0`, `yes`/`no`, `on`/`off`); any other value is
+an error. The key is either one of the visibility fields below or a display
+control path such as `Nets/Power` or `Instances/*`, matched the way
+`gui::set_display_controls` matches it. Any other key is an error.
 
 | Key | Default | Description |
 | --- | ------- | ----------- |
 | `stdcells` | true | Standard cells |
+| `std_physical` | `stdcells` | Liberty cells with no ports, such as decaps |
+| `std_other` | `stdcells` | Cells with no Liberty cell that are not core masters |
 | `macros` | true | Macros |
 | `routing` | true | Signal routing |
 | `special_nets` | true | Power/ground straps |
-| `pins` | true | Instance pins |
+| `pins` | true | IO pin shapes |
 | `pin_markers` | true | IO pin direction markers |
+| `inst_pins` | true | Instance pins |
 | `blockages` | true | Blockages |
 | `net_signal` | true | Signal nets |
 | `net_power` | true | Power nets |
@@ -268,6 +279,11 @@ save_image -web -area {0 0 100 100} -width 2048 region.png
 # Hide routing and power nets
 save_image -web -display_option {routing false} \
                 -display_option {net_power false} \
+                layout.png
+
+# The same, by display-control paths
+save_image -web -display_option {{Shape Types/Routing/*} false} \
+                -display_option {Nets/Power false} \
                 layout.png
 
 # Save with RUDY congestion heatmap overlay
@@ -467,6 +483,14 @@ whichever one synced last.
 
 Because Tcl commands typed into the browser console run on the server, this is
 normally invoked from the viewer's own console after arranging the panel.
+
+This command is not `gui::save_display_controls`. With no Qt window open,
+`gui::set_display_controls`, `gui::check_display_controls`,
+`gui::save_display_controls`, `gui::restore_display_controls` and `gui::fit`
+act on a copy of the Qt display-control tree kept on the server, with the
+same paths and defaults. That copy works in a build without Qt and needs no
+running server, but it is separate from what a browser shows. Of the colors,
+only `Misc/Background` is kept there.
 
 ### Restore Display Controls
 

@@ -102,20 +102,20 @@ void _dbChipConn::collectMemInfo(MemInfo& info)
 
 const std::string& dbChipConn::getName() const
 {
-  _dbChipConn* obj = (_dbChipConn*) this;
+  const _dbChipConn* obj = reinterpret_cast<const _dbChipConn*>(this);
   return obj->name_;
 }
 
 void dbChipConn::setThickness(int thickness)
 {
-  _dbChipConn* obj = (_dbChipConn*) this;
+  _dbChipConn* obj = reinterpret_cast<_dbChipConn*>(this);
 
   obj->thickness_ = thickness;
 }
 
 int dbChipConn::getThickness() const
 {
-  _dbChipConn* obj = (_dbChipConn*) this;
+  const _dbChipConn* obj = reinterpret_cast<const _dbChipConn*>(this);
   return obj->thickness_;
 }
 

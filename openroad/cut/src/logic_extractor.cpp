@@ -96,7 +96,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
   for (sta::Vertex* vertex : cut_vertices) {
     // If the pins in the cutset are primary outputs don't call it
     // a primary input
-    if (endpoint_vertex.find(vertex) != endpoint_vertex.end()) {
+    if (endpoint_vertex.contains(vertex)) {
       continue;
     }
 
@@ -109,7 +109,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
     for (const sta::Pin* pin : *pin_set) {
       // If a driver pin of the pin under consideration is not in the cut
       // vertices, then it is a primary input.
-      if (pins.find(pin) != pins.end()) {
+      if (pins.contains(pin)) {
         is_primary_input = false;
         break;
       }
@@ -122,6 +122,8 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
 
   return primary_inputs;
 }
+
+namespace {
 
 // Returns the vertex of a constant 1 or 0 cell if the driver of the input
 // pin is a constant 0 or 1 port. Otherwise return nullptr.
@@ -162,6 +164,8 @@ sta::Vertex* GetConstantVertexIfExists(sta::dbNetwork* network,
   return constant_vertex;
 }
 
+}  // namespace
+
 // Annoyingly STA does not include input pins that are filtered out in the
 // search. for example constant inputs, or disabled timing paths. We need to
 // loop through all the instances attached to the vertices to make sure we
@@ -189,7 +193,7 @@ std::vector<sta::Vertex*> LogicExtractorFactory::AddMissingVertices(
     // want to add vertices from these cells. We really just
     // want the ones in the fan-in set who are filtered by STA
     // for one reason or another.
-    if (endpoint_set.find(vertex) != endpoint_set.end()) {
+    if (endpoint_set.contains(vertex)) {
       continue;
     }
 
@@ -201,7 +205,7 @@ std::vector<sta::Vertex*> LogicExtractorFactory::AddMissingVertices(
       sta::Pin* pin = iter->next();
       sta::Vertex* vertex = graph->vertex(network->vertexId(pin));
       // Don't want any duplicate entries
-      if (cut_vertex_set.find(vertex) != cut_vertex_set.end()) {
+      if (cut_vertex_set.contains(vertex)) {
         continue;
       }
       // Don't want any non-inputs.
@@ -262,7 +266,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
     while (pin_iterator->hasNext()) {
       const sta::Pin* connected_pin = pin_iterator->next();
       // Pin is not in our cutset, and therefore is a primary output.
-      if (cut_set_vertices.find(connected_pin) == cut_set_vertices.end()) {
+      if (!cut_set_vertices.contains(connected_pin)) {
         sta::VertexId vertex_id = network->vertexId(connected_pin);
         sta::Vertex* vertex = network->graph()->vertex(vertex_id);
         primary_outputs.push_back(vertex->pin());
@@ -294,13 +298,6 @@ sta::InstanceSet LogicExtractorFactory::GetCutInstances(
     }
   }
 
-  // We don't want DFFs in the instance themselves since we don't actually
-  // want to put those cells in ABC. Remove them.
-  for (sta::Vertex* vertex : endpoints_) {
-    sta::Instance* endpoint_instance = network->instance(vertex->pin());
-    cut_instances.erase(endpoint_instance);
-  }
-
   return cut_instances;
 }
 
@@ -326,7 +323,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::FilterUndrivenOutputs(
         continue;
       }
       // Output pin is driven by something in the cutset. Keep it.
-      if (cut_instances.find(connected_instance) != cut_instances.end()) {
+      if (cut_instances.contains(connected_instance)) {
         filtered_pin_set.insert(pin);
       }
     }
@@ -339,6 +336,27 @@ std::vector<sta::Pin*> LogicExtractorFactory::FilterUndrivenOutputs(
   }
 
   return filtered_output_pins;
+}
+
+std::vector<sta::Vertex*> LogicExtractorFactory::FilterVerticesOnEndpointCells(
+    const std::vector<sta::Vertex*>& cut_vertices)
+{
+  sta::dbNetwork* network = open_sta_->getDbNetwork();
+  std::unordered_set<sta::Instance*> endpoint_intances;
+  for (sta::Vertex* vertex : endpoints_) {
+    sta::Instance* instance = network->instance(vertex->pin());
+    if (instance) {
+      endpoint_intances.insert(instance);
+    }
+  }
+
+  std::vector<sta::Vertex*> result;
+  for (sta::Vertex* vertex : cut_vertices) {
+    if (!endpoint_intances.contains(network->instance(vertex->pin()))) {
+      result.push_back(vertex);
+    }
+  }
+  return result;
 }
 
 std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
@@ -382,6 +400,7 @@ LogicCut LogicExtractorFactory::BuildLogicCut(AbcLibrary& abc_network)
   std::vector<sta::Vertex*> cut_vertices = GetCutVertices(abc_network);
   // Dealing with constant cells 1/0 and disabled timing paths.
   cut_vertices = AddMissingVertices(cut_vertices, abc_network);
+  cut_vertices = FilterVerticesOnEndpointCells(cut_vertices);
 
   std::vector<sta::Pin*> primary_inputs = GetPrimaryInputs(cut_vertices);
   std::vector<sta::Pin*> primary_outputs = GetPrimaryOutputs(cut_vertices);

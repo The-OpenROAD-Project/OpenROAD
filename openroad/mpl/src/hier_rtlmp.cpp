@@ -25,9 +25,9 @@
 #include <vector>
 
 #include "MplObserver.h"
+#include "SACore.h"
 #include "SACoreHardMacro.h"
 #include "SACoreSoftMacro.h"
-#include "SimulatedAnnealingCore.h"
 #include "boost/polygon/polygon.hpp"
 #include "clusterEngine.h"
 #include "db_sta/dbNetwork.hh"
@@ -482,26 +482,30 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
       if (graphics_) {
         graphics_->setOutline(new_outline);
       }
-      std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_.get(),
-                                              new_outline,
-                                              macros,
-                                              shaping_core_weights_,
-                                              SASoftWeights(),
-                                              0.0,  // no notch size
-                                              0.0,  // no notch size
-                                              pos_swap_prob_ / action_sum,
-                                              neg_swap_prob_ / action_sum,
-                                              double_swap_prob_ / action_sum,
-                                              exchange_swap_prob_ / action_sum,
-                                              resize_prob_ / action_sum,
-                                              init_prob_,
-                                              max_num_step_,
-                                              num_perturb_per_step,
-                                              random_seed_,
-                                              graphics_.get(),
-                                              logger_,
-                                              block_);
+      std::unique_ptr<SACoreSoftMacro> sa = std::make_unique<SACoreSoftMacro>(
+          tree_.get(),
+          new_outline,
+          macros,
+          shaping_core_weights_,
+          SASoftWeights(),
+          0.0,  // no notch size
+          0.0,  // no notch size
+          SACoreActionProbs{
+              .pos_swap = pos_swap_prob_ / action_sum,
+              .neg_swap = neg_swap_prob_ / action_sum,
+              .double_swap = double_swap_prob_ / action_sum,
+              .exchange = exchange_swap_prob_ / action_sum,
+          },
+          SASoftActionsProbs{.resize = resize_prob_ / action_sum},
+          SAHyperparams{
+              .init_prob = init_prob_,
+              .max_num_step = max_num_step_,
+              .num_perturb_per_step = num_perturb_per_step,
+          },
+          random_seed_,
+          graphics_.get(),
+          logger_,
+          block_);
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
@@ -540,26 +544,30 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
       if (graphics_) {
         graphics_->setOutline(new_outline);
       }
-      std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_.get(),
-                                              new_outline,
-                                              macros,
-                                              shaping_core_weights_,
-                                              SASoftWeights(),
-                                              0.0,  // no notch size
-                                              0.0,  // no notch size
-                                              pos_swap_prob_ / action_sum,
-                                              neg_swap_prob_ / action_sum,
-                                              double_swap_prob_ / action_sum,
-                                              exchange_swap_prob_ / action_sum,
-                                              resize_prob_ / action_sum,
-                                              init_prob_,
-                                              max_num_step_,
-                                              num_perturb_per_step,
-                                              random_seed_,
-                                              graphics_.get(),
-                                              logger_,
-                                              block_);
+      std::unique_ptr<SACoreSoftMacro> sa = std::make_unique<SACoreSoftMacro>(
+          tree_.get(),
+          new_outline,
+          macros,
+          shaping_core_weights_,
+          SASoftWeights(),
+          0.0,  // no notch size
+          0.0,  // no notch size
+          SACoreActionProbs{
+              .pos_swap = pos_swap_prob_ / action_sum,
+              .neg_swap = neg_swap_prob_ / action_sum,
+              .double_swap = double_swap_prob_ / action_sum,
+              .exchange = exchange_swap_prob_ / action_sum,
+          },
+          SASoftActionsProbs{.resize = resize_prob_ / action_sum},
+          SAHyperparams{
+              .init_prob = init_prob_,
+              .max_num_step = max_num_step_,
+              .num_perturb_per_step = num_perturb_per_step,
+          },
+          random_seed_,
+          graphics_.get(),
+          logger_,
+          block_);
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
@@ -1373,26 +1381,30 @@ void HierRTLMP::placeChildren(Cluster* parent)
       const bool single_array_single_std_cell_cluster
           = singleArraySingleStdCellCluster(macros);
 
-      std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_.get(),
-                                              outline,
-                                              inflated_macros,
-                                              placement_core_weights_,
-                                              cluster_placement_weights_,
-                                              notch_h_th_,
-                                              notch_v_th_,
-                                              pos_swap_prob_ / action_sum,
-                                              neg_swap_prob_ / action_sum,
-                                              double_swap_prob_ / action_sum,
-                                              exchange_swap_prob_ / action_sum,
-                                              resize_prob_ / action_sum,
-                                              init_prob_,
-                                              max_num_step_,
-                                              num_perturb_per_step,
-                                              random_seed_,
-                                              graphics_.get(),
-                                              logger_,
-                                              block_);
+      std::unique_ptr<SACoreSoftMacro> sa = std::make_unique<SACoreSoftMacro>(
+          tree_.get(),
+          outline,
+          inflated_macros,
+          placement_core_weights_,
+          cluster_placement_weights_,
+          notch_h_th_,
+          notch_v_th_,
+          SACoreActionProbs{
+              .pos_swap = pos_swap_prob_ / action_sum,
+              .neg_swap = neg_swap_prob_ / action_sum,
+              .double_swap = double_swap_prob_ / action_sum,
+              .exchange = exchange_swap_prob_ / action_sum,
+          },
+          SASoftActionsProbs{.resize = resize_prob_ / action_sum},
+          SAHyperparams{
+              .init_prob = init_prob_,
+              .max_num_step = max_num_step_,
+              .num_perturb_per_step = num_perturb_per_step,
+          },
+          random_seed_,
+          graphics_.get(),
+          logger_,
+          block_);
       sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
       sa->enableEnhancements();
       sa->setFences(fences);
@@ -1944,22 +1956,26 @@ void HierRTLMP::placeMacros(Cluster* cluster)
       new_weights.outline *= (run_id + 1) * 10;
       new_weights.wirelength /= (run_id + 1);
 
-      std::unique_ptr<SACoreHardMacro> sa
-          = std::make_unique<SACoreHardMacro>(tree_.get(),
-                                              outline,
-                                              sa_macros,
-                                              new_weights,
-                                              pos_swap_prob,
-                                              neg_swap_prob,
-                                              double_swap_prob,
-                                              exchange_swap_prob,
-                                              init_prob_,
-                                              max_num_step_,
-                                              perturbations_per_step,
-                                              random_seed_ + run_id,
-                                              graphics_.get(),
-                                              logger_,
-                                              block_);
+      std::unique_ptr<SACoreHardMacro> sa = std::make_unique<SACoreHardMacro>(
+          tree_.get(),
+          outline,
+          sa_macros,
+          new_weights,
+          SACoreActionProbs{
+              .pos_swap = pos_swap_prob,
+              .neg_swap = neg_swap_prob,
+              .double_swap = double_swap_prob,
+              .exchange = exchange_swap_prob,
+          },
+          SAHyperparams{
+              .init_prob = init_prob_,
+              .max_num_step = max_num_step_,
+              .num_perturb_per_step = perturbations_per_step,
+          },
+          random_seed_ + run_id,
+          graphics_.get(),
+          logger_,
+          block_);
       sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
       sa->setNets(nets);
       sa->setFences(fences);
@@ -1990,7 +2006,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
     for (auto& sa : sa_batch) {
       // Reset weights so we can compare the final costs.
-      sa->setWeights(placement_core_weights_);
+      sa->setCoreWeights(placement_core_weights_);
 
       if (sa->isValid() && sa->getNormCost() < best_cost) {
         best_cost = sa->getNormCost();

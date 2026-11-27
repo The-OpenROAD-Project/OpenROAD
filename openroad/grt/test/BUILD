@@ -1,5 +1,5 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -49,6 +49,7 @@ TESTS = [
     "global_route_rerun_cugr",
     "increase_capacity1",
     "incremental_deleted_net",
+    "incremental_end_without_start",
     "incremental_from_odb",
     "incremental_repair_cugr",
     "incremental_update_net",
@@ -70,6 +71,10 @@ TESTS = [
     "obs_out_of_die",
     "obstruction",
     "overlapping_edges",
+    "pad_pin_edge",
+    "pad_pin_edge_cugr",
+    "pad_pin_edge_odb_roundtrip",
+    "pad_pin_edge_restore_cugr",
     "pd1",
     "pd2",
     "pd3",
@@ -270,6 +275,34 @@ regression_test(
     data = [":test_resources"],
 )
 
+regression_test(
+    name = "congestion_only",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_only_guides",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_only_reset",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_only_ndr",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
 cc_test(
     name = "TestOverflow",
     size = "small",
@@ -349,8 +382,9 @@ cc_test(
         "//openroad/grt:fastroute",
         "//openroad/grt:groute",
         "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
         "//openroad/stt",
-        "//openroad/tst:db_fixture",
+        "//openroad/tst",
         "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -408,15 +442,9 @@ cc_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "grt_man_tcl_check",
-    srcs = ["grt_man_tcl_check.py"],
-    data = ["//openroad/grt:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "grt",
 )
 
 doc_check_test(

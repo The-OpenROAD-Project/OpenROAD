@@ -357,5 +357,17 @@ TEST_F(MinimizeDisplacement, MirroredPairsOnOppositeEdgesDoNotOverlap)
   }
 }
 
+TEST_F(MinimizeDisplacement, SkipsLayerWithNoValidSlots)
+{
+  odb::dbTechLayer* metal5 = db_->getTech()->findLayer("metal5");
+  odb::dbTrackGrid::destroy(block_->findTrackGrid(metal5));
+  const odb::Rect die = block_->getDieArea();
+  odb::dbTrackGrid::create(block_, metal5)
+      ->addGridPatternY(die.yMin(), 1, die.dy() * 2);
+  addLayers();
+  pin_placer_.addHorLayer(metal5);
+  EXPECT_NO_THROW(pin_placer_.runHungarianMatching());
+}
+
 }  // namespace
 }  // namespace ppl

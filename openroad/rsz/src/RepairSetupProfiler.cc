@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <memory>
 #include <sstream>
+#include <string_view>
 #include <system_error>
 #include <utility>
 
@@ -52,8 +53,13 @@ std::string number(const double value)
 }
 
 // The phases the profiler covers completely; others are marked partial.
-constexpr std::array<std::string_view, 4> kCoveredPhases
-    = {"LEGACY", "LAST_GASP", "CRIT_VT_SWAP", "PARALLEL_EVAL"};
+constexpr std::array<std::string_view, 5> kCoveredPhases = {
+    "LEGACY",
+    "LAST_GASP",
+    "CRIT_VT_SWAP",
+    "CAPTURE_VT_SWAP",
+    "PARALLEL_EVAL",
+};
 
 }  // namespace
 

@@ -136,7 +136,7 @@ void _dbModule::collectMemInfo(MemInfo& info)
 _dbModule::~_dbModule()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
   // User Code Begin Destructor
   delete _port_iter;
@@ -151,25 +151,26 @@ _dbModule::~_dbModule()
 
 const char* dbModule::getName() const
 {
-  _dbModule* obj = (_dbModule*) this;
+  const _dbModule* obj = reinterpret_cast<const _dbModule*>(this);
   return obj->name_;
 }
 
 void dbModule::setModInst(dbModInst* mod_inst)
 {
-  _dbModule* obj = (_dbModule*) this;
+  _dbModule* obj = reinterpret_cast<_dbModule*>(this);
 
   obj->mod_inst_ = mod_inst->getImpl()->getOID();
 }
 
 dbModInst* dbModule::getModInst() const
 {
-  _dbModule* obj = (_dbModule*) this;
+  const _dbModule* obj = reinterpret_cast<const _dbModule*>(this);
   if (obj->mod_inst_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModInst*) par->modinst_tbl_->getPtr(obj->mod_inst_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbModInst*>(
+      par->modinst_tbl_->getPtr(obj->mod_inst_));
 }
 
 // User Code Begin dbModulePublicMethods

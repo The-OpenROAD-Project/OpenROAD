@@ -59,20 +59,46 @@ class Graph2D
   void clearUsed();
   bool hasEdges() const;
 
-  uint16_t getUsageH(int x, int y) const;
-  uint16_t getUsageV(int x, int y) const;
-  int16_t getLastUsageH(int x, int y) const;
-  int16_t getLastUsageV(int x, int y) const;
-  double getEstUsageH(int x, int y) const;
-  double getEstUsageV(int x, int y) const;
-  uint16_t getUsageRedH(int x, int y) const;
-  uint16_t getUsageRedV(int x, int y) const;
-  double getEstUsageRedH(int x, int y) const;
-  double getEstUsageRedV(int x, int y) const;
-  int getOverflowH(int x, int y) const;
-  int getOverflowV(int x, int y) const;
-  uint16_t getCapH(int x, int y) const;
-  uint16_t getCapV(int x, int y) const;
+  uint16_t getUsageH(int x, int y) const { return h_edges_[x][y].usage; }
+  uint16_t getUsageV(int x, int y) const { return v_edges_[x][y].usage; }
+  int16_t getLastUsageH(int x, int y) const
+  {
+    return h_edges_[x][y].last_usage;
+  }
+  int16_t getLastUsageV(int x, int y) const
+  {
+    return v_edges_[x][y].last_usage;
+  }
+  double getEstUsageH(int x, int y) const { return h_edges_[x][y].est_usage; }
+  double getEstUsageV(int x, int y) const { return v_edges_[x][y].est_usage; }
+  uint16_t getUsageRedH(int x, int y) const
+  {
+    return h_edges_[x][y].usage_red();
+  }
+  uint16_t getUsageRedV(int x, int y) const
+  {
+    return v_edges_[x][y].usage_red();
+  }
+  double getEstUsageRedH(int x, int y) const
+  {
+    return h_edges_[x][y].est_usage_red();
+  }
+  double getEstUsageRedV(int x, int y) const
+  {
+    return v_edges_[x][y].est_usage_red();
+  }
+  int getOverflowH(int x, int y) const
+  {
+    const auto& edge = h_edges_[x][y];
+    return edge.usage - edge.cap;
+  }
+  int getOverflowV(int x, int y) const
+  {
+    const auto& edge = v_edges_[x][y];
+    return edge.usage - edge.cap;
+  }
+  uint16_t getCapH(int x, int y) const { return h_edges_[x][y].cap; }
+  uint16_t getCapV(int x, int y) const { return v_edges_[x][y].cap; }
 
   const std::set<std::pair<int, int>>& getUsedGridsH() const;
   const std::set<std::pair<int, int>>& getUsedGridsV() const;
@@ -83,7 +109,12 @@ class Graph2D
   void prepareForIncrementalRun();
   // Full-scan reference check, intended for tests and GRT usedgridcheck debug.
   bool usedGridsMatchUsage() const;
-  bool isUsedGrid(int x, int y, EdgeDirection direction) const;
+  bool isUsedGrid(int x, int y, EdgeDirection direction) const
+  {
+    const auto& edge = direction == EdgeDirection::Horizontal ? h_edges_[x][y]
+                                                              : v_edges_[x][y];
+    return edge.in_used_grid;
+  }
   std::array<OverflowStatistics, 2> overflowStatistics(bool estimated);
   int maxUsage(EdgeDirection direction);
   bool needsEstimatedUsageScan();
@@ -104,7 +135,14 @@ class Graph2D
                                bool stop_decreasing,
                                int& max_adj);
   void str_accu(int rnd);
-  void saveResources(int x, int y, bool is_horizontal);
+  void saveResources(int x, int y, bool is_horizontal)
+  {
+    if (is_horizontal) {
+      h_edges_[x][y].real_cap = h_edges_[x][y].cap;
+    } else {
+      v_edges_[x][y].real_cap = v_edges_[x][y].cap;
+    }
+  }
   bool computeSuggestedAdjustment(int x,
                                   int y,
                                   bool is_horizontal,
@@ -119,6 +157,8 @@ class Graph2D
   void updateUsageV(int x, const Interval& yi, FrNet* net, int usage);
   void updateUsageV(int x, int y, FrNet* net, int usage);
   void initCap3D();
+  void clearCap3D();
+  bool hasCap3D() const { return !h_cap_3D_.empty() && !v_cap_3D_.empty(); }
   void updateCap3D(int x,
                    int y,
                    int layer,
@@ -194,9 +234,13 @@ class Graph2D
 
   void foreachEdge(const std::function<void(Edge&)>& func);
   void checkDirtyLists() const;
+  void markEstUsageDirty(Edge& edge, int x, int y, EdgeDirection direction);
   void markEstUsageDirty(int x, int y, EdgeDirection direction);
+  void markUsedGridDirty(Edge& edge, int x, int y, EdgeDirection direction);
   void markUsedGridDirty(int x, int y, EdgeDirection direction);
+  void insertUsedGrid(Edge& edge, int x, int y, EdgeDirection direction);
   void insertUsedGrid(int x, int y, EdgeDirection direction);
+  void eraseUsedGrid(Edge& edge, int x, int y, EdgeDirection direction);
   void eraseUsedGrid(int x, int y, EdgeDirection direction);
   static bool needsOrderedEstimateScan(double usage);
   void invalidateOverflow2D();
@@ -206,15 +250,13 @@ class Graph2D
                             bool added);
   // Keep each mutation's original arithmetic and conversion types.
   template <typename Mutation>
-  void mutateEdge(int x, int y, EdgeDirection direction, Mutation mutate)
+  void mutateEdge(Edge& edge, EdgeDirection direction, Mutation mutate)
   {
-    auto& edge = direction == EdgeDirection::Horizontal ? h_edges_[x][y]
-                                                        : v_edges_[x][y];
     const auto old_usage = edge.usage;
     const auto old_capacity = edge.cap;
     const auto old_estimate = edge.est_usage;
     mutate(edge);
-    if (overflow_2d_valid_ && isUsedGrid(x, y, direction)) {
+    if (overflow_2d_valid_ && edge.in_used_grid) {
       auto& totals
           = direction == EdgeDirection::Horizontal ? h_overflow_ : v_overflow_;
       totals.usage.replace(old_usage, old_capacity, edge.usage, edge.cap);
@@ -226,6 +268,14 @@ class Graph2D
       totals.ordered_estimates += needsOrderedEstimateScan(edge.est_usage)
                                   - needsOrderedEstimateScan(old_estimate);
     }
+  }
+  template <typename Mutation>
+  Edge& mutateEdge(int x, int y, EdgeDirection direction, Mutation mutate)
+  {
+    auto& edge = direction == EdgeDirection::Horizontal ? h_edges_[x][y]
+                                                        : v_edges_[x][y];
+    mutateEdge(edge, direction, std::move(mutate));
+    return edge;
   }
   std::array<OverflowStatistics, 2> scanOverflowStatistics(
       bool estimated) const;

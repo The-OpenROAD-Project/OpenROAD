@@ -830,7 +830,9 @@ frCoord FlexPA::viaMaxExt(frInstTerm* inst_term,
   const auto layer_num = ap->getLayerNum();
   auto via = std::make_unique<frVia>(via_def);
   via->setOrigin(begin_point);
-  const odb::Rect box = via->getLayer1BBox();
+  const odb::Rect box = via_def->getLayer1Num() == layer_num
+                            ? via->getLayer1BBox()
+                            : via->getLayer2BBox();
 
   // check if ap is on the left/right boundary of the cell
   odb::Rect boundary_bbox;
@@ -855,6 +857,9 @@ frCoord FlexPA::viaMaxExt(frInstTerm* inst_term,
   // via ranking criteria: max extension distance beyond pin shape
   std::vector<gtl::rectangle_data<frCoord>> int_rects;
   intersection.get_rectangles(int_rects, gtl::orientation_2d_enum::HORIZONTAL);
+  if (int_rects.empty()) {
+    return std::numeric_limits<frCoord>::max();
+  }
   for (const auto& r : int_rects) {
     max_ext = std::max(max_ext, box.xMax() - gtl::xh(r));
     max_ext = std::max(max_ext, gtl::xl(r) - box.xMin());
@@ -1607,6 +1612,31 @@ void FlexPA::genAllAccessPoints()
     logger_->info(DRT, 78, "  Complete {} pins.", pin_count);
   }
 }
+
+namespace {
+
+void translateAccessPoint(frAccessPoint& access_point,
+                          const odb::dbTransform& revertXform)
+{
+  odb::Point unique_AP_point(access_point.getPoint());
+  revertXform.apply(unique_AP_point);
+  access_point.setPoint(unique_AP_point);
+  for (auto& ps : access_point.getPathSegs()) {
+    odb::Point begin = ps.getBeginPoint();
+    odb::Point end = ps.getEndPoint();
+    revertXform.apply(begin);
+    revertXform.apply(end);
+    if (end < begin) {
+      odb::Point tmp = begin;
+      begin = end;
+      end = tmp;
+    }
+    ps.setPoints(begin, end);
+  }
+}
+
+}  // namespace
+
 void FlexPA::revertAccessPoints(frInst* inst)
 {
   const odb::dbTransform xform = inst->getTransform();
@@ -1618,21 +1648,7 @@ void FlexPA::revertAccessPoints(frInst* inst)
     for (auto& pin : inst_term->getTerm()->getPins()) {
       auto pin_access = pin->getPinAccess(pin_access_idx);
       for (auto& access_point : pin_access->getAccessPoints()) {
-        odb::Point unique_AP_point(access_point->getPoint());
-        revertXform.apply(unique_AP_point);
-        access_point->setPoint(unique_AP_point);
-        for (auto& ps : access_point->getPathSegs()) {
-          odb::Point begin = ps.getBeginPoint();
-          odb::Point end = ps.getEndPoint();
-          revertXform.apply(begin);
-          revertXform.apply(end);
-          if (end < begin) {
-            odb::Point tmp = begin;
-            begin = end;
-            end = tmp;
-          }
-          ps.setPoints(begin, end);
-        }
+        translateAccessPoint(*access_point, revertXform);
       }
     }
   }

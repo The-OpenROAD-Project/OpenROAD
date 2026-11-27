@@ -52,7 +52,13 @@ activity, so that nets that toggle often are kept short and use less switching
 power. The activity is read from `read_saif`, `read_vcd` or
 `set_power_activity` if given, otherwise from the OpenSTA default propagation,
 in the same scene (`set_scene`) that `report_power` uses. The extra weight
-scales with activity. Clock nets are not weighted.
+scales with activity and covers both signal and clock nets. A signal net gets
+it directly. For a clock net, `gpl` predicts the sink clusters that
+`clock_tree_synthesis -sink_clustering_enable` would build at the current
+placement with the `set_cts_config` settings, and adds a virtual leaf net over
+each cluster, weighted by the activity of the clock. The leaf nets are
+predicted at each overflow of `-power_driven_clock_leaf_overflow`, and again
+right after each timing-driven iteration.
 
 When the routability-driven option is enabled, each of its iterations will 
 execute RUDY to provide an estimation of routing congestion. Congested tiles 
@@ -82,7 +88,7 @@ Timing-driven arguments
 - `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`, `keep_resize_below_overflow`, `-timing_driven_repair_timing`, `-timing_driven_repair_tns_end_percent`
 
 Power-driven arguments
-- `-power_driven_net_weight`
+- `-power_driven_net_weight`, `-power_driven_clock_leaf_overflow`
 
 ```tcl
 global_placement
@@ -120,6 +126,7 @@ global_placement
     [-timing_driven_repair_timing]\
     [-timing_driven_repair_tns_end_percent timing_driven_repair_tns_end_percent]\
     [-power_driven_net_weight power_driven_net_weight]\
+    [-power_driven_clock_leaf_overflow power_driven_clock_leaf_overflow]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
@@ -138,7 +145,7 @@ global_placement
 | `-timing_driven` | Enable timing-driven mode. See [link](#timing-driven-arguments) for timing-specific arguments. |
 | `-power_driven` | Enable power-driven mode. See [link](#power-driven-arguments) for power-specific arguments. |
 | `-routability_driven` | Enable routability-driven mode. See [link](#routability-driven-arguments) for routability-specific arguments. |
-| `-skip_initial_place` | Skip the initial placement (Biconjugate gradient stabilized, or BiCGSTAB solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0`. | 
+| `-skip_initial_place` | Skip the initial placement (conjugate gradient solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0`. | 
 | `-skip_nesterov_place` | Skip the nesterov placement. | 
 | `-force_center_initial_place` | Initiate instances at the center of the core (or region) before initial placement, even if they already have a valid ODB location. By default, the placer will use the existing ODB locations if available. |
 | `-incremental` | Enable the incremental global placement. Users would need to tune other parameters (e.g., `init_density_penalty`) with pre-placed solutions. | 
@@ -153,7 +160,7 @@ global_placement
 | `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
-| `-place_ios` | Flag to co-optimize movable IO pins with cells in the same placement solve. Pins move along the die perimeter, or in 2D inside their region when `set_io_pin_constraint -region up:` puts them on a `define_pin_shape_pattern` grid. The pin layers and spacing come from `set_place_config`, which must set both the horizontal and the vertical layers. The pins are legalized with the pin placer at the end, so the separate `place_pins` step can be skipped. Not supported on a rectilinear die. Cannot be combined with `-incremental`, `-skip_io`, or `-skip_nesterov_place`. The default value is False, allowed values are boolean. |
+| `-place_ios` | Flag to co-optimize movable IO pins with cells in the same placement solve. Pins move along the die perimeter, or in 2D inside their region when `set_io_pin_constraint -region up:` puts them on a `define_pin_shape_pattern` grid. The pin layers and spacing come from `set_placer_config`, which must set both the horizontal and the vertical layers. The pins are legalized with the pin placer at the end, so the separate `place_pins` step can be skipped. Not supported on a rectilinear die. Cannot be combined with `-incremental`, `-skip_io`, or `-skip_nesterov_place`. The default value is False, allowed values are boolean. |
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
@@ -198,11 +205,12 @@ global_placement
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-power_driven_net_weight` | Set the extra net weight in power-driven mode for a net that toggles once per cycle of the fastest clock. A net gains this value times its toggles per cycle, capped at one toggle. The default value is `1`, and the allowed values are floats `>= 0`. |
+| `-power_driven_net_weight` | Set the extra net weight in power-driven mode for a net that toggles once per cycle of the fastest clock. A signal net gains this value times its toggles per cycle, capped at one toggle. A clock leaf net gains this value times the toggles per cycle of its clock, uncapped. The default value is `1`, and the allowed values are floats `>= 0`. |
+| `-power_driven_clock_leaf_overflow` | Set overflow thresholds for predicting the clock leaf nets in power-driven mode. Allowed value is a Tcl list of integers where each number is `[0, 100]`. Default values are [64, 20]. An empty list disables the clock leaf nets. |
 
 ### Placement Configuration
 
-The `set_place_config` command keeps placement settings in the design's block
+The `set_placer_config` command keeps placement settings in the design's block
 properties, so they persist when the design is written and read back. Each call
 changes only the options it is given. The options below set the slots where
 the IO pins are placed: `place_pins` uses them for any switch it is not given,
@@ -211,7 +219,7 @@ Regions and groups of pins are not part of these settings; define them with
 `exclude_io_pin_region` and `set_io_pin_constraint`.
 
 ```tcl
-set_place_config
+set_placer_config
     [-io_pin_hor_layers h_layers]
     [-io_pin_ver_layers v_layers]
     [-io_pin_corner_avoidance distance]
@@ -233,11 +241,11 @@ set_place_config
 
 ### Reset Placement Configuration
 
-The `reset_place_config` command removes the given settings, or all of them
+The `reset_placer_config` command removes the given settings, or all of them
 when no option is given.
 
 ```tcl
-reset_place_config
+reset_placer_config
     [-io_pin_hor_layers]
     [-io_pin_ver_layers]
     [-io_pin_corner_avoidance]
@@ -257,12 +265,12 @@ reset_place_config
 
 ### Report Placement Configuration
 
-The `report_place_config` command reports the current settings. With a
+The `report_placer_config` command reports the current settings. With a
 per-layer minimum distance, it also says what the other layers use, and names
 the layers that are not in the saved pin layers of their direction.
 
 ```tcl
-report_place_config
+report_placer_config
 ```
 
 ### Cluster Flops

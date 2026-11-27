@@ -47,25 +47,6 @@ enum class EdgeDirection
   Vertical
 };
 
-struct Segment  // A Segment is a 2-pin connection
-{
-  Segment(int netID,
-          int16_t x1,
-          int16_t y1,
-          int16_t x2,
-          int16_t y2,
-          int8_t cost)
-      : netID(netID), x1(x1), y1(y1), x2(x2), y2(y2), cost(cost)
-  {
-  }
-  const int netID;
-  const int16_t x1, y1, x2, y2;  // coordinates of two endpoints (x1 <= x2)
-  int16_t Zpoint{-1};  // The coordinates of Z point (x for HVH and y for VHV)
-  const int8_t cost;   // the netID of the net this segment belonging to
-  bool xFirst : 1 {false};  // route x-direction first (only for L route)
-  bool HVH : 1 {false};     // TRUE = HVH or false = VHV (only for Z route)
-};
-
 struct FrNet  // A Net is a set of connected MazePoints
 {
   bool isClock() const { return is_clock_; }
@@ -144,6 +125,7 @@ struct Edge  // An Edge is the routing track holder between two adjacent
   bool used_grid_dirty : 1;  // queued until the next run's reconciliation
   bool est_usage_dirty : 1;  // queued until InitEstUsage
   bool history_dirty : 1;    // queued until InitLastUsage(1)
+  bool in_used_grid : 1;     // in h_used_ggrid_ / v_used_ggrid_
   double est_usage;          // the estimated usage of the edge
 
   uint16_t usage_red() const { return usage + red; }

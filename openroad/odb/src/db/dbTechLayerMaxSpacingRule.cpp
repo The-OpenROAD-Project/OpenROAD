@@ -25,6 +25,12 @@ bool _dbTechLayerMaxSpacingRule::operator==(
   if (max_spacing_ != rhs.max_spacing_) {
     return false;
   }
+  if (width_ != rhs.width_) {
+    return false;
+  }
+  if (length_ != rhs.length_) {
+    return false;
+  }
 
   return true;
   // NOLINTEND(readability-simplify-boolean-expr)
@@ -39,12 +45,20 @@ bool _dbTechLayerMaxSpacingRule::operator<(
 _dbTechLayerMaxSpacingRule::_dbTechLayerMaxSpacingRule(_dbDatabase* db)
 {
   max_spacing_ = 0;
+  width_ = 0;
+  length_ = 0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMaxSpacingRule& obj)
 {
   stream >> obj.cut_class_;
   stream >> obj.max_spacing_;
+  if (obj.getDatabase()->isSchema(kSchemaLef58ImplantRules)) {
+    stream >> obj.width_;
+  }
+  if (obj.getDatabase()->isSchema(kSchemaLef58ImplantRules)) {
+    stream >> obj.length_;
+  }
   return stream;
 }
 
@@ -52,6 +66,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMaxSpacingRule& obj)
 {
   stream << obj.cut_class_;
   stream << obj.max_spacing_;
+  stream << obj.width_;
+  stream << obj.length_;
   return stream;
 }
 
@@ -71,41 +87,78 @@ void _dbTechLayerMaxSpacingRule::collectMemInfo(MemInfo& info)
 
 void dbTechLayerMaxSpacingRule::setCutClass(const std::string& cut_class)
 {
-  _dbTechLayerMaxSpacingRule* obj = (_dbTechLayerMaxSpacingRule*) this;
+  _dbTechLayerMaxSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerMaxSpacingRule*>(this);
 
   obj->cut_class_ = cut_class;
 }
 
 const std::string& dbTechLayerMaxSpacingRule::getCutClass() const
 {
-  _dbTechLayerMaxSpacingRule* obj = (_dbTechLayerMaxSpacingRule*) this;
+  const _dbTechLayerMaxSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerMaxSpacingRule*>(this);
   return obj->cut_class_;
 }
 
 void dbTechLayerMaxSpacingRule::setMaxSpacing(int max_spacing)
 {
-  _dbTechLayerMaxSpacingRule* obj = (_dbTechLayerMaxSpacingRule*) this;
+  _dbTechLayerMaxSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerMaxSpacingRule*>(this);
 
   obj->max_spacing_ = max_spacing;
 }
 
 int dbTechLayerMaxSpacingRule::getMaxSpacing() const
 {
-  _dbTechLayerMaxSpacingRule* obj = (_dbTechLayerMaxSpacingRule*) this;
+  const _dbTechLayerMaxSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerMaxSpacingRule*>(this);
   return obj->max_spacing_;
+}
+
+void dbTechLayerMaxSpacingRule::setWidth(int width)
+{
+  _dbTechLayerMaxSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerMaxSpacingRule*>(this);
+
+  obj->width_ = width;
+}
+
+int dbTechLayerMaxSpacingRule::getWidth() const
+{
+  const _dbTechLayerMaxSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerMaxSpacingRule*>(this);
+  return obj->width_;
+}
+
+void dbTechLayerMaxSpacingRule::setLength(int length)
+{
+  _dbTechLayerMaxSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerMaxSpacingRule*>(this);
+
+  obj->length_ = length;
+}
+
+int dbTechLayerMaxSpacingRule::getLength() const
+{
+  const _dbTechLayerMaxSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerMaxSpacingRule*>(this);
+  return obj->length_;
 }
 
 dbTechLayerMaxSpacingRule* dbTechLayerMaxSpacingRule::create(
     dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerMaxSpacingRule*) _parent->max_spacing_rules_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerMaxSpacingRule*>(
+      _parent->max_spacing_rules_tbl_->create());
 }
 void dbTechLayerMaxSpacingRule::destroy(dbTechLayerMaxSpacingRule* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
-  _parent->max_spacing_rules_tbl_->destroy((_dbTechLayerMaxSpacingRule*) obj);
+  _parent->max_spacing_rules_tbl_->destroy(
+      reinterpret_cast<_dbTechLayerMaxSpacingRule*>(obj));
 }
 // User Code Begin dbTechLayerMaxSpacingRulePublicMethods
 
