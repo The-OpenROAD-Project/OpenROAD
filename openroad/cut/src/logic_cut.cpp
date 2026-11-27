@@ -3,7 +3,7 @@
 
 #include "cut/logic_cut.h"
 
-#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+#include <string.h>  // NOLINT(modernize-deprecated-headers,misc-include-cleaner): strdup()
 
 #include <algorithm>
 #include <cstdlib>
@@ -19,7 +19,6 @@
 #include "cut/abc_library_factory.h"
 #include "db_sta/dbNetwork.hh"
 #include "map/mio/mio.h"
-#include "map/mio/mioInt.h"
 #include "map/scl/sclLib.h"
 #include "misc/vec/vecPtr.h"
 #include "sta/Liberty.hh"
@@ -227,7 +226,7 @@ void AbcNetlistBuilder::CreateStandardCells(
       }
 
       // Is a regular standard cell
-      if (cell_name_to_mio.find(cell_name) == cell_name_to_mio.end()) {
+      if (!cell_name_to_mio.contains(cell_name)) {
         logger_->error(
             utl::CUT,
             24,
@@ -290,7 +289,7 @@ void AbcNetlistBuilder::ConnectFanins()
     abc::Mio_Gate_t* gate
         = static_cast<abc::Mio_Gate_t*>(abc::Abc_ObjData(abc_instance));
 
-    if (port_order.find(gate) == port_order.end()) {
+    if (!port_order.contains(gate)) {
       logger_->error(
           utl::CUT,
           28,
@@ -300,7 +299,7 @@ void AbcNetlistBuilder::ConnectFanins()
 
     // Connect in ABC port order
     for (const std::string& port_name : port_order.at(gate)) {
-      ConnectPinToDriver(network_->findPin(sta_instance, port_name.c_str()));
+      ConnectPinToDriver(network_->findPin(sta_instance, port_name));
     }
   }
 }
@@ -308,7 +307,7 @@ void AbcNetlistBuilder::ConnectFanins()
 void AbcNetlistBuilder::ConnectPinToDriver(sta::Pin* input_pin)
 {
   const sta::Instance* instance = network_->instance(input_pin);
-  if (abc_instances_.find(instance) == abc_instances_.end()) {
+  if (!abc_instances_.contains(instance)) {
     logger_->error(utl::CUT,
                    25,
                    "Cannot find instance {} in abc instance map. Please "
@@ -320,7 +319,7 @@ void AbcNetlistBuilder::ConnectPinToDriver(sta::Pin* input_pin)
 
   sta::Net* net = network_->net(input_pin);
   // If the net already exists just connect it
-  if (abc_nets_.find(net) != abc_nets_.end()) {
+  if (abc_nets_.contains(net)) {
     abc::Abc_ObjAddFanin(abc_fanin_reciever, abc_nets_.at(net));
     return;
   }
@@ -348,7 +347,7 @@ void AbcNetlistBuilder::ConnectPinToDriver(sta::Pin* input_pin)
     abc::Abc_ObjAddFanin(abc_net, abc_input);
     std::string driver_name = network_->name(driver);
     abc::Abc_ObjAssignName(abc_net, driver_name.data(), nullptr);
-  } else if (abc_instances_.find(driver_instance) == abc_instances_.end()) {
+  } else if (!abc_instances_.contains(driver_instance)) {
     logger_->error(
         utl::CUT,
         27,
@@ -468,8 +467,7 @@ void StaNetlistInserter::CreateInstances()
 
     auto std_cell = static_cast<abc::Mio_Gate_t*>(abc::Abc_ObjData(node_obj));
     const std::string std_cell_name = abc::Mio_GateReadName(std_cell);
-    sta::LibertyCell* liberty_cell
-        = network_->findLibertyCell(std_cell_name.c_str());
+    sta::LibertyCell* liberty_cell = network_->findLibertyCell(std_cell_name);
 
     if (liberty_cell == nullptr) {
       logger_->error(
@@ -479,10 +477,8 @@ void StaNetlistInserter::CreateInstances()
           std_cell_name);
     }
 
-    sta::Instance* new_instance
-        = network_->makeInstance(liberty_cell,
-                                 unique_name_.GetUniqueName("cut_").c_str(),
-                                 parent_instance_);
+    sta::Instance* new_instance = network_->makeInstance(
+        liberty_cell, unique_name_.GetUniqueName("cut_"), parent_instance_);
 
     instances_[node_obj] = new_instance;
   }
@@ -514,7 +510,7 @@ void StaNetlistInserter::CreateNets()
     }
 
     const std::string net_name = abc::Abc_ObjName(net_obj);
-    sta::Net* net = network_->findNet(net_name.c_str());
+    sta::Net* net = network_->findNet(net_name);
     if (!net) {
       logger_->error(utl::CUT, 34, "Cannot find primary net {}", net_name);
     }
@@ -529,12 +525,12 @@ void StaNetlistInserter::CreateNets()
       continue;
     }
 
-    if (nets_.find(node_obj) != nets_.end()) {
+    if (nets_.contains(node_obj)) {
       continue;
     }
 
-    sta::Net* sta_net = network_->makeNet(
-        unique_name_.GetUniqueName("cut_").c_str(), parent_instance_);
+    sta::Net* sta_net = network_->makeNet(unique_name_.GetUniqueName("cut_"),
+                                          parent_instance_);
     nets_[node_obj] = sta_net;
   }
 }
@@ -567,7 +563,7 @@ void StaNetlistInserter::ConnectInstance(
         gate_to_port_order)
 {
   auto std_cell = static_cast<abc::Mio_Gate_t*>(abc::Abc_ObjData(abc_obj));
-  if (gate_to_port_order.find(std_cell) == gate_to_port_order.end()) {
+  if (!gate_to_port_order.contains(std_cell)) {
     logger_->error(utl::CUT,
                    35,
                    "Cannot find abc gate port order {}, please report this "
@@ -577,7 +573,7 @@ void StaNetlistInserter::ConnectInstance(
 
   // Connect fan-ins for instance
   const std::string gate_name = abc::Mio_GateReadName(std_cell);
-  sta::LibertyCell* cell = network_->findLibertyCell(gate_name.c_str());
+  sta::LibertyCell* cell = network_->findLibertyCell(gate_name);
   if (!cell) {
     logger_->error(utl::CUT, 36, "Cannot find cell {}", gate_name);
   }
@@ -588,7 +584,7 @@ void StaNetlistInserter::ConnectInstance(
   // loop through in that order, and connect the ports correctly based
   // on the abc fan-in.
   for (const std::string& port_name : gate_to_port_order.at(std_cell)) {
-    sta::LibertyPort* port = cell->findLibertyPort(port_name.c_str());
+    sta::LibertyPort* port = cell->findLibertyPort(port_name);
     if (!port) {
       logger_->error(
           utl::CUT, 37, "Cannot find port  {}/{}", gate_name, port_name);
@@ -602,7 +598,7 @@ void StaNetlistInserter::ConnectInstance(
                      abc::Abc_ObjName(net));
     }
 
-    if (nets_.find(net) == nets_.end()) {
+    if (!nets_.contains(net)) {
       logger_->error(utl::CUT,
                      39,
                      "Could not find corresponding sta net for abc net: {}",
@@ -616,8 +612,7 @@ void StaNetlistInserter::ConnectInstance(
   // Connect the fan-out, in this case the only fan-out since ABC only
   // deals with single output gates.
   const std::string output_port_name = abc::Mio_GateReadOutName(std_cell);
-  sta::LibertyPort* output_port
-      = cell->findLibertyPort(output_port_name.c_str());
+  sta::LibertyPort* output_port = cell->findLibertyPort(output_port_name);
 
   if (!output_port) {
     logger_->error(
@@ -631,7 +626,7 @@ void StaNetlistInserter::ConnectInstance(
                    abc::Abc_ObjName(net));
   }
 
-  if (nets_.find(net) == nets_.end()) {
+  if (!nets_.contains(net)) {
     logger_->error(utl::CUT,
                    42,
                    "Could not find corresponding sta net for abc net: {}",
@@ -673,8 +668,7 @@ void DeleteExistingLogicCut(sta::dbNetwork* network,
       // If pin isn't a primary input or output add to deleted list. The only
       // way this can happen is if a net is only used within the cutset, and
       // in that case we want to delete it.
-      if (primary_input_or_output_nets.find(connected_net)
-          == primary_input_or_output_nets.end()) {
+      if (!primary_input_or_output_nets.contains(connected_net)) {
         nets_to_be_deleted.insert(connected_net);
       }
     }

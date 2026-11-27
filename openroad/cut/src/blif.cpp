@@ -4,7 +4,7 @@
 #include "cut/blif.h"
 
 #include <algorithm>
-#include <cstdint>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -19,15 +19,16 @@
 #include "cut/blifParser.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "fmt/format.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
-#include "sta/Network.hh"
 #include "sta/Path.hh"
-#include "sta/PortDirection.hh"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 
@@ -174,7 +175,7 @@ std::optional<std::string> Blif::gateLine(odb::dbInst* inst,
   const sta::LibertyCell* cell = network->libertyCell(network->dbToSta(master));
 
   std::string gate
-      = ((cell->isSequential()) ? ".mlatch " : ".gate ") + master->getName();
+      = (cell->isSequential() ? ".mlatch " : ".gate ") + master->getName();
   std::string clock;
   std::set<std::string> clocks;
 
@@ -640,7 +641,7 @@ float Blif::getArrivalTime(sta::Pin* term, bool is_rise)
 
 void Blif::addArrival(sta::Pin* pin, const std::string& net_name)
 {
-  if (arrivals_.find(net_name) == arrivals_.end()) {
+  if (!arrivals_.contains(net_name)) {
     arrivals_[net_name] = std::pair<float, float>(
         getArrivalTime(pin, true) * 1e12, getArrivalTime(pin, false) * 1e12);
   }
@@ -648,7 +649,7 @@ void Blif::addArrival(sta::Pin* pin, const std::string& net_name)
 
 void Blif::addRequired(sta::Pin* pin, const std::string& net_name)
 {
-  if (requireds_.find(net_name) == requireds_.end()) {
+  if (!requireds_.contains(net_name)) {
     requireds_[net_name] = std::pair<float, float>(
         getRequiredTime(pin, true) * 1e12, getRequiredTime(pin, false) * 1e12);
   }

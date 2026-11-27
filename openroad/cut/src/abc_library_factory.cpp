@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "cut/abc_init.h"
 #include "db_sta/dbSta.hh"
 #include "misc/util/abc_global.h"
 #include "misc/vec/vecFlt.h"
@@ -29,9 +30,9 @@
 #include "utl/Logger.h"
 // Poor include definitions in ABC
 // clang-format off
-#include "misc/st/st.h"
+#include "misc/st/st.h"  // NOLINT(misc-include-cleaner): needed by sclCon.h
 #include "map/mio/mio.h"
-#include "misc/util/utilNam.h"
+#include "misc/util/utilNam.h"  // NOLINT(misc-include-cleaner): needed by sclCon.h
 #include "map/scl/sclCon.h"
 // clang-format on
 #include "map/scl/sclLib.h"
@@ -350,7 +351,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
     abc::Vec_WrdErase(&output_pin->vFunc);
     v_func = abc::Mio_ParseFormulaTruth(
         output_pin->func_text,
-        (char**) (abc::Vec_PtrArray(input_names_abc)),
+        reinterpret_cast<char**>(abc::Vec_PtrArray(input_names_abc)),
         input_names.size());
 
     output_pin->vFunc = *v_func;
@@ -370,7 +371,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
       }
 
       std::string arc_pin_name = arc_set->from()->name();
-      if (pins.find(arc_pin_name) != pins.end()) {
+      if (pins.contains(arc_pin_name)) {
         continue;
       }
       pins.insert(arc_pin_name);
@@ -622,7 +623,7 @@ bool AbcLibrary::IsSupportedCell(const std::string& cell_name)
       supported_cells_.insert(cell->pName);
     }
   }
-  return supported_cells_.find(cell_name) != supported_cells_.end();
+  return supported_cells_.contains(cell_name);
 }
 
 void AbcLibrary::InitializeConstGates()
@@ -659,8 +660,9 @@ void AbcLibrary::InitializeConstGates()
 
 // Find cell matching truth table for constant cells either 0 or 1
 // where 1 is represented as all 1s in binary.
-std::pair<abc::SC_Cell*, abc::SC_Pin*> FindConstantCell(abc::SC_Lib* library,
-                                                        abc::word constant)
+static std::pair<abc::SC_Cell*, abc::SC_Pin*> FindConstantCell(
+    abc::SC_Lib* library,
+    abc::word constant)
 {
   std::pair<abc::SC_Cell*, abc::SC_Pin*> result = {nullptr, nullptr};
   std::optional<float> min_area;
