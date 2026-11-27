@@ -325,8 +325,6 @@ class PlacerBaseCommon
   int64_t getHpwl() const;
   void printInfo() const;
 
-  int64_t getMacroInstsArea() const { return macroInstsArea_; }
-
   odb::dbDatabase* db() const { return db_; }
 
   void unlockAll();
@@ -356,8 +354,6 @@ class PlacerBaseCommon
 
   int siteSizeX_ = 0;
   int siteSizeY_ = 0;
-
-  int64_t macroInstsArea_ = 0;
 
   void init();
   void reset();
@@ -401,8 +397,8 @@ class PlacerBase
 
   int64_t placeInstsArea() const { return placeInstsArea_; }
   int64_t nonPlaceInstsArea() const { return nonPlaceInstsArea_; }
-  int64_t macroInstsArea() const;
-  int64_t stdInstsArea() const { return stdInstsArea_; }
+  int64_t largeInstsArea() const;
+  int64_t stdInstsArea() const { return std_insts_area_; }
 
   odb::dbDatabase* db() const { return db_; }
   odb::dbGroup* getGroup() const { return group_; }
@@ -432,11 +428,11 @@ class PlacerBase
   int64_t placeInstsArea_ = 0;
   int64_t nonPlaceInstsArea_ = 0;
 
-  // macroInstsArea_ + stdInstsArea_ = placeInstsArea_;
-  // macroInstsArea_ should be separated
+  // large_insts_area_ + std_insts_area_ = placeInstsArea_;
+  // large_insts_area_ should be separated
   // because of target_density tuning
-  int64_t macroInstsArea_ = 0;
-  int64_t stdInstsArea_ = 0;
+  int64_t large_insts_area_ = 0;
+  int64_t std_insts_area_ = 0;
 
   std::shared_ptr<PlacerBaseCommon> pbCommon_;
   odb::dbGroup* group_ = nullptr;

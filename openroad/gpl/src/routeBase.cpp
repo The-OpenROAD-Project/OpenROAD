@@ -758,7 +758,7 @@ int64_t RouteBase::inflateNewCells()
       }
     }
     const int64_t available_area
-        = nb->getWhiteSpaceArea() - nb->getPb()->macroInstsArea();
+        = nb->getWhiteSpaceArea() - nb->getPb()->largeInstsArea();
     int64_t available = std::max<int64_t>(
         0,
         static_cast<int64_t>(static_cast<double>(rbVars_.maxDensity)

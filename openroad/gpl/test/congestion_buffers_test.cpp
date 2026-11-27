@@ -272,7 +272,8 @@ class CongestionBuffersTest : public tst::IntegratedFixture
     EXPECT_TRUE(std::isfinite(nb_->getTargetDensity()));
     for (const auto& handle : nb_->getGCells()) {
       const double effective_area = static_cast<double>(handle->dDx())
-                                    * handle->dDy() * handle->getDensityScale();
+                                    * handle->dDy()
+                                    * handle->getSmoothingScale();
       EXPECT_NEAR(effective_area, cellArea(handle), cellArea(handle) * 0.01);
     }
     nb_->checkConsistency();
@@ -514,7 +515,7 @@ TEST_F(MovableMacroBuffersTest, InflationUsesDensityScaledMacroArea)
   addDemand();
   auto* buffer = insertBuffer("near_macro");
   const int64_t area = cellArea(cellFor(buffer));
-  const int64_t macro_area = nb_->getPb()->macroInstsArea();
+  const int64_t macro_area = nb_->getPb()->largeInstsArea();
   ASSERT_GT(macro_area, 0);
   ASSERT_TRUE(cellFor(macro_)->isMacroInstance());
   const int64_t occupied_standard_area
@@ -802,7 +803,7 @@ class MacroOnlyDensityTest : public CongestionBuffersTest
 TEST_F(MacroOnlyDensityTest,
        RetainedCreationInOtherRegionPreservesMacroOnlyDensity)
 {
-  ASSERT_EQ(nb_->getWhiteSpaceArea(), nb_->getPb()->macroInstsArea());
+  ASSERT_EQ(nb_->getWhiteSpaceArea(), nb_->getPb()->largeInstsArea());
   ASSERT_EQ(nb_->getStdInstArea(), 0);
   ASSERT_EQ(nb_->getTotalFillerArea(), 0);
   ASSERT_EQ(nb_->getFillerCnt(), 0);
@@ -844,7 +845,7 @@ TEST_F(MacroOnlyDensityTest,
 
 TEST_F(MacroOnlyDensityTest, ZeroAvailableAreaWithRetainedCellRejectsDensity)
 {
-  ASSERT_EQ(nb_->getWhiteSpaceArea(), nb_->getPb()->macroInstsArea());
+  ASSERT_EQ(nb_->getWhiteSpaceArea(), nb_->getPb()->largeInstsArea());
   auto* buffer = insertBuffer("no_space_for_retained_cell", 1000, groups_[0]);
   ASSERT_NE(cellFor(buffer), nullptr);
   ASSERT_GT(cellArea(cellFor(buffer)), 0);
@@ -864,8 +865,8 @@ TEST_F(OverfullMacroDensityTest, NegativeAvailableAreaRejectsDensity)
 {
   // This real geometry exceeds 100% by less than the initializer's 0.1%
   // tolerance, so construction with check_density enabled must accept it.
-  ASSERT_GT(nb_->getPb()->macroInstsArea(), nb_->getWhiteSpaceArea());
-  ASSERT_LT(static_cast<double>(nb_->getPb()->macroInstsArea())
+  ASSERT_GT(nb_->getPb()->largeInstsArea(), nb_->getWhiteSpaceArea());
+  ASSERT_LT(static_cast<double>(nb_->getPb()->largeInstsArea())
                 / nb_->getWhiteSpaceArea(),
             1.001);
   ASSERT_EQ(nb_->getStdInstArea(), 0);

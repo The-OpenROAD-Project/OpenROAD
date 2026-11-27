@@ -182,7 +182,7 @@ NesterovDeviceContext::NesterovDeviceContext(
   // NB-owned Poisson solver.
   s.d_half_ddx = Kokkos::View<int*>("nb_half_ddx", n);
   s.d_half_ddy = Kokkos::View<int*>("nb_half_ddy", n);
-  s.d_density_scale = Kokkos::View<float*>("nb_density_scale", n);
+  s.d_smoothing_scale = Kokkos::View<float*>("nb_smoothing_scale", n);
   s.d_cell_kind = Kokkos::View<int*>("nb_cell_kind", n);
   refreshCellDensityParams(nb_gcells);
   initDensityDeviceState(bg);
@@ -203,7 +203,7 @@ void NesterovDeviceContext::refreshCellDensityParams(
     const GCell* gc = nb_gcells[i];
     h_half_ddx[i] = gc->dDx() / 2;
     h_half_ddy[i] = gc->dDy() / 2;
-    h_scale[i] = gc->getDensityScale();
+    h_scale[i] = gc->getSmoothingScale();
     // Same dispatch as the BinGrid scatter loop: macro and std instances
     // accumulate inst area (macro additionally target-density scaled),
     // fillers accumulate filler area, anything else is skipped.
@@ -226,7 +226,7 @@ void NesterovDeviceContext::refreshCellDensityParams(
       = Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
   Kokkos::deep_copy(s.d_half_ddx, HostIntUM(h_half_ddx.data(), n));
   Kokkos::deep_copy(s.d_half_ddy, HostIntUM(h_half_ddy.data(), n));
-  Kokkos::deep_copy(s.d_density_scale, HostFloatUM(h_scale.data(), n));
+  Kokkos::deep_copy(s.d_smoothing_scale, HostFloatUM(h_scale.data(), n));
   Kokkos::deep_copy(s.d_cell_kind, HostIntUM(h_kind.data(), n));
 }
 
@@ -248,15 +248,15 @@ void NesterovDeviceContext::initDensityDeviceState(const BinGrid& bg)
   s.d_bin_uy = Kokkos::View<int*>("nb_bin_uy", nbins);
   s.d_bin_target_density = Kokkos::View<float*>("nb_bin_target", nbins);
   s.d_bin_scaled_area = Kokkos::View<float*>("nb_bin_scaled_area", nbins);
+  s.d_bin_nonplace_binormal
+      = Kokkos::View<long long*>("nb_bin_nonplace_binormal", nbins);
   s.d_bin_nonplace = Kokkos::View<long long*>("nb_bin_nonplace", nbins);
-  s.d_bin_nonplace_unscaled
-      = Kokkos::View<long long*>("nb_bin_nonplace_u", nbins);
   s.d_bin_inst_area = Kokkos::View<double*>("nb_bin_inst_area", nbins);
   s.d_bin_filler_area = Kokkos::View<double*>("nb_bin_filler_area", nbins);
 
   std::vector<int> h_lx(nbins), h_ly(nbins), h_ux(nbins), h_uy(nbins);
   std::vector<float> h_target(nbins), h_scaled(nbins);
-  std::vector<long long> h_np(nbins), h_np_u(nbins);
+  std::vector<long long> h_np_binormal(nbins), h_np(nbins);
   const std::vector<Bin>& bins = bg.getBinsConst();
   for (int x = 0; x < s.bin_cnt_x; ++x) {
     for (int y = 0; y < s.bin_cnt_y; ++y) {
@@ -271,8 +271,8 @@ void NesterovDeviceContext::initDensityDeviceState(const BinGrid& bg)
       h_target[k] = b.getTargetDensity();
       // Same expression (and float rounding) as the CPU overflow loop.
       h_scaled[k] = static_cast<float>(b.getBinArea() * b.getTargetDensity());
+      h_np_binormal[k] = b.getNonPlaceAreaBinormal();
       h_np[k] = b.getNonPlaceArea();
-      h_np_u[k] = b.getNonPlaceAreaUnscaled();
     }
   }
 
@@ -289,8 +289,9 @@ void NesterovDeviceContext::initDensityDeviceState(const BinGrid& bg)
   Kokkos::deep_copy(s.d_bin_target_density,
                     HostFloatUM(h_target.data(), nbins));
   Kokkos::deep_copy(s.d_bin_scaled_area, HostFloatUM(h_scaled.data(), nbins));
+  Kokkos::deep_copy(s.d_bin_nonplace_binormal,
+                    HostLLUM(h_np_binormal.data(), nbins));
   Kokkos::deep_copy(s.d_bin_nonplace, HostLLUM(h_np.data(), nbins));
-  Kokkos::deep_copy(s.d_bin_nonplace_unscaled, HostLLUM(h_np_u.data(), nbins));
 
   // The Poisson solver's binCntX axis is gpl's fast (y) axis — same swap as
   // GpuFftBackend's solver member.
@@ -319,7 +320,7 @@ NesterovDeviceContext::densitySolveIteration(RegionDensityField* region_field,
 
   DensityIterResult r;
   densop::launchNbDensityScatter(
-      s, rdf, num_cells_, slot, r.overflow_area, r.overflow_area_unscaled);
+      s, rdf, num_cells_, slot, r.overflow_area_binormal, r.overflow_area);
   if (want_sum_phi) {
     s.solver->solvePoisson(
         rdf.d_bin_density, rdf.d_bin_phi, rdf.d_bin_elec_x, rdf.d_bin_elec_y);

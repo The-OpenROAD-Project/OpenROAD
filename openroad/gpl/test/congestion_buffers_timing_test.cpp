@@ -161,7 +161,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
   // How doNesterovPlace() classifies an iteration at this overflow.
   bool isRoutabilityIteration(float overflow)
   {
-    np_->average_overflow_unscaled_ = overflow;
+    np_->average_overflow_ = overflow;
     return np_->isRoutabilityGplIter();
   }
 
@@ -223,7 +223,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
         }
       }
       const int64_t available
-          = nb->getWhiteSpaceArea() - nb->getPb()->macroInstsArea();
+          = nb->getWhiteSpaceArea() - nb->getPb()->largeInstsArea();
       const float expected
           = static_cast<float>(standard_area + nb->getTotalFillerArea())
             / static_cast<float>(available);
@@ -241,7 +241,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
     // Supply settled motion to the real controller, then execute its ordinary
     // congestion checks. Completion is not set by hand in this fixture.
     grt_.getRudy()->setWireWidth(wire_width);
-    np_->average_overflow_unscaled_ = overflow;
+    np_->average_overflow_ = overflow;
     for (const auto& nb : nb_vec_) {
       nb->peak_coordi_distance_ = 1.0f;
       nb->coordiDistance_ = 0.0f;
@@ -305,7 +305,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
 
   void runTiming(float overflow, bool routability_iteration = false)
   {
-    np_->average_overflow_unscaled_ = overflow;
+    np_->average_overflow_ = overflow;
     int virtual_cts = 0;
     np_->runTimingDriven(0,
                          "",
@@ -321,7 +321,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
   // checkDivergence() fires against them until they are reset.
   void setPreRepairDivergenceBaselines(NesterovBase& nb)
   {
-    nb.prev_reported_overflow_unscaled_ = nb.minSumOverflow_ = 1e-3f;
+    nb.prev_reported_overflow_ = nb.minSumOverflow_ = 1e-3f;
     nb.prev_reported_hpwl_ = 1;
     nb.hpwlWithMinSumOverflow_ = 1;
   }
@@ -384,7 +384,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
         EXPECT_GT(static_cast<int64_t>(cell->dx()) * cell->dy(),
                   cell->insts().front()->getArea());
         const double density_area = static_cast<double>(cell->dDx())
-                                    * cell->dDy() * cell->getDensityScale();
+                                    * cell->dDy() * cell->getSmoothingScale();
         EXPECT_NEAR(density_area,
                     static_cast<double>(cell->dx()) * cell->dy(),
                     density_area * 0.01);
@@ -656,7 +656,7 @@ TEST_F(MacroOnlyTimingRepairIntegrationTest,
   makePlacer(false, true, groups_, true);
   const auto& macro_region = nb_vec_[1];
   ASSERT_EQ(macro_region->getWhiteSpaceArea(),
-            macro_region->getPb()->macroInstsArea());
+            macro_region->getPb()->largeInstsArea());
   ASSERT_EQ(macro_region->getStdInstArea(), 0);
   ASSERT_EQ(macro_region->getTotalFillerArea(), 0);
   ASSERT_EQ(macro_region->getFillerCnt(), 0);
@@ -723,7 +723,7 @@ class MixedMacroTimingRepairIntegrationTest : public TimingRepairIntegrationTest
     ASSERT_NE(macro_cell, nullptr);
     ASSERT_TRUE(macro_cell->isMacroInstance());
     ASSERT_GT(nb->getStdInstArea(), 0);
-    const int64_t macro_area = nb->getPb()->macroInstsArea();
+    const int64_t macro_area = nb->getPb()->largeInstsArea();
     const int64_t whitespace = nb->getWhiteSpaceArea();
     ASSERT_GT(macro_area, 0);
     ASSERT_GT(whitespace, macro_area);
@@ -774,7 +774,7 @@ class MixedMacroTimingRepairIntegrationTest : public TimingRepairIntegrationTest
               static_cast<int64_t>(macro_dx) * macro_dy);
     const double density_area = static_cast<double>(macro_cell->dDx())
                                 * macro_cell->dDy()
-                                * macro_cell->getDensityScale();
+                                * macro_cell->getSmoothingScale();
     EXPECT_TRUE(std::isfinite(density_area));
     EXPECT_NEAR(density_area,
                 static_cast<double>(macro_dx) * macro_dy,

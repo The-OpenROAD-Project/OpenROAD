@@ -133,7 +133,7 @@ class NesterovPlace
   };
   DivergeAction isDiverged(float& curA);
   void revertToDivergeSnapshot();
-  // Unscaled overflow of the current placement, averaged over the regions.
+  // Overflow of the current placement, averaged over the regions.
   float getFinalOverflow() const;
   void routabilitySnapshot(int iter,
                            float curA,
@@ -193,12 +193,12 @@ class NesterovPlace
   NesterovPlaceVars npVars_;
   std::unique_ptr<AbstractGraphics> graphics_;
 
+  float total_sum_overflow_binormal_ = 0;
   float total_sum_overflow_ = 0;
-  float total_sum_overflow_unscaled_ = 0;
   // The average here is between regions (NB objects)
+  float average_overflow_binormal_ = 0;
   float average_overflow_ = 0;
-  float average_overflow_unscaled_ = 0;
-  // Set when average_overflow_unscaled_ does not describe the current
+  // Set when average_overflow_ does not describe the current
   // placement: no update has run in this doNesterovPlace() call yet, or the
   // placement was reverted to the snapshot since the last one.
   bool overflow_update_is_stale_ = true;
@@ -221,7 +221,7 @@ class NesterovPlace
   // pass clears min_hpwl_ but keeps the snapshot, and a later min hpwl may go
   // unsaved.
   int64_t diverge_snapshot_hpwl_ = 0;
-  float diverge_snapshot_average_overflow_unscaled_ = 0;
+  float diverge_snapshot_average_overflow_ = 0;
   int diverge_snapshot_iter_ = 0;
 
   // Repeats only help while the resumed descent keeps finding a better

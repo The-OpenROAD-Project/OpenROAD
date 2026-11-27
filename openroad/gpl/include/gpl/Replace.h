@@ -62,7 +62,7 @@ using Clusters = std::vector<Cluster>;
 struct PlaceIteration
 {
   int iteration = 0;
-  // Unscaled overflow, averaged over the regions.
+  // Overflow, averaged over the regions.
   float overflow = 0;
   // Total HPWL of the nets, in DBU.
   int64_t hpwl = 0;
@@ -99,7 +99,7 @@ struct PlaceResult
   // runs out stops at the iteration limit, one past the trace, and one that
   // diverges in the gradient step stops before recording that iteration.
   int final_iteration = 0;
-  // Unscaled overflow of the final placement, averaged over the regions.
+  // Overflow of the final placement, averaged over the regions.
   // After a revert to a snapshot this is the overflow of the restored
   // placement, not that of the last iteration in the trace.
   float overflow = 0;

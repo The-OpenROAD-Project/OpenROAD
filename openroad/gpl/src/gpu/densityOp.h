@@ -44,8 +44,8 @@ void launchNbDensityScatter(KokkosNesterovState& ns,
                             KokkosRegionDensityField& rdf,
                             int n_cells,
                             SlpSlot src,
-                            float& overflow_area,
-                            float& overflow_area_unscaled);
+                            float& overflow_area_binormal,
+                            float& overflow_area);
 
 // NB-level density gradient gather for all nb cells (fillers included):
 // overlap-weighted sum of the region bin electric field at the `src` coords.

@@ -109,7 +109,7 @@ struct KokkosDeviceState
   // Per-inst density box half-sizes: dLx = dCx - half_dx, etc.
   Kokkos::View<int*> d_inst_density_half_dx;
   Kokkos::View<int*> d_inst_density_half_dy;
-  Kokkos::View<float*> d_inst_density_scale;
+  Kokkos::View<float*> d_inst_smoothing_scale;
 
   // Per-inst density gradient (gather output, host-readable mirror).
   Kokkos::View<float*> d_inst_density_grad_x;

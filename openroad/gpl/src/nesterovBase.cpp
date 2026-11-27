@@ -65,9 +65,9 @@ using utl::GPL;
 
 static float calculateBiVariateNormalCDF(biNormalParameters i);
 
-static int64_t getOverlapArea(const Bin* bin,
-                              const Instance* inst,
-                              int dbu_per_micron);
+static int64_t getOverlapAreaBinormal(const Bin* bin,
+                                      const Instance* inst,
+                                      int dbu_per_micron);
 
 static float getDistance(const std::vector<FloatPoint>& a,
                          const std::vector<FloatPoint>& b);
@@ -263,9 +263,9 @@ void GCell::setDensitySize(int dDx, int dDy)
   dUy_ = dCenterY + dDy / 2;
 }
 
-void GCell::setDensityScale(float densityScale)
+void GCell::setSmoothingScale(const float smoothing_scale)
 {
-  densityScale_ = densityScale;
+  smoothing_scale_ = smoothing_scale;
 }
 
 void GCell::setGradientX(float gradientX)
@@ -325,8 +325,8 @@ void GCell::print(utl::Logger* logger, bool print_only_name = true) const
     logger->report("lx_: {} ly_: {} ux_: {} uy_: {}", lx_, ly_, ux_, uy_);
     logger->report(
         "dLx_: {} dLy_: {} dUx_: {} dUy_: {}", dLx_, dLy_, dUx_, dUy_);
-    logger->report("densityScale_: {} gradientX_: {} gradientY_: {}",
-                   densityScale_,
+    logger->report("smoothing_scale_: {} gradientX_: {} gradientY_: {}",
+                   smoothing_scale_,
                    gradientX_,
                    gradientY_);
   }
@@ -337,7 +337,7 @@ void GCell::writeAttributesToCSV(std::ostream& out) const
   out << "," << insts_.size() << "," << gPins_.size();
   out << "," << lx_ << "," << ly_ << "," << ux_ << "," << uy_;
   out << "," << dLx_ << "," << dLy_ << "," << dUx_ << "," << dUy_;
-  out << "," << densityScale_ << "," << gradientX_ << "," << gradientY_;
+  out << "," << smoothing_scale_ << "," << gradientX_ << "," << gradientY_;
 }
 
 ////////////////////////////////////////////////
@@ -743,14 +743,14 @@ double BinGrid::getBinSizeY() const
   return binSizeY_;
 }
 
-int64_t BinGrid::getOverflowArea() const
+int64_t BinGrid::getOverflowAreaBinormal() const
 {
-  return sumOverflowArea_;
+  return sum_overflow_area_binormal_;
 }
 
-int64_t BinGrid::getOverflowAreaUnscaled() const
+int64_t BinGrid::getOverflowArea() const
 {
-  return sumOverflowAreaUnscaled_;
+  return sum_overflow_area_;
 }
 
 static unsigned int roundDownToPowerOfTwo(unsigned int x)
@@ -880,8 +880,8 @@ void BinGrid::initBins()
 void BinGrid::updateBinsNonPlaceArea()
 {
   for (auto& bin : bins_) {
+    bin.setNonPlaceAreaBinormal(0);
     bin.setNonPlaceArea(0);
-    bin.setNonPlaceAreaUnscaled(0);
   }
 
   using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
@@ -910,7 +910,7 @@ void BinGrid::updateBinsNonPlaceArea()
   }
 
   // Per-bin geometric union area (deduplicated across overlapping
-  // fixed instances). Drives nonPlaceAreaUnscaled and the cap below.
+  // fixed instances). Drives non_place_area_ and the cap below.
   std::vector<int64_t> unionArea(bins_.size(), 0);
   for (size_t i = 0; i < bins_.size(); ++i) {
     const auto& touching = bin_insts[i];
@@ -940,14 +940,14 @@ void BinGrid::updateBinsNonPlaceArea()
     }
     // Note that nonPlaceArea should have scale-down with target
     // density. See MS-replace paper.
-    bin.setNonPlaceAreaUnscaled(
+    bin.setNonPlaceArea(
         static_cast<int64_t>(unionArea[i] * bin.getTargetDensity()));
   }
 
-  // Per-macro Gaussian smoothing in getOverlapArea spreads density
+  // Per-macro Gaussian smoothing in getOverlapAreaBinormal spreads density
   // around the macro center; preserve that for non-overlapping cases
   // by accumulating per-instance, then clamp at union-area * 1.10
-  // (the same headroom getOverlapArea allows for a single macro) so
+  // (the same headroom getOverlapAreaBinormal allows for a single macro) so
   // overlapping macros cannot exceed a single-macro contribution.
   const int dbu_per_micron
       = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
@@ -959,7 +959,7 @@ void BinGrid::updateBinsNonPlaceArea()
       for (int x = pairX.first; x < pairX.second; x++) {
         Bin& bin = bins_[y * binCntX_ + x];
         nonPlaceAreaRaw[y * binCntX_ + x]
-            += getOverlapArea(&bin, inst, dbu_per_micron);
+            += getOverlapAreaBinormal(&bin, inst, dbu_per_micron);
       }
     }
   }
@@ -967,7 +967,7 @@ void BinGrid::updateBinsNonPlaceArea()
     if (nonPlaceAreaRaw[i] == 0) {
       continue;
     }
-    bins_[i].addNonPlaceArea(
+    bins_[i].addNonPlaceAreaBinormal(
         static_cast<int64_t>(nonPlaceAreaRaw[i] * bins_[i].getTargetDensity()));
   }
   for (size_t i = 0; i < bins_.size(); ++i) {
@@ -977,8 +977,8 @@ void BinGrid::updateBinsNonPlaceArea()
     Bin& bin = bins_[i];
     const int64_t cap
         = static_cast<int64_t>(unionArea[i] * bin.getTargetDensity() * 1.10f);
-    if (bin.getNonPlaceArea() > cap) {
-      bin.setNonPlaceArea(cap);
+    if (bin.getNonPlaceAreaBinormal() > cap) {
+      bin.setNonPlaceAreaBinormal(cap);
     }
   }
 }
@@ -1006,12 +1006,12 @@ void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
       for (int y = pairY.first; y < pairY.second; y++) {
         for (int x = pairX.first; x < pairX.second; x++) {
           Bin& bin = bins_[y * binCntX_ + x];
-          float scaledArea
-              = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
+          float scaled_area
+              = getOverlapDensityArea(bin, cell) * cell->getSmoothingScale();
           if (macro) {
-            scaledArea *= bin.getTargetDensity();
+            scaled_area *= bin.getTargetDensity();
           }
-          bin.atomicAddInstPlacedAreaUnscaled(static_cast<int64_t>(scaledArea));
+          bin.atomicAddInstPlacedArea(static_cast<int64_t>(scaled_area));
         }
       }
     } else if (cell->isFiller()) {
@@ -1019,7 +1019,7 @@ void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
         for (int x = pairX.first; x < pairX.second; x++) {
           Bin& bin = bins_[y * binCntX_ + x];
           bin.atomicAddFillerArea(static_cast<int64_t>(
-              getOverlapDensityArea(bin, cell) * cell->getDensityScale()));
+              getOverlapDensityArea(bin, cell) * cell->getSmoothingScale()));
         }
       }
     }
@@ -1032,7 +1032,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
 {
   // clear the Bin-area info
   for (Bin& bin : bins_) {
-    bin.setInstPlacedAreaUnscaled(0);
+    bin.setInstPlacedArea(0);
     bin.setFillerArea(0);
   }
 
@@ -1060,7 +1060,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
             const int bi = y * binCntX_ + x;
             Bin& bin = bins_[bi];
             float v
-                = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
+                = getOverlapDensityArea(bin, cell) * cell->getSmoothingScale();
             if (macro) {
               v *= bin.getTargetDensity();
             }
@@ -1073,7 +1073,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
           for (int x = pairX.first; x < pairX.second; x++) {
             const int bi = y * binCntX_ + x;
             const float v = getOverlapDensityArea(bins_[bi], cell)
-                            * cell->getDensityScale();
+                            * cell->getSmoothingScale();
 #pragma omp atomic
             filler_area[bi] += v;
           }
@@ -1082,7 +1082,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
     }
 #pragma omp parallel for num_threads(parallel_threads)
     for (int b = 0; b < nbins; b++) {
-      bins_[b].setInstPlacedAreaUnscaled(inst_area[b]);
+      bins_[b].setInstPlacedArea(inst_area[b]);
       bins_[b].setFillerArea(filler_area[b]);
     }
   } else {
@@ -1093,43 +1093,39 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
 #endif
 
   odb::dbBlock* block = pb_->db()->getChip()->getBlock();
-  sumOverflowArea_ = 0;
-  sumOverflowAreaUnscaled_ = 0;
+  sum_overflow_area_binormal_ = 0;
+  sum_overflow_area_ = 0;
   // update density and overflowArea
   // for nesterov use and FFT library
 #pragma omp parallel for num_threads(num_threads_) \
-    reduction(+ : sumOverflowArea_, sumOverflowAreaUnscaled_)
+    reduction(+ : sum_overflow_area_binormal_, sum_overflow_area_)
   for (Bin& bin : bins_) {
-    // Copy unscaled to scaled
-    bin.setInstPlacedArea(bin.getInstPlacedAreaUnscaled());
-
-    int64_t binArea = bin.getBinArea();
-    const float scaledBinArea
-        = static_cast<float>(binArea * bin.getTargetDensity());
-    bin.setDensity((static_cast<float>(bin.instPlacedArea())
+    const int64_t bin_area = bin.getBinArea();
+    const float scaled_bin_area = bin_area * bin.getTargetDensity();
+    bin.setDensity((static_cast<float>(bin.getInstPlacedArea())
                     + static_cast<float>(bin.getFillerArea())
-                    + static_cast<float>(bin.getNonPlaceArea()))
-                   / scaledBinArea);
+                    + static_cast<float>(bin.getNonPlaceAreaBinormal()))
+                   / scaled_bin_area);
 
-    const float overflowArea = std::max(
-        0.0f,
-        static_cast<float>(bin.instPlacedArea())
-            + static_cast<float>(bin.getNonPlaceArea()) - scaledBinArea);
-    sumOverflowArea_ += overflowArea;  // NOLINT
-
-    const float overflowAreaUnscaled
+    const float overflow_area_binormal
         = std::max(0.0f,
-                   static_cast<float>(bin.getInstPlacedAreaUnscaled())
-                       + static_cast<float>(bin.getNonPlaceAreaUnscaled())
-                       - scaledBinArea);
-    sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
-    if (overflowAreaUnscaled > 0) {
+                   static_cast<float>(bin.getInstPlacedArea())
+                       + static_cast<float>(bin.getNonPlaceAreaBinormal())
+                       - scaled_bin_area);
+    sum_overflow_area_binormal_ += overflow_area_binormal;  // NOLINT
+
+    const float overflow_area = std::max(
+        0.0f,
+        static_cast<float>(bin.getInstPlacedArea())
+            + static_cast<float>(bin.getNonPlaceArea()) - scaled_bin_area);
+    sum_overflow_area_ += overflow_area;
+    if (overflow_area > 0) {
       debugPrint(log_,
                  GPL,
                  "overflow",
                  1,
                  "overflow:{}, bin:{},{}",
-                 block->dbuAreaToMicrons(overflowAreaUnscaled),
+                 block->dbuAreaToMicrons(overflow_area),
                  block->dbuToMicrons(bin.lx()),
                  block->dbuToMicrons(bin.ly()));
       debugPrint(log_,
@@ -1137,16 +1133,15 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                  "overflow",
                  1,
                  "binArea:{}, scaledBinArea:{}",
-                 block->dbuAreaToMicrons(binArea),
-                 block->dbuAreaToMicrons(scaledBinArea));
-      debugPrint(
-          log_,
-          GPL,
-          "overflow",
-          1,
-          "bin.instPlacedAreaUnscaled():{}, bin.nonPlaceAreaUnscaled():{}",
-          block->dbuAreaToMicrons(bin.getInstPlacedAreaUnscaled()),
-          block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
+                 block->dbuAreaToMicrons(bin_area),
+                 block->dbuAreaToMicrons(scaled_bin_area));
+      debugPrint(log_,
+                 GPL,
+                 "overflow",
+                 1,
+                 "bin.getInstPlacedArea():{}, bin.getNonPlaceArea():{}",
+                 block->dbuAreaToMicrons(bin.getInstPlacedArea()),
+                 block->dbuAreaToMicrons(bin.getNonPlaceArea()));
     }
   }
 }
@@ -2305,8 +2300,8 @@ NesterovBase::NesterovBase(
              pb_->getGroup() ? pb_->getGroup()->getName() : "Top-level");
 
   // area update from pb
-  stdInstsArea_ = pb_->stdInstsArea();
-  macroInstsArea_ = pb_->macroInstsArea();
+  std_insts_area_ = pb_->stdInstsArea();
+  macro_insts_area_ = pb_->largeInstsArea();
 
   int dbu_per_micron = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
 
@@ -2433,7 +2428,7 @@ NesterovBase::NesterovBase(
   fft_ = std::move(fft);
   debugPrint(log_, GPL, "init", 1, "FFT backend: {}", fft_->getBackendName());
 
-  // update densitySize and densityScale in each gCell. With the GPU path on,
+  // update densitySize and smoothingScale in each gCell. With the GPU path on,
   // this also pushes the per-inst density params to the (now construction-time
   // allocated) DeviceState views.
   updateDensitySize();
@@ -2516,8 +2511,8 @@ void NesterovBase::initFillerGCells()
   // }
 
   float tmp_targetDensity
-      = static_cast<float>(stdInstsArea_)
-            / static_cast<float>(whiteSpaceArea_ - macroInstsArea_)
+      = static_cast<float>(std_insts_area_)
+            / static_cast<float>(whiteSpaceArea_ - macro_insts_area_)
         + 0.01;
   // targetDensity initialize
   if (nbVars_.useUniformTargetDensity) {
@@ -2827,14 +2822,14 @@ double NesterovBase::getBinSizeY() const
   return bg_.getBinSizeY();
 }
 
+int64_t NesterovBase::getOverflowAreaBinormal() const
+{
+  return bg_.getOverflowAreaBinormal();
+}
+
 int64_t NesterovBase::getOverflowArea() const
 {
   return bg_.getOverflowArea();
-}
-
-int64_t NesterovBase::getOverflowAreaUnscaled() const
-{
-  return bg_.getOverflowAreaUnscaled();
 }
 
 int NesterovBase::getFillerDx() const
@@ -2887,9 +2882,9 @@ int64_t NesterovBase::getTotalFillerArea() const
 
 int64_t NesterovBase::getNesterovInstsArea() const
 {
-  return stdInstsArea_
+  return std_insts_area_
          + static_cast<int64_t>(
-             std::round(pb_->macroInstsArea() * targetDensity_));
+             std::round(pb_->largeInstsArea() * targetDensity_));
 }
 
 int64_t NesterovBase::getInflationArea() const
@@ -2954,28 +2949,26 @@ float NesterovBase::estimateTargetDensity(float overflow)
                current_density,
                min_density,
                max_density);
-    float sum_overflow_area_unscaled = 0;
+    float sum_overflow_area = 0;
     for (auto& bin : bins) {
-      float non_place_area_unscaled = bin.getNonPlaceAreaUnscaled()
-                                      / bin.getTargetDensity()
-                                      * current_density;
-      float scaled_bin_area = bin.getBinArea() * current_density;
+      const float non_place_area
+          = bin.getNonPlaceArea() / bin.getTargetDensity() * current_density;
+      const float scaled_bin_area = bin.getBinArea() * current_density;
 
-      sum_overflow_area_unscaled
-          += std::max(0.0f,
-                      static_cast<float>(bin.getInstPlacedAreaUnscaled())
-                          + non_place_area_unscaled - scaled_bin_area);
+      sum_overflow_area += std::max(0.0f,
+                                    static_cast<float>(bin.getInstPlacedArea())
+                                        + non_place_area - scaled_bin_area);
     }
 
-    current_overflow = sum_overflow_area_unscaled / getNesterovInstsArea();
+    current_overflow = sum_overflow_area / getNesterovInstsArea();
     debugPrint(log_,
                GPL,
                "estimateTargetDensity",
                1,
-               "current_overflow {:10.9f}, sum_overflow_areaUnscaled "
+               "current_overflow {:10.9f}, sum_overflow_area "
                "{:13.9e}, getNesterovInstsArea(): {:13.9e}",
                current_overflow,
-               sum_overflow_area_unscaled,
+               sum_overflow_area,
                static_cast<float>(getNesterovInstsArea()));
     if (std::abs(current_overflow - overflow) < 1e-6) {
       return current_density;
@@ -3008,7 +3001,9 @@ float NesterovBase::getTargetDensity() const
   return targetDensity_;
 }
 
-// update densitySize and densityScale in each gCell
+// update densitySize and smoothingScale in each gCell
+// Density smoothing from ePlace paper: "4.5. Local Smoothness Over Discrete
+// Grids"
 void NesterovBase::updateDensitySize()
 {
   assert(omp_get_thread_num() == 0);
@@ -3035,7 +3030,7 @@ void NesterovBase::updateDensitySize()
     }
 
     gCell->setDensitySize(densitySizeX, densitySizeY);
-    gCell->setDensityScale(scaleX * scaleY);
+    gCell->setSmoothingScale(scaleX * scaleY);
   }
 
 #ifdef ENABLE_GPU
@@ -3059,11 +3054,12 @@ void NesterovBase::updateTimingDrivenDensity()
   updateAreas();
   // Macros contribute targetDensity * macro area to the density field.
   // Solve D * whitespace = std + fillers + D * macros for D.
-  const int64_t available_area = getWhiteSpaceArea() - pb_->macroInstsArea();
+  const int64_t available_area = getWhiteSpaceArea() - pb_->largeInstsArea();
   if (available_area <= 0) {
     // With only macros filling the region, the density equation holds for
     // the current density. Any other nonpositive-space case is unsatisfiable.
-    if (available_area < 0 || stdInstsArea_ != 0 || getTotalFillerArea() != 0) {
+    if (available_area < 0 || std_insts_area_ != 0
+        || getTotalFillerArea() != 0) {
       auto* block = pb_->db()->getChip()->getBlock();
       log_->error(GPL,
                   334,
@@ -3072,13 +3068,13 @@ void NesterovBase::updateTimingDrivenDensity()
                   "is {:.3f} um^2, and filler area is {:.3f} um^2.",
                   pb_->getGroup() ? pb_->getGroup()->getName() : "top-level",
                   block->dbuAreaToMicrons(available_area),
-                  block->dbuAreaToMicrons(stdInstsArea_),
+                  block->dbuAreaToMicrons(std_insts_area_),
                   block->dbuAreaToMicrons(getTotalFillerArea()));
     }
   } else {
     // Preserve the placer's existing float rounding when no macros are present.
     // A one-ULP target change perturbs the subsequent optimization trajectory.
-    setTargetDensity(static_cast<float>(stdInstsArea_ + getTotalFillerArea())
+    setTargetDensity(static_cast<float>(std_insts_area_ + getTotalFillerArea())
                      / static_cast<float>(available_area));
   }
   setMovableArea(getNesterovInstsArea() + getTotalFillerArea());
@@ -3088,19 +3084,19 @@ void NesterovBase::updateTimingDrivenDensity()
 void NesterovBase::updateAreas()
 {
   // bloating can change the following :
-  // stdInstsArea and macroInstsArea
-  stdInstsArea_ = macroInstsArea_ = 0;
+  // std_insts_area_ and macro_insts_area_
+  std_insts_area_ = macro_insts_area_ = 0;
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
     auto& gCell = *it;
     if (!gCell) {
       continue;
     }
     if (gCell->isMacroInstance()) {
-      macroInstsArea_ += static_cast<int64_t>(gCell->dx())
-                         * static_cast<int64_t>(gCell->dy());
+      macro_insts_area_ += static_cast<int64_t>(gCell->dx())
+                           * static_cast<int64_t>(gCell->dy());
     } else if (gCell->isStdInstance()) {
-      stdInstsArea_ += static_cast<int64_t>(gCell->dx())
-                       * static_cast<int64_t>(gCell->dy());
+      std_insts_area_ += static_cast<int64_t>(gCell->dx())
+                         * static_cast<int64_t>(gCell->dy());
     }
   }
 }
@@ -3173,7 +3169,7 @@ FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
 
   const int bin_cnt_x = getBinCntX();
   const auto& bins = bg_.getBinsConst();
-  const float scale = gCell->getDensityScale();
+  const float scale = gCell->getSmoothingScale();
 
   for (int i = pairX.first; i < pairX.second; i++) {
     for (int j = pairY.first; j < pairY.second; j++) {
@@ -3232,7 +3228,8 @@ void NesterovBase::updateDensityFieldBin()
     bin.setElectroPhi(electroPhi);
 
     sumPhi_ += electroPhi
-               * static_cast<float>(bin.getNonPlaceArea() + bin.instPlacedArea()
+               * static_cast<float>(bin.getNonPlaceAreaBinormal()
+                                    + bin.getInstPlacedArea()
                                     + bin.getFillerArea());
   }
 }
@@ -3367,11 +3364,11 @@ void NesterovBase::initDensity1()
       = npVars_->initWireLengthCoef
         / (static_cast<float>(getBinSizeX() + getBinSizeY()) * 0.5);
 
+  sum_overflow_binormal_ = static_cast<float>(getOverflowAreaBinormal())
+                           / static_cast<float>(getNesterovInstsArea());
+
   sum_overflow_ = static_cast<float>(getOverflowArea())
                   / static_cast<float>(getNesterovInstsArea());
-
-  sum_overflow_unscaled_ = static_cast<float>(getOverflowAreaUnscaled())
-                           / static_cast<float>(getNesterovInstsArea());
 
   rebuildNbDeviceCtx();
 }
@@ -3499,11 +3496,11 @@ float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
     updateDensityPenaltyFromRatio(npVars_->initDensityPenalty);
   }
 
+  sum_overflow_binormal_ = static_cast<float>(getOverflowAreaBinormal())
+                           / static_cast<float>(getNesterovInstsArea());
+
   sum_overflow_ = static_cast<float>(getOverflowArea())
                   / static_cast<float>(getNesterovInstsArea());
-
-  sum_overflow_unscaled_ = static_cast<float>(getOverflowAreaUnscaled())
-                           / static_cast<float>(getNesterovInstsArea());
 
   stepLength_ = getStepLength(
       prevSLPCoordi_, prevSLPSumGrads_, curSLPCoordi_, curSLPSumGrads_);
@@ -3773,7 +3770,7 @@ void NesterovBase::resetMinSumOverflow()
   // reset the divergence detect conditions
   minSumOverflow_ = 1e30;
   hpwlWithMinSumOverflow_ = 1e30;
-  prev_reported_overflow_unscaled_ = 0;
+  prev_reported_overflow_ = 0;
   prev_reported_hpwl_ = 0;
 }
 
@@ -3803,9 +3800,9 @@ float NesterovBase::getOverflowDenominator(const int iter) const
                   fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
 }
 
-float NesterovBase::getCurrentSumOverflowUnscaled(const int iter) const
+float NesterovBase::getCurrentSumOverflow(const int iter) const
 {
-  return getOverflowAreaUnscaled() / getOverflowDenominator(iter);
+  return getOverflowArea() / getOverflowDenominator(iter);
 }
 
 void NesterovBase::updateNextIter(const int iter)
@@ -3851,8 +3848,8 @@ void NesterovBase::updateNextIter(const int iter)
 
   const float overflowDenominator = getOverflowDenominator(iter);
 
+  sum_overflow_binormal_ = getOverflowAreaBinormal() / overflowDenominator;
   sum_overflow_ = getOverflowArea() / overflowDenominator;
-  sum_overflow_unscaled_ = getOverflowAreaUnscaled() / overflowDenominator;
 
   int64_t hpwl = nbc_->getHpwl();
 
@@ -3864,7 +3861,7 @@ void NesterovBase::updateNextIter(const int iter)
                             * 100.0;
     }
     prev_reported_hpwl_ = hpwl;
-    prev_reported_overflow_unscaled_ = sum_overflow_unscaled_;
+    prev_reported_overflow_ = sum_overflow_;
 
     std::string group_name;
     if (pb_->getGroup()) {
@@ -3895,7 +3892,7 @@ void NesterovBase::updateNextIter(const int iter)
     dbBlock* block = pb_->db()->getChip()->getBlock();
     log_->report("{:9d} | {:8.4f} | {:13.6e} | {:+7.2f}% | {:9.2e} | {:>5}",
                  iter,
-                 sum_overflow_unscaled_,
+                 sum_overflow_,
                  block->dbuToMicrons(hpwl),
                  hpwl_percent_change,
                  densityPenalty_,
@@ -3920,16 +3917,15 @@ void NesterovBase::updateNextIter(const int iter)
                getSecondNorm(curSLPSumGrads_));
   }
   debugPrint(log_, GPL, "updateNextIter", 1, "Phi: {:g}", getSumPhi());
-  debugPrint(
-      log_, GPL, "updateNextIter", 1, "Overflow: {:g}", sum_overflow_unscaled_);
+  debugPrint(log_, GPL, "updateNextIter", 1, "Overflow: {:g}", sum_overflow_);
 
   densityPenalty_ *= phiCoef;
   prev_hpwl_ = hpwl;
 
   peak_coordi_distance_ = std::max(peak_coordi_distance_, coordiDistance_);
 
-  if (iter > 50 && minSumOverflow_ > sum_overflow_unscaled_) {
-    minSumOverflow_ = sum_overflow_unscaled_;
+  if (iter > 50 && minSumOverflow_ > sum_overflow_) {
+    minSumOverflow_ = sum_overflow_;
     hpwlWithMinSumOverflow_ = prev_hpwl_;
   }
 }
@@ -3987,8 +3983,8 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
       const NesterovDeviceContext::DensityIterResult r
           = nb_device_ctx_->densitySolveIteration(
               region_density_field_.get(), SlpSlot::Next, want_sum_phi);
-      bg_.setOverflowAreas(static_cast<int64_t>(r.overflow_area),
-                           static_cast<int64_t>(r.overflow_area_unscaled));
+      bg_.setOverflowAreas(static_cast<int64_t>(r.overflow_area_binormal),
+                           static_cast<int64_t>(r.overflow_area));
       sumPhi_ = r.sum_phi;
       commitCoordsToDeviceState(SlpSlot::Next);
       host_coords_fresh_ = false;
@@ -4050,7 +4046,7 @@ void NesterovBase::nesterovAdjustPhi()
   // dynamic adjustment for
   // better convergence with
   // large designs
-  if (!nbVars_.isMaxPhiCoefChanged && sum_overflow_unscaled_ < 0.35f) {
+  if (!nbVars_.isMaxPhiCoefChanged && sum_overflow_ < 0.35f) {
     nbVars_.isMaxPhiCoefChanged = true;
     nbVars_.maxPhiCoef *= 0.99;
   }
@@ -4090,7 +4086,7 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
   if (isConverged_) {
     return true;
   }
-  if (sum_overflow_unscaled_ <= npVars_->targetOverflow) {
+  if (sum_overflow_ <= npVars_->targetOverflow) {
     const bool has_group = pb_->getGroup();
     const std::string group_name = has_group ? pb_->getGroup()->getName() : "";
     const int final_iter = gpl_iter_count;
@@ -4098,7 +4094,7 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
 
     log_->report("{:9d} | {:8.4f} | {:13.6e} | {:>8} | {:9.2e} | {:>5}",
                  final_iter,
-                 sum_overflow_unscaled_,
+                 sum_overflow_,
                  block->dbuToMicrons(nbc_->getHpwl()),
                  "",  // No % delta
                  densityPenalty_,
@@ -4227,8 +4223,7 @@ float NesterovBase::getSettleRatio() const
 
 bool NesterovBase::checkDivergence()
 {
-  if (sum_overflow_unscaled_ < 0.2f
-      && sum_overflow_unscaled_ - minSumOverflow_ >= 0.02f
+  if (sum_overflow_ < 0.2f && sum_overflow_ - minSumOverflow_ >= 0.02f
       && hpwlWithMinSumOverflow_ * 1.2f < prev_hpwl_) {
     isDiverged_ = true;
     log_->warn(GPL, 323, "Divergence detected between consecutive iterations");
@@ -4243,9 +4238,8 @@ bool NesterovBase::checkDivergence()
   // itself, so the gate is no longer load bearing, and a design whose overflow
   // stalls above 0.2 is no longer left with divergence detection switched off
   // for the rest of the run.
-  if (prev_reported_overflow_unscaled_ > 0 && prev_reported_hpwl_ > 0) {
-    float overflow_change
-        = sum_overflow_unscaled_ - prev_reported_overflow_unscaled_;
+  if (prev_reported_overflow_ > 0 && prev_reported_hpwl_ > 0) {
+    const float overflow_change = sum_overflow_ - prev_reported_overflow_;
     float hpwl_increase = (static_cast<float>(prev_hpwl_ - prev_reported_hpwl_))
                           / static_cast<float>(prev_reported_hpwl_);
 
@@ -4309,7 +4303,7 @@ bool NesterovBase::revertToSnapshot()
   // clear the baseline so the next comparison starts from where the revert
   // landed.
   prev_reported_hpwl_ = 0;
-  prev_reported_overflow_unscaled_ = 0;
+  prev_reported_overflow_ = 0;
 
   return true;
 }
@@ -4442,7 +4436,7 @@ void NesterovBase::updateGCellState()
       }
 
       gcell->setDensitySize(densitySizeX, densitySizeY);
-      gcell->setDensityScale(scaleX * scaleY);
+      gcell->setSmoothingScale(scaleX * scaleY);
 
       // analogous to NesterovBase::initDensity1()
       updateDensityCoordiLayoutInside(gcell);
@@ -4979,8 +4973,8 @@ void NesterovBase::redistributeFillerCells()
     const double scaled_bin_area
         = static_cast<double>(bin.getBinArea()) * bin.getTargetDensity();
     const double free = scaled_bin_area
-                        - static_cast<double>(bin.instPlacedArea())
-                        - static_cast<double>(bin.getNonPlaceArea());
+                        - static_cast<double>(bin.getInstPlacedArea())
+                        - static_cast<double>(bin.getNonPlaceAreaBinormal());
     free_capacity[b] = std::max(0.0, free);
     total_free_capacity += free_capacity[b];
   }
@@ -5373,7 +5367,7 @@ void NesterovBase::writeGCellVectorsToCSV(const std::string& filename,
     file << ",insts_size,gPins_size";
     file << ",lx,ly,ux,uy";
     file << ",dLx,dLy,dUx,dUy";
-    file << ",densityScale,gradientX,gradientY";
+    file << ",smoothingScale,gradientX,gradientY";
 
     auto add_header = [&](const std::string& name) {
       file << "," << name << "_x" << "," << name << "_y";
@@ -5465,9 +5459,9 @@ static float getOverlapDensityArea(const Bin& bin, const GCell* cell)
          * static_cast<float>(rectUy - rectLy);
 }
 
-static int64_t getOverlapArea(const Bin* bin,
-                              const Instance* inst,
-                              int dbu_per_micron)
+static int64_t getOverlapAreaBinormal(const Bin* bin,
+                                      const Instance* inst,
+                                      int dbu_per_micron)
 {
   int rectLx = std::max(bin->lx(), inst->lx()),
       rectLy = std::max(bin->ly(), inst->ly()),
