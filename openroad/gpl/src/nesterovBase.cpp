@@ -2314,6 +2314,7 @@ NesterovBase::NesterovBase(
   initFillerGCells();
 
   nb_gcells_.reserve(pb_->getInsts().size() + fillerStor_.size());
+  db_inst_to_nb_index_.reserve(pb_->placeInsts().size());
 
   // add place instances
   for (auto& pb_inst : pb_->placeInsts()) {
@@ -2337,10 +2338,10 @@ NesterovBase::NesterovBase(
     db_inst_to_nb_index_[pb_inst->dbInst()] = gcells_index;
   }
 
-  // add filler cells to gCells_
+  // add filler cells to nb_gcells_ (filler_stor_index_to_nb_index_ is
+  // populated lazily only if routability cuts fillers).
   for (size_t i = 0; i < fillerStor_.size(); ++i) {
     nb_gcells_.emplace_back(this, i);
-    filler_stor_index_to_nb_index_[i] = nb_gcells_.size() - 1;
   }
 
   debugPrint(log_,
@@ -3322,29 +3323,27 @@ void NesterovBase::initDensity1()
   assert(omp_get_thread_num() == 0);
   const int gCellSize = nb_gcells_.size();
   curSLPCoordi_.resize(gCellSize, FloatPoint());
-  curSLPWireLengthGrads_.resize(gCellSize, FloatPoint());
-  curSLPDensityGrads_.resize(gCellSize, FloatPoint());
   curSLPSumGrads_.resize(gCellSize, FloatPoint());
 
   nextSLPCoordi_.resize(gCellSize, FloatPoint());
-  nextSLPWireLengthGrads_.resize(gCellSize, FloatPoint());
-  nextSLPDensityGrads_.resize(gCellSize, FloatPoint());
   nextSLPSumGrads_.resize(gCellSize, FloatPoint());
 
   prevSLPCoordi_.resize(gCellSize, FloatPoint());
-  prevSLPWireLengthGrads_.resize(gCellSize, FloatPoint());
-  prevSLPDensityGrads_.resize(gCellSize, FloatPoint());
   prevSLPSumGrads_.resize(gCellSize, FloatPoint());
+
+  wireLengthGrads_.resize(gCellSize, FloatPoint());
+  densityGrads_.resize(gCellSize, FloatPoint());
 
   curCoordi_.resize(gCellSize, FloatPoint());
   nextCoordi_.resize(gCellSize, FloatPoint());
 
   initCoordi_.resize(gCellSize, FloatPoint());
 
-  snapshotCoordi_.resize(gCellSize, FloatPoint());
-  snapshotSLPCoordi_.resize(gCellSize, FloatPoint());
-  snapshotSLPSumGrads_.resize(gCellSize, FloatPoint());
-  snapshotPrevSLPSumGrads_.resize(gCellSize, FloatPoint());
+  snapshot_saved_ = false;
+  snapshotCoordi_.clear();
+  snapshotSLPCoordi_.clear();
+  snapshotSLPSumGrads_.clear();
+  snapshotPrevSLPSumGrads_.clear();
 
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto& gCell : nb_gcells_) {
@@ -3688,29 +3687,20 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
 
 void NesterovBase::nbUpdatePrevGradient(float wlCoeffX, float wlCoeffY)
 {
-  updateGradients(prevSLPSumGrads_,
-                  prevSLPWireLengthGrads_,
-                  prevSLPDensityGrads_,
-                  wlCoeffX,
-                  wlCoeffY);
+  updateGradients(
+      prevSLPSumGrads_, wireLengthGrads_, densityGrads_, wlCoeffX, wlCoeffY);
 }
 
 void NesterovBase::nbUpdateCurGradient(float wlCoeffX, float wlCoeffY)
 {
-  updateGradients(curSLPSumGrads_,
-                  curSLPWireLengthGrads_,
-                  curSLPDensityGrads_,
-                  wlCoeffX,
-                  wlCoeffY);
+  updateGradients(
+      curSLPSumGrads_, wireLengthGrads_, densityGrads_, wlCoeffX, wlCoeffY);
 }
 
 void NesterovBase::nbUpdateNextGradient(float wlCoeffX, float wlCoeffY)
 {
-  updateGradients(nextSLPSumGrads_,
-                  nextSLPWireLengthGrads_,
-                  nextSLPDensityGrads_,
-                  wlCoeffX,
-                  wlCoeffY);
+  updateGradients(
+      nextSLPSumGrads_, wireLengthGrads_, densityGrads_, wlCoeffX, wlCoeffY);
 }
 
 void NesterovBase::updateInitialPrevSLPCoordi()
@@ -3817,8 +3807,6 @@ void NesterovBase::updateNextIter(const int iter)
 
   // swap vector pointers
   std::swap(prevSLPCoordi_, curSLPCoordi_);
-  std::swap(prevSLPWireLengthGrads_, curSLPWireLengthGrads_);
-  std::swap(prevSLPDensityGrads_, curSLPDensityGrads_);
   std::swap(prevSLPSumGrads_, curSLPSumGrads_);
 
   // Prevent locked instances from moving
@@ -3826,16 +3814,12 @@ void NesterovBase::updateNextIter(const int iter)
   for (size_t k = 0; k < nb_gcells_.size(); ++k) {
     if (nb_gcells_[k]->isInstance() && nb_gcells_[k]->isLocked()) {
       nextSLPCoordi_[k] = curSLPCoordi_[k];
-      nextSLPWireLengthGrads_[k] = curSLPWireLengthGrads_[k];
-      nextSLPDensityGrads_[k] = curSLPDensityGrads_[k];
       nextSLPSumGrads_[k] = curSLPSumGrads_[k];
       nextCoordi_[k] = curCoordi_[k];
     }
   }
 
   std::swap(curSLPCoordi_, nextSLPCoordi_);
-  std::swap(curSLPWireLengthGrads_, nextSLPWireLengthGrads_);
-  std::swap(curSLPDensityGrads_, nextSLPDensityGrads_);
   std::swap(curSLPSumGrads_, nextSLPSumGrads_);
 
   std::swap(curCoordi_, nextCoordi_);
@@ -4077,6 +4061,7 @@ void NesterovBase::saveSnapshot()
   snapshotPrevSLPSumGrads_ = prevSLPSumGrads_;
   snapshotDensityPenalty_ = densityPenalty_;
   snapshotStepLength_ = stepLength_;
+  snapshot_saved_ = true;
   if (io_) {
     io_->saveSnapshot();
   }
@@ -4268,7 +4253,7 @@ bool NesterovBase::checkDivergence()
 
 bool NesterovBase::revertToSnapshot()
 {
-  if (isConverged_) {
+  if (isConverged_ || !snapshot_saved_) {
     return true;
   }
   // CPU semantics keep the pre-revert prevSLP coords (they are NOT part of
@@ -4446,10 +4431,12 @@ void NesterovBase::updateGCellState()
 
       // analogous to NesterovBase::initDensity1()
       updateDensityCoordiLayoutInside(gcell);
+      const FloatPoint pt(gcell->dCx(), gcell->dCy());
       curSLPCoordi_[gcells_index] = prevSLPCoordi_[gcells_index]
-          = curCoordi_[gcells_index] = initCoordi_[gcells_index]
-          = snapshotCoordi_[gcells_index] = snapshotSLPCoordi_[gcells_index]
-          = FloatPoint(gcell->dCx(), gcell->dCy());
+          = curCoordi_[gcells_index] = initCoordi_[gcells_index] = pt;
+      if (snapshot_saved_) {
+        snapshotCoordi_[gcells_index] = snapshotSLPCoordi_[gcells_index] = pt;
+      }
 
       // Gradients are left to NesterovPlace::refreshCurGradients(), which
       // evaluates every GCell once the whole repair has landed. The prev slot
@@ -4702,31 +4689,29 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
        --i) {
     if (nb_gcells_[i]->isFiller()) {
       const GCell& removed = fillerStor_[nb_gcells_[i].getStorageIndex()];
+      const auto snap = [&](const std::vector<FloatPoint>& slot) {
+        return snapshot_saved_ ? slot[i] : FloatPoint();
+      };
       removed_fillers_.push_back(RemovedFillerState{
           .gcell = removed,
           .curSLPCoordi = curSLPCoordi_[i],
-          .curSLPWireLengthGrads = curSLPWireLengthGrads_[i],
-          .curSLPDensityGrads = curSLPDensityGrads_[i],
           .curSLPSumGrads = curSLPSumGrads_[i],
 
           .nextSLPCoordi = nextSLPCoordi_[i],
-          .nextSLPWireLengthGrads = nextSLPWireLengthGrads_[i],
-          .nextSLPDensityGrads = nextSLPDensityGrads_[i],
           .nextSLPSumGrads = nextSLPSumGrads_[i],
 
           .prevSLPCoordi = prevSLPCoordi_[i],
-          .prevSLPWireLengthGrads = prevSLPWireLengthGrads_[i],
-          .prevSLPDensityGrads = prevSLPDensityGrads_[i],
           .prevSLPSumGrads = prevSLPSumGrads_[i],
 
           .curCoordi = curCoordi_[i],
           .nextCoordi = nextCoordi_[i],
           .initCoordi = initCoordi_[i],
 
-          .snapshotCoordi = snapshotCoordi_[i],
-          .snapshotSLPCoordi = snapshotSLPCoordi_[i],
-          .snapshotSLPSumGrads = snapshotSLPSumGrads_[i],
-          .snapshotPrevSLPSumGrads = snapshotPrevSLPSumGrads_[i]});
+          .snapshotCoordi = snap(snapshotCoordi_),
+          .snapshotSLPCoordi = snap(snapshotSLPCoordi_),
+          .snapshotSLPSumGrads = snap(snapshotSLPSumGrads_),
+          .snapshotPrevSLPSumGrads = snap(snapshotPrevSLPSumGrads_),
+      });
 
       destroyFillerGCell(i);
       availableFillerArea -= single_filler_area;
@@ -4803,8 +4788,22 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
   rebuildNbDeviceCtx();
 }
 
+void NesterovBase::ensureFillerIndexMap()
+{
+  if (filler_stor_index_to_nb_index_.size() == fillerStor_.size()) {
+    return;
+  }
+  filler_stor_index_to_nb_index_.assign(fillerStor_.size(), 0);
+  for (size_t idx = 0; idx < nb_gcells_.size(); ++idx) {
+    if (!nb_gcells_[idx].isNesterovBaseCommon()) {
+      filler_stor_index_to_nb_index_[nb_gcells_[idx].getStorageIndex()] = idx;
+    }
+  }
+}
+
 void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
 {
+  ensureFillerIndexMap();
   debugPrint(log_,
              GPL,
              "callbacks",
@@ -4842,18 +4841,17 @@ void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
   }
   swapAndPopParallelVectors(nb_index_remove, nb_last_index);
   nb_gcells_.pop_back();
-  filler_stor_index_to_nb_index_.erase(stor_index_remove);
   if (nb_index_remove != nb_last_index) {
     rebindHandleIndex(nb_index_remove);
   }
 
   if (stor_index_remove != stor_last_index) {
-    size_t replacer_index
-        = filler_stor_index_to_nb_index_.find(stor_last_index)->second;
+    size_t replacer_index = filler_stor_index_to_nb_index_[stor_last_index];
     std::swap(fillerStor_[stor_index_remove], fillerStor_[stor_last_index]);
     nb_gcells_[replacer_index].updateHandle(this, stor_index_remove);
     filler_stor_index_to_nb_index_[stor_index_remove] = replacer_index;
   }
+  filler_stor_index_to_nb_index_.pop_back();
   fillerStor_.pop_back();
 }
 
@@ -4874,39 +4872,36 @@ void NesterovBase::restoreRemovedFillers()
   size_t num_fill_before = fillerStor_.size();
   int64_t area_before = totalFillerArea_;
 
+  ensureFillerIndexMap();
   for (const auto& filler : removed_fillers_) {
     fillerStor_.push_back(filler.gcell);
     size_t new_index = fillerStor_.size() - 1;
     nb_gcells_.emplace_back(this, new_index);
-    filler_stor_index_to_nb_index_[new_index] = nb_gcells_.size() - 1;
+    filler_stor_index_to_nb_index_.push_back(nb_gcells_.size() - 1);
 
     appendParallelVectors();
     size_t idx = nb_gcells_.size() - 1;
     debugPrint(log_, GPL, "callbacks", 2, "restore filler nb index:  {}", idx);
     // Restore parallel vector data
     curSLPCoordi_[idx] = filler.curSLPCoordi;
-    curSLPWireLengthGrads_[idx] = filler.curSLPWireLengthGrads;
-    curSLPDensityGrads_[idx] = filler.curSLPDensityGrads;
     curSLPSumGrads_[idx] = filler.curSLPSumGrads;
 
     nextSLPCoordi_[idx] = filler.nextSLPCoordi;
-    nextSLPWireLengthGrads_[idx] = filler.nextSLPWireLengthGrads;
-    nextSLPDensityGrads_[idx] = filler.nextSLPDensityGrads;
     nextSLPSumGrads_[idx] = filler.nextSLPSumGrads;
 
     prevSLPCoordi_[idx] = filler.prevSLPCoordi;
-    prevSLPWireLengthGrads_[idx] = filler.prevSLPWireLengthGrads;
-    prevSLPDensityGrads_[idx] = filler.prevSLPDensityGrads;
     prevSLPSumGrads_[idx] = filler.prevSLPSumGrads;
 
     curCoordi_[idx] = filler.curCoordi;
     nextCoordi_[idx] = filler.nextCoordi;
     initCoordi_[idx] = filler.initCoordi;
 
-    snapshotCoordi_[idx] = filler.snapshotCoordi;
-    snapshotSLPCoordi_[idx] = filler.snapshotSLPCoordi;
-    snapshotSLPSumGrads_[idx] = filler.snapshotSLPSumGrads;
-    snapshotPrevSLPSumGrads_[idx] = filler.snapshotPrevSLPSumGrads;
+    if (snapshot_saved_) {
+      snapshotCoordi_[idx] = filler.snapshotCoordi;
+      snapshotSLPCoordi_[idx] = filler.snapshotSLPCoordi;
+      snapshotSLPSumGrads_[idx] = filler.snapshotSLPSumGrads;
+      snapshotPrevSLPSumGrads_[idx] = filler.snapshotPrevSLPSumGrads;
+    }
 
     totalFillerArea_ += getFillerCellArea();
   }
@@ -5081,12 +5076,14 @@ void NesterovBase::redistributeFillerCells()
     nextCoordi_[i] = pos;
     nextSLPCoordi_[i] = pos;
     initCoordi_[i] = pos;
-    snapshotCoordi_[i] = pos;
-    snapshotSLPCoordi_[i] = pos;
+    if (snapshot_saved_) {
+      snapshotCoordi_[i] = pos;
+      snapshotSLPCoordi_[i] = pos;
+    }
 
     // Reset the gradients
-    curSLPWireLengthGrads_[i] = FloatPoint();
-    curSLPDensityGrads_[i] = FloatPoint();
+    wireLengthGrads_[i] = FloatPoint();
+    densityGrads_[i] = FloatPoint();
     curSLPSumGrads_[i] = FloatPoint();
 
     --remaining_in_bin;
@@ -5228,24 +5225,20 @@ void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
              last_index);
 
   // Avoid modifying this if snapshot has not been saved yet.
-  if (curSLPCoordi_.size() == snapshotCoordi_.size()) {
+  if (snapshot_saved_) {
     swapAndPop(snapshotCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
     swapAndPop(snapshotPrevSLPSumGrads_, remove_index, last_index);
   }
   swapAndPop(curSLPCoordi_, remove_index, last_index);
-  swapAndPop(curSLPWireLengthGrads_, remove_index, last_index);
-  swapAndPop(curSLPDensityGrads_, remove_index, last_index);
   swapAndPop(curSLPSumGrads_, remove_index, last_index);
   swapAndPop(nextSLPCoordi_, remove_index, last_index);
-  swapAndPop(nextSLPWireLengthGrads_, remove_index, last_index);
-  swapAndPop(nextSLPDensityGrads_, remove_index, last_index);
   swapAndPop(nextSLPSumGrads_, remove_index, last_index);
   swapAndPop(prevSLPCoordi_, remove_index, last_index);
-  swapAndPop(prevSLPWireLengthGrads_, remove_index, last_index);
-  swapAndPop(prevSLPDensityGrads_, remove_index, last_index);
   swapAndPop(prevSLPSumGrads_, remove_index, last_index);
+  swapAndPop(wireLengthGrads_, remove_index, last_index);
+  swapAndPop(densityGrads_, remove_index, last_index);
   swapAndPop(curCoordi_, remove_index, last_index);
   swapAndPop(nextCoordi_, remove_index, last_index);
   swapAndPop(initCoordi_, remove_index, last_index);
@@ -5277,8 +5270,10 @@ void NesterovBase::rebindHandleIndex(size_t nb_index)
     return;
   }
 
-  auto it = filler_stor_index_to_nb_index_.find(stor_index);
-  if (it == filler_stor_index_to_nb_index_.end()) {
+  if (filler_stor_index_to_nb_index_.empty()) {
+    return;
+  }
+  if (stor_index >= filler_stor_index_to_nb_index_.size()) {
     debugPrint(log_,
                GPL,
                "callbacks",
@@ -5288,29 +5283,25 @@ void NesterovBase::rebindHandleIndex(size_t nb_index)
                stor_index);
     return;
   }
-  it->second = nb_index;
+  filler_stor_index_to_nb_index_[stor_index] = nb_index;
 }
 
 void NesterovBase::appendParallelVectors()
 {
-  if (curSLPCoordi_.size() == snapshotCoordi_.size()) {
+  if (snapshot_saved_) {
     snapshotCoordi_.emplace_back();
     snapshotSLPCoordi_.emplace_back();
     snapshotSLPSumGrads_.emplace_back();
     snapshotPrevSLPSumGrads_.emplace_back();
   }
   curSLPCoordi_.emplace_back();
-  curSLPWireLengthGrads_.emplace_back();
-  curSLPDensityGrads_.emplace_back();
   curSLPSumGrads_.emplace_back();
   nextSLPCoordi_.emplace_back();
-  nextSLPWireLengthGrads_.emplace_back();
-  nextSLPDensityGrads_.emplace_back();
   nextSLPSumGrads_.emplace_back();
   prevSLPCoordi_.emplace_back();
-  prevSLPWireLengthGrads_.emplace_back();
-  prevSLPDensityGrads_.emplace_back();
   prevSLPSumGrads_.emplace_back();
+  wireLengthGrads_.emplace_back();
+  densityGrads_.emplace_back();
   curCoordi_.emplace_back();
   nextCoordi_.emplace_back();
   initCoordi_.emplace_back();
@@ -5380,28 +5371,26 @@ void NesterovBase::writeGCellVectorsToCSV(const std::string& filename,
     };
 
     add_header("curSLPCoordi");
-    add_header("curSLPWireLengthGrads");
-    add_header("curSLPDensityGrads");
+    add_header("wireLengthGrads");
+    add_header("densityGrads");
     add_header("curSLPSumGrads");
 
     add_header("nextSLPCoordi");
-    add_header("nextSLPWireLengthGrads");
-    add_header("nextSLPDensityGrads");
     add_header("nextSLPSumGrads");
 
     add_header("prevSLPCoordi");
-    add_header("prevSLPWireLengthGrads");
-    add_header("prevSLPDensityGrads");
     add_header("prevSLPSumGrads");
 
     add_header("curCoordi");
     add_header("nextCoordi");
     add_header("initCoordi");
 
-    add_header("snapshotCoordi");
-    add_header("snapshotSLPCoordi");
-    add_header("snapshotSLPSumGrads");
-    add_header("snapshotPrevSLPSumGrads");
+    if (snapshot_saved_) {
+      add_header("snapshotCoordi");
+      add_header("snapshotSLPCoordi");
+      add_header("snapshotSLPSumGrads");
+      add_header("snapshotPrevSLPSumGrads");
+    }
 
     file << "\n";
   }
@@ -5420,25 +5409,21 @@ void NesterovBase::writeGCellVectorsToCSV(const std::string& filename,
     };
 
     add_value(curSLPCoordi_);
-    add_value(curSLPWireLengthGrads_);
-    add_value(curSLPDensityGrads_);
+    add_value(wireLengthGrads_);
+    add_value(densityGrads_);
     add_value(curSLPSumGrads_);
 
     add_value(nextSLPCoordi_);
-    add_value(nextSLPWireLengthGrads_);
-    add_value(nextSLPDensityGrads_);
     add_value(nextSLPSumGrads_);
 
     add_value(prevSLPCoordi_);
-    add_value(prevSLPWireLengthGrads_);
-    add_value(prevSLPDensityGrads_);
     add_value(prevSLPSumGrads_);
 
     add_value(curCoordi_);
     add_value(nextCoordi_);
     add_value(initCoordi_);
 
-    if (snapshotCoordi_.size() == curSLPCoordi_.size()) {
+    if (snapshot_saved_) {
       add_value(snapshotCoordi_);
       add_value(snapshotSLPCoordi_);
       add_value(snapshotSLPSumGrads_);

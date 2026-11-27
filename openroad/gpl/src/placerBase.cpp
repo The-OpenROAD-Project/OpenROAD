@@ -1240,7 +1240,7 @@ void PlacerBase::initInstsForUnusableSites()
   int64_t siteCountX = region_bbox_.dx() / siteSizeX_;
   int64_t siteCountY = region_bbox_.dy() / siteSizeY_;
 
-  enum SiteInfo
+  enum SiteInfo : uint8_t
   {
     Blocked,   // site representation of dummy instances
     Row,       // placable site
