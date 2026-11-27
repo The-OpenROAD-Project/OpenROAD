@@ -133,6 +133,14 @@ class LatencyBalancer
       const std::vector<odb::dbITerm*>& sinksInput);
   bool propagateClock(odb::dbITerm* input);
   bool isSink(odb::dbITerm* iterm);
+  // The insertion delay a sink is balanced with: its clock pin's
+  // max_clock_tree_path, rise and fall averaged, less the sink instance's
+  // "cts_latency_offset" double property (seconds) if it has one. A
+  // positive offset lands the sink's internal clock that much later than
+  // the others; STA never reads the property.
+  float sinkInsertionDelay(odb::dbITerm* iterm);
+  // A macro tree one of whose sinks carries a cts_latency_offset.
+  bool hasLatencyOffsetSink(TreeBuilder* builder) const;
 
   void showGraph();
 

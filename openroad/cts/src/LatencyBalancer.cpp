@@ -186,7 +186,10 @@ int64_t LatencyBalancer::computeWireLumpedDelay(
 
 void LatencyBalancer::findLeafBuilders(TreeBuilder* builder)
 {
-  if (builder->isLeafTree()) {
+  // A leaf tree is balanced as one sink, its sinks' average arrival. A
+  // macro tree with a cts_latency_offset sink is not: the offset is a
+  // sink's own, so the graph descends to each macro.
+  if (builder->isLeafTree() && !hasLatencyOffsetSink(builder)) {
     std::string topBufferName = builder->getTopBufferName();
     inst2builder_[topBufferName] = builder;
   }
@@ -276,27 +279,7 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
             sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
             float arrival
                 = getVertexClkArrival(sinkVertex, clkInputNet, sinkIterm);
-            float insDelay = 0.0;
-            sta::LibertyCell* libCell
-                = network_->libertyCell(network_->dbToSta(sinkInst));
-            odb::dbMTerm* mterm = sinkIterm->getMTerm();
-            if (libCell && mterm) {
-              sta::LibertyPort* libPort
-                  = libCell->findLibertyPort(mterm->getConstName());
-              if (libPort) {
-                const float rise = libPort->clkTreeDelay(
-                    0.0, sta::RiseFall::rise(), sta::MinMax::max());
-                const float fall = libPort->clkTreeDelay(
-                    0.0, sta::RiseFall::fall(), sta::MinMax::max());
-
-                if (rise != 0 || fall != 0) {
-                  insDelay = (rise + fall);
-                  if (rise != 0 && fall != 0) {
-                    insDelay /= 2.0;
-                  }
-                }
-              }
-            }
+            const float insDelay = sinkInsertionDelay(sinkIterm);
             worseDelay_ = std::max(worseDelay_, (arrival + insDelay));
             graph_[sinkId].arrival = arrival + insDelay;
             debugPrint(logger_,
@@ -421,27 +404,7 @@ void LatencyBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
           sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
           float arrival = getVertexClkArrival(sinkVertex, topClokcNet, iterm);
           // add insertion delay
-          float insDelay = 0.0;
-          sta::LibertyCell* libCell
-              = network_->libertyCell(network_->dbToSta(inst));
-          odb::dbMTerm* mterm = iterm->getMTerm();
-          if (libCell && mterm) {
-            sta::LibertyPort* libPort
-                = libCell->findLibertyPort(mterm->getConstName());
-            if (libPort) {
-              const float rise = libPort->clkTreeDelay(
-                  0.0, sta::RiseFall::rise(), sta::MinMax::max());
-              const float fall = libPort->clkTreeDelay(
-                  0.0, sta::RiseFall::fall(), sta::MinMax::max());
-
-              if (rise != 0 || fall != 0) {
-                insDelay = (rise + fall);
-                if (rise != 0 && fall != 0) {
-                  insDelay /= 2.0;
-                }
-              }
-            }
-          }
+          const float insDelay = sinkInsertionDelay(iterm);
           sumArrivals += (arrival + insDelay);
           numSinks++;
         }
@@ -962,6 +925,58 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
   }
 
   return getFirstInput(returnBuffer);
+}
+
+bool LatencyBalancer::hasLatencyOffsetSink(TreeBuilder* builder) const
+{
+  if (builder->getTreeType() != TreeType::MacroTree) {
+    return false;
+  }
+  bool found = false;
+  builder->getClock().forEachSink([&](const ClockInst& sink) {
+    odb::dbITerm* iterm = sink.getDbInputPin();
+    if (iterm
+        && odb::dbDoubleProperty::find(iterm->getInst(),
+                                       "cts_latency_offset")) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+float LatencyBalancer::sinkInsertionDelay(odb::dbITerm* iterm)
+{
+  odb::dbInst* inst = iterm->getInst();
+  float insDelay = 0.0;
+  sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
+  odb::dbMTerm* mterm = iterm->getMTerm();
+  if (libCell && mterm) {
+    sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
+    if (libPort) {
+      const float rise = libPort->clkTreeDelay(
+          0.0, sta::RiseFall::rise(), sta::MinMax::max());
+      const float fall = libPort->clkTreeDelay(
+          0.0, sta::RiseFall::fall(), sta::MinMax::max());
+
+      if (rise != 0 || fall != 0) {
+        insDelay = (rise + fall);
+        if (rise != 0 && fall != 0) {
+          insDelay /= 2.0;
+        }
+      }
+    }
+  }
+  odb::dbDoubleProperty* offset
+      = odb::dbDoubleProperty::find(inst, "cts_latency_offset");
+  if (offset) {
+    insDelay -= offset->getValue();
+    logger_->info(CTS,
+                  610,
+                  "Sink {} is balanced {:.1f} ps later (cts_latency_offset).",
+                  iterm->getName(),
+                  offset->getValue() * 1e12);
+  }
+  return insDelay;
 }
 
 bool LatencyBalancer::propagateClock(odb::dbITerm* input)
