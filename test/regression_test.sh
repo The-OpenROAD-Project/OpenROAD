@@ -10,6 +10,10 @@ METRICS_FILE="${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.metrics"
 
 mkdir -p ${RESULTS_DIR}
 
+# On a --config=gpu build, Kokkos's OpenMP backend prints a warning when
+# OMP_PROC_BIND is unset, which would break the golden-log diff.
+export OMP_PROC_BIND="${OMP_PROC_BIND:-false}"
+
 echo "Directory: ${PWD}"
 echo "Results Directory: ${RESULTS_DIR}"
 

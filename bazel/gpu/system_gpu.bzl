@@ -3,7 +3,7 @@
 
 """Wrap the system CUDA toolkit used by the opt-in GPU build.
 
-Kokkos and KokkosFFT are fetched and built from pinned source archives. The
+Kokkos and KokkosFFT are fetched and built from bazel central registry. The
 CUDA toolkit is the only remaining host-provided build dependency. This rule
 exposes its files through an execroot-relative symlink tree so clang sees only
 declared inputs. An unusable toolkit becomes a stub that fails only when a GPU

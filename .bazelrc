@@ -233,11 +233,12 @@ build:ubsan --per_file_copt=.*external/.*@-fno-sanitize=all
 # Kokkos warns at runtime if that target differs from the selected device.
 build:gpu --//:gpu=cuda
 # Convenience configs for the two architectures the GPU tests are run on;
-# any value in bazel/gpu/archs.bzl works via --config=gpu --//:cuda_arch=sm_XX.
+# any other architecture Kokkos supports works via
+# --config=gpu --@kokkos//:cuda_arch=sm_XX, which also sets OpenROAD's target.
 build:gpu-sm120 --config=gpu
-build:gpu-sm120 --//:cuda_arch=sm_120
+build:gpu-sm120 --@kokkos//:cuda_arch=sm_120
 build:gpu-sm121 --config=gpu
-build:gpu-sm121 --//:cuda_arch=sm_121
+build:gpu-sm121 --@kokkos//:cuda_arch=sm_121
 
 # Flags with enough debug symbols to get useful outputs with Linux `perf`
 build:profile --strip=never
@@ -361,5 +362,13 @@ build:cachelog --execution_log_json_file=bazel-cachelog.json
 build:release --stamp
 # Tell the 'release' config to include 'opt'
 build:release --config=opt
+
+# Kokkos and KokkosFFT come from the registry. Kokkos gets its CUDA backend
+# from the toolkit described in //bazel/gpu/kokkos; KokkosFFT gets
+# OpenROAD's KokkosFFT_config.hpp (FFTW + cuFFT).
+build:gpu --@kokkos_fft//:config=//bazel/gpu/kokkos:kokkos_fft_config
+build:gpu --@kokkos//:device=cuda
+build:gpu --@kokkos//:cuda_constexpr
+build:gpu --@kokkos//:cuda_toolkit=//bazel/gpu/kokkos:kokkos_cuda_toolkit
 
 try-import %workspace%/user.bazelrc

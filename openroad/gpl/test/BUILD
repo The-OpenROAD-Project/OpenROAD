@@ -4,6 +4,7 @@ load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 load("//bazel/gpu:copts.bzl", "CUDA_COPTS")
 load("//bazel/gpu:defs.bzl", "GPU_ENV_OFF", "GPU_ONLY")
+load("//bazel/kokkos:defs.bzl", "kokkos_backend_tests")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -48,6 +49,7 @@ PASSFAIL_TESTS = [
     "options01",
     "place_ios_rd",
     "place_ios_td",
+    "thread_count01",
 ]
 
 # Longer-running regression tests. These are
@@ -72,6 +74,15 @@ GPU_TESTS = [
     "region01_gpu",
     "region01_gpu_asym",
 ]
+
+# ENABLE_GPU=0 on a --config=gpu build with CUDA hidden. Each <name>-gpu-off.tcl
+# must stop with GPL-0336 (a GPU build needs a CUDA device even with
+# ENABLE_GPU=0) rather than a raw Kokkos/CUDA error. Maps each test to the
+# Tcl scripts it sources, which :test_resources excludes.
+GPU_OFF_TESTS = {
+    "gcd": [],
+    "mbff_clock_power_on": ["mbff_clock_power_on.tcl"],
+}
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
 
@@ -103,7 +114,10 @@ filegroup(
         ["**/*"],
         exclude = [
             test + "." + ext
-            for test in ALL_TESTS + LARGE_TESTS + GPU_TESTS
+            for test in ALL_TESTS + LARGE_TESTS + GPU_TESTS + [
+                t + "-gpu-off"
+                for t in GPU_OFF_TESTS
+            ] + ["omp_thread_limit01"]
             for ext in [
                 "tcl",
                 "py",
@@ -126,12 +140,55 @@ filegroup(
     tags = ["manual"],
 ) for test_name in LARGE_TESTS]
 
+[regression_test(
+    name = test_name + "-gpu-off",
+    data = [":test_resources"] + sourced_scripts,
+    env = {
+        "CUDA_VISIBLE_DEVICES": "",
+        "ENABLE_GPU": "0",
+    },
+    expected_exit_code = 1,
+    target_compatible_with = GPU_ONLY,
+) for test_name, sourced_scripts in GPU_OFF_TESTS.items()]
+
+# OpenMP capped below the requested placement thread count: the script asks
+# for two threads, OMP_THREAD_LIMIT allows one. Keeps the GPU_ENV_OFF pin.
+regression_test(
+    name = "omp_thread_limit01",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+    env = GPU_ENV_OFF | {"OMP_THREAD_LIMIT": "1"},
+)
+
 # Convenience suite to run all long-running tests explicitly:
 #   bazel test //openroad/gpl/test:large_tests
 test_suite(
     name = "large_tests",
     tags = ["manual"],
     tests = [":" + test_name + "-tcl_test" for test_name in LARGE_TESTS],
+)
+
+# Re-run Kokkos-heavy regressions with the non-default host backends
+# (--//bazel/kokkos:backend=serial|threads). The default build only covers
+# openmp. Results must be bit-identical across backends, so the same golden
+# files are used. Covers Nesterov placement and its determinism across thread
+# counts (nesterov_place_test, simple01-td, incremental01, thread_count01) and
+# MBFF clustering (mbff_*). The Threads pool size is fixed by the first
+# placement in a process, so nesterov_place_test's thread-count check runs
+# single-threaded there; thread_count01 starts a fresh process with eight.
+kokkos_backend_tests(
+    tags = ["kokkos_backend"],
+    tests = [":nesterov_place_test"] + [
+        ":" + test_name + "-tcl_test"
+        for test_name in [
+            "incremental01",
+            "mbff_clock_power_on",
+            "mbff_hier",
+            "simple01-td",
+            "thread_count01",
+        ]
+    ],
 )
 
 # ENABLE_GPU=1 overrides the GPU_ENV_OFF default that regression_test()

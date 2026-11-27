@@ -5,8 +5,6 @@
 
 #include <limits>
 
-#include "omp.h"
-
 namespace gpl {
 namespace {
 
@@ -65,7 +63,7 @@ ResidualError cpuSparseSolve(int maxSolverIter,
                              utl::Logger* logger,
                              int threads)
 {
-  omp_set_num_threads(threads);
+  Eigen::setNbThreads(threads);
   return {
       .x = solveAxis(maxSolverIter,
                      placeInstForceMatrixX,

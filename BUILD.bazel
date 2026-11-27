@@ -13,7 +13,6 @@ load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "python_wrap_cc"
 load("//bazel:stamped_binary.bzl", "stamped_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
-load("//bazel/gpu:archs.bzl", "CUDA_ARCHS")
 load("//test:regression.bzl", "messages_txt")
 
 package(
@@ -108,25 +107,6 @@ config_setting(
     },
     visibility = ["//visibility:public"],
 )
-
-# CUDA code generation and the Kokkos configuration must use the same target.
-# "none" makes plain --config=gpu fail with an actionable message instead of
-# silently producing kernels for the wrong device.
-string_flag(
-    name = "cuda_arch",
-    build_setting_default = "none",
-    values = ["none"] + CUDA_ARCHS,
-    visibility = ["//visibility:public"],
-)
-
-[
-    config_setting(
-        name = "cuda_arch_" + arch,
-        flag_values = {":cuda_arch": arch},
-        visibility = ["//visibility:public"],
-    )
-    for arch in CUDA_ARCHS
-]
 
 OPENROAD_LIBRARY_DEPS = [
     "//bazel:openroad_version",

@@ -4,17 +4,17 @@
 // HPWL (half-perimeter wirelength) backends and dispatch.
 // makeHpwlBackend() chooses the backend: GpuHpwlBackend (Kokkos) on an
 // ENABLE_GPU build with gpuEnabled(), else the always-compiled CpuHpwlBackend
-// (OpenMP reduction over nets). NesterovBaseCommon::getHpwl() just delegates.
+// (Kokkos reduction over nets). NesterovBaseCommon::getHpwl() just delegates.
 
-#include <cassert>
+#include <Kokkos_Core.hpp>
 #include <cstdint>
 #include <memory>
 #include <vector>
 
 #include "backendContext.h"
 #include "hpwlBackend.h"
+#include "kokkosRuntime.h"
 #include "nesterovBase.h"
-#include "omp.h"  // NOLINT(misc-include-cleaner): omp_get_thread_num used in assert below
 
 #ifdef ENABLE_GPU
 #include "gpu/deviceState.h"
@@ -26,29 +26,36 @@ namespace gpl {
 
 namespace {
 
-// CPU HPWL backend: the OpenMP reduction over nets. The loop body is
-// byte-identical to the pre-GPU NesterovBaseCommon::getHpwl().
+// CPU HPWL backend: the Kokkos reduction over nets. The loop body is
+// equivalent to the pre-GPU NesterovBaseCommon::getHpwl().
 class CpuHpwlBackend : public HpwlBackend
 {
  public:
-  explicit CpuHpwlBackend(int num_threads) : num_threads_(num_threads) {}
+  explicit CpuHpwlBackend(const BackendContext& ctx)
+      : host_space_(ctx.nbc->getKokkosContext().space)
+  {
+  }
 
   int64_t computeHpwl(std::vector<GNet>& nets) override
   {
-    assert(omp_get_thread_num() == 0);
     int64_t hpwl = 0;
-#pragma omp parallel for num_threads(num_threads_) reduction(+ : hpwl)
-    for (auto& gNet : nets) {
-      gNet.updateBox();
-      hpwl += gNet.getHpwl();
-    }
+    const auto& space = host_space_;
+    Kokkos::parallel_reduce(
+        "gpl::hpwl",
+        HostRange(space, 0, nets.size()),
+        [&](std::size_t index, int64_t& sum) {
+          auto& gNet = nets[index];
+          gNet.updateBox();
+          sum += gNet.getHpwl();
+        },
+        Kokkos::Sum<int64_t>(hpwl));
     return hpwl;
   }
 
-  const char* name() const override { return "CPU (OpenMP)"; }
+  const char* name() const override { return "CPU (Kokkos)"; }
 
  private:
-  int num_threads_;
+  const Kokkos::DefaultHostExecutionSpace& host_space_;
 };
 
 }  // namespace
@@ -60,29 +67,27 @@ std::unique_ptr<HpwlBackend> makeHpwlBackend(const BackendContext& ctx)
   // fixed, so use the CPU backends.
   if (gpuEnabled() && !ctx.place_ios_mode) {
     ensureKokkosInitialized();
-    return std::make_unique<GpuHpwlBackend>(ctx.device_state, ctx.num_threads);
+    return std::make_unique<GpuHpwlBackend>(ctx);
   }
 #endif
-  return std::make_unique<CpuHpwlBackend>(ctx.num_threads);
+  return std::make_unique<CpuHpwlBackend>(ctx);
 }
 
 #ifdef ENABLE_GPU
-// Host-side mirror of the device-computed per-net bboxes; declared in
-// gpu/gpuHpwlBackend.h. Lives here rather than in gpuHpwlBackend.cpp because
-// that TU is compiled as CUDA and does not get the OpenMP flags this loop
-// needs.
+// Host-side mirror of the device-computed per-net boxes, declared in
+// gpu/gpuHpwlBackend.h. This uses the same host execution policy as HPWL.
 void applyNetBoxesParallel(std::vector<GNet>& gNetStor,
                            const int* lx,
                            const int* ly,
                            const int* ux,
                            const int* uy,
-                           const int num_threads)
+                           const KokkosContext& kokkos_ctx)
 {
   const int n_nets = static_cast<int>(gNetStor.size());
-#pragma omp parallel for num_threads(num_threads)
-  for (int i = 0; i < n_nets; ++i) {
-    gNetStor[i].setBox(lx[i], ly[i], ux[i], uy[i]);
-  }
+  Kokkos::parallel_for(
+      "gpl::applyNetBoxes", HostRange(kokkos_ctx.space, 0, n_nets), [&](int i) {
+        gNetStor[i].setBox(lx[i], ly[i], ux[i], uy[i]);
+      });
 }
 #endif
 

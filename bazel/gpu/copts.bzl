@@ -14,7 +14,7 @@ have.
 """
 
 load("@cuda_local//:defs.bzl", "CUDA_PATH")
-load("//bazel/gpu:archs.bzl", "CUDA_ARCHS", "CUDA_ARCH_FLAG_ERROR")
+load("@kokkos//:cuda_toolkit.bzl", "CUDA_ARCH_DEFINES")
 
 CUDA_TOOLKIT_COPTS = [
     # Overrides the global "-xc++" from .bazelrc: rule copts come after
@@ -32,14 +32,26 @@ CUDA_TOOLKIT_COPTS = [
     # The hermetic LLVM toolchain uses libc++; CUDA's host header requires
     # this opt-out on x86_64.
     "-D_ALLOW_UNSUPPORTED_LIBCPP",
+    # Boost.Core disables empty-base optimization for Clang CUDA. Restore
+    # it so embedded Boost containers have the same layout as in C++ TUs.
+    "-DBOOST_DETAIL_EMPTY_VALUE_BASE",
 ]
 
+_CUDA_ARCH_FLAG_ERROR = (
+    "--config=gpu requires an explicit CUDA architecture: pass " +
+    "--@kokkos//:cuda_arch=sm_<compute capability>. See " +
+    "docs/user/Bazel.md, section \"GPU build\"."
+)
+
+# --@kokkos//:cuda_arch is the single architecture setting: it configures
+# Kokkos and selects the device target of OpenROAD's own CUDA sources, so the
+# two cannot diverge.
 CUDA_ARCH_COPTS = select(
     {
-        Label("//:cuda_arch_" + arch): ["--cuda-gpu-arch=" + arch]
-        for arch in CUDA_ARCHS
+        Label("@kokkos//:cuda_" + arch): ["--cuda-gpu-arch=" + arch]
+        for arch in CUDA_ARCH_DEFINES
     },
-    no_match_error = CUDA_ARCH_FLAG_ERROR,
+    no_match_error = _CUDA_ARCH_FLAG_ERROR,
 )
 
 CUDA_COPTS = CUDA_TOOLKIT_COPTS + CUDA_ARCH_COPTS + [
@@ -58,9 +70,10 @@ CUDA_COPTS = CUDA_TOOLKIT_COPTS + CUDA_ARCH_COPTS + [
     # additional_compiler_inputs, which is what makes the expansion legal.
     "-include",
     "$(location //bazel/gpu:cuda_placement_new.h)",
+] + select({
     # Required by Kokkos's OpenMP backend headers in every TU that includes
-    # Kokkos (see BUILD.kokkos.bazel); gpl's sources also use OpenMP pragmas
-    # on the host side. Same flag (and @openmp dependency) as
-    # //openroad/gpl:gpl_impl.
-    "-fopenmp",
-]
+    # Kokkos (the registry module adds it to its own copts). Only with the
+    # OpenMP host backend (--@kokkos//:backend), matching //openroad/gpl:gpl_impl.
+    "@kokkos//:openmp": ["-fopenmp"],
+    "//conditions:default": [],
+})
