@@ -1183,8 +1183,16 @@ bool PlacementDRC::hasPaddingConflict(const Node* cell,
 
 bool PlacementDRC::checkPadding(const Node* cell) const
 {
-  // Use the same approach as grid pixel painting, using gridCovering.
-  return checkPadding(cell, grid_->gridCovering(cell));
+  // Use the same pixels as grid painting: a rectilinear block covers its
+  // OVERLAP rects, not its bbox.
+  bool ok = true;
+  grid_->visitCellPixels(*cell, true, [&](Pixel* pixel, bool /* padded */) {
+    if (hasPaddingConflict(cell, pixel->cell)
+        || hasPaddingConflict(cell, pixel->padding_reserved_by)) {
+      ok = false;
+    }
+  });
+  return ok;
 }
 
 // CLASSes are grouped as follows
