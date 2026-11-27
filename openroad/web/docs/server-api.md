@@ -1141,6 +1141,7 @@ Server-side directory listing (used by the file-open dialog).
 {
   "path":   "/canonical/absolute",
   "parent": "/canonical",
+  "host":   "farm-42",
   "entries": [
     {"name": "subdir",    "is_dir": true},
     {"name": "report.rpt","is_dir": false, "size": 12345},
@@ -1151,6 +1152,9 @@ Server-side directory listing (used by the file-open dialog).
 
 Hidden entries (`.`-prefixed) and unreadable entries are skipped.
 Directories are listed before files; both groups sort alphabetically.
+`host` is the server's host name, left out when it cannot be read. The file
+dialogs show it in their title, since a browser reached through an ssh tunnel
+may run on another machine.
 
 ---
 

@@ -31,6 +31,7 @@
 
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
+#include "boost/asio/ip/host_name.hpp"
 #include "boost/beast/core/string.hpp"
 #include "boost/beast/http/field.hpp"
 #include "boost/beast/http/message.hpp"
@@ -7211,6 +7212,12 @@ WebSocketResponse handleListDir(const WebSocketRequest& req)
     boost::json::object root;
     root["path"] = dir_path.string();
     root["parent"] = dir_path.parent_path().string();
+    // The browser may run on another machine, behind an ssh tunnel.
+    boost::system::error_code host_ec;
+    const std::string host = boost::asio::ip::host_name(host_ec);
+    if (!host_ec && !host.empty()) {
+      root["host"] = host;
+    }
     boost::json::array arr;
     arr.reserve(entries.size());
     for (const auto& entry : entries) {

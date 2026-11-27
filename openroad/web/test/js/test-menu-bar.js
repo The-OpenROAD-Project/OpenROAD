@@ -14,10 +14,10 @@ const kDir = '/work/proj[0]';
 const kFile = 'chip $x;y.odb';
 const kQuotedPath = String.raw`"/work/proj\[0\]/chip \$x;y.odb"`;
 
-// Opens File > `label` on directory `dir`, picks `file` from its listing,
-// presses OK, and returns the tcl_eval command.  Open DB is enabled only
-// without a design, Save DB only with one.
-async function fileDialogCommand(label, dir, file) {
+// Opens File > `label` with `listing` as the list_dir reply and returns the
+// requests the dialog sends.  Open DB is enabled only without a design, Save
+// DB only with one.
+async function openFileDialog(label, listing) {
     document.body.innerHTML = '<div id="menu-bar"></div>';
     const requests = [];
     const app = {
@@ -26,10 +26,7 @@ async function fileDialogCommand(label, dir, file) {
             request(msg) {
                 requests.push(msg);
                 if (msg.type === 'list_dir') {
-                    return Promise.resolve({
-                        path: dir,
-                        entries: [{ name: file, is_dir: false, size: 10 }],
-                    });
+                    return Promise.resolve(listing);
                 }
                 // An error keeps the dialog open and skips the page reload.
                 return Promise.resolve({ result: 'cannot read db', is_error: true });
@@ -40,6 +37,16 @@ async function fileDialogCommand(label, dir, file) {
     createMenuBar(app);
     rowByLabel(openMenu('File'), label).click();
     await waitForMicrotasks();
+    return requests;
+}
+
+// Picks `file` in `dir` from File > `label`, presses OK, and returns the
+// tcl_eval command.
+async function fileDialogCommand(label, dir, file) {
+    const requests = await openFileDialog(label, {
+        path: dir,
+        entries: [{ name: file, is_dir: false, size: 10 }],
+    });
     document.querySelector('.fb-entry').click();
     document.querySelector('.modal-buttons .ok').click();
     await waitForMicrotasks();
@@ -68,6 +75,18 @@ describe('MenuBar', () => {
         const ok = document.querySelector('.modal-buttons .ok');
         assert.equal(ok.disabled, false);
         assert.equal(ok.textContent, 'Open');
+    });
+
+    it('names the server in the file dialog title', async () => {
+        await openFileDialog('Save DB', { path: '/work', entries: [], host: 'farm-42' });
+        assert.equal(document.querySelector('.file-browser-dialog h3').textContent,
+                     'Save DB (on farm-42)');
+    });
+
+    it('keeps the file dialog title when the server sends no host', async () => {
+        await openFileDialog('Open DB', { path: '/work', entries: [] });
+        assert.equal(document.querySelector('.file-browser-dialog h3').textContent,
+                     'Open DB');
     });
 
     it('renders Tcl-registered custom items with a hierarchical path', () => {

@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 import { showFindDialog, showGotoDialog } from './search-nav.js';
-import { runTclScript, tclQuote } from './ui-utils.js';
+import { runTclScript, tclQuote, titleOnHost } from './ui-utils.js';
 
 // The menu bar in #menu-bar: static menus merged with the custom items
 // registered from Tcl (`create_menu_item`, delivered in app.customMenu).
@@ -418,6 +418,7 @@ function showPathDialog(app, title, tclCmd) {
 
     document.body.appendChild(overlay);
 
+    const heading = overlay.querySelector('h3');
     const breadcrumb = overlay.querySelector('.fb-breadcrumb');
     const fileList = overlay.querySelector('.fb-file-list');
     const pathInput = overlay.querySelector('.fb-path-input');
@@ -532,6 +533,7 @@ function showPathDialog(app, title, tclCmd) {
                 path: dirPath || '',
             });
             currentPath = resp.path;
+            heading.textContent = titleOnHost(title, resp.host);
             renderBreadcrumb(resp.path);
             renderEntries(resp.entries);
             // For save mode, keep the filename if user typed one
