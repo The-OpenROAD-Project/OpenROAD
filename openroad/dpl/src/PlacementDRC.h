@@ -7,12 +7,14 @@
 
 #include "dpl/Opendp.h"
 #include "infrastructure/Coordinates.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {
 class dbBlock;
 class dbTech;
 class dbOrientType;
+class dbTechLayer;
 }  // namespace odb
 
 namespace dpl {
@@ -32,6 +34,16 @@ struct EdgeSpacingEntry
   int spc;
   bool is_exact;
   bool except_abutted;
+};
+
+// Region around one fixed supply via shape where a cell shape on the same
+// layer is rejected, taking the worst case over every master shape size: a
+// Euclidean |spacing| from |via| plus rectangular end-of-line zones.
+struct FixedSupplyViaKeepout
+{
+  odb::Rect via;
+  int spacing{0};
+  std::vector<odb::Rect> eol_zones;
 };
 
 class PlacementDRC
@@ -62,6 +74,11 @@ class PlacementDRC
                             GridX x,
                             GridY y,
                             const odb::dbOrientType& orient) const;
+  // Keepouts of the fixed supply via shapes on |layer| that reach |region|,
+  // for debug drawing.
+  std::vector<FixedSupplyViaKeepout> fixedSupplyViaKeepouts(
+      odb::dbTechLayer* layer,
+      const odb::Rect& region) const;
   // Check shared padding spacing conflicts
   bool checkPadding(const Node* cell) const;
   bool checkPadding(const Node* cell, GridX x, GridY y) const;
