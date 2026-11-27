@@ -96,10 +96,9 @@ class ClockGating::Impl
   // skips multi-bit registers.
   std::vector<sta::Instance*> collectRegisters(sta::dbNetwork* network);
   // Adds instance to an accepted gate whose condition also gates it, and
-  // returns whether one was found.  Appends the nets upstream of
-  // gate_cond_cover to it (see upstreamNets).
+  // returns whether one was found.
   bool reuseAcceptedGate(sta::Instance* instance,
-                         std::vector<sta::Net*>& gate_cond_cover,
+                         const std::vector<sta::Net*>& gate_cond_cover,
                          abc::Abc_Ntk_t& abc_network,
                          AcceptedGates& accepted);
   // Returns a minimal gating condition for instance drawn from
