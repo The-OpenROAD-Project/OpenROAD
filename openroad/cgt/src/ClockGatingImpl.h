@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "NetworkBuilder.h"
@@ -35,6 +36,43 @@ class AbcLibraryFactory;
 
 namespace cgt {
 
+// Clock gates accepted so far, each with the nets of its gating condition and
+// the instances it gates, indexed by the nets in the conditions.
+class AcceptedGates
+{
+ public:
+  struct Gate
+  {
+    std::vector<sta::Net*> conds;
+    std::vector<sta::Instance*> insts;
+    bool clk_enable;
+  };
+
+  const std::vector<Gate>& gates() const { return gates_; }
+  Gate& gate(int idx) { return gates_[idx]; }
+  // Returns the indices of the gates whose conditions use any of nets, in
+  // ascending order.
+  std::vector<int> gatesUsing(const std::vector<sta::Net*>& nets) const;
+  // Returns the index of the first gate of the same polarity whose
+  // conditions are a subset of conds, if any.
+  std::optional<int> findSubset(const std::vector<sta::Net*>& conds,
+                                bool clk_enable) const;
+  // Replaces gate idx's conditions with conds and adds instance to it.
+  void extend(int idx,
+              const std::vector<sta::Net*>& conds,
+              sta::Instance* instance);
+  void add(const std::vector<sta::Net*>& conds,
+           sta::Instance* instance,
+           bool clk_enable);
+
+ private:
+  // Records that gate idx uses net, keeping each net's list sorted.
+  void index(sta::Net* net, int idx);
+
+  std::vector<Gate> gates_;
+  std::unordered_map<sta::Net*, std::vector<int>> net_to_gates_;
+};
+
 class ClockGating::Impl
 {
  public:
@@ -54,6 +92,44 @@ class ClockGating::Impl
   // in two. If the first half can form a gating condition, the second half is
   // dropped from the list. Otherwise, the second half is recursed into.
   // Finally, the first half is recursed into.
+  // Returns the single-bit registers of the top instance.  Warns about and
+  // skips multi-bit registers.
+  std::vector<sta::Instance*> collectRegisters(sta::dbNetwork* network);
+  // Adds instance to an accepted gate whose condition also gates it, and
+  // returns whether one was found.  Appends the nets upstream of
+  // gate_cond_cover to it (see upstreamNets).
+  bool reuseAcceptedGate(sta::Instance* instance,
+                         std::vector<sta::Net*>& gate_cond_cover,
+                         abc::Abc_Ntk_t& abc_network,
+                         AcceptedGates& accepted);
+  // Returns a minimal gating condition for instance drawn from
+  // gate_cond_cover, and sets clk_enable to its polarity.  Returns an empty
+  // vector when the cover cannot gate instance.
+  std::vector<sta::Net*> findGateCondition(
+      sta::Instance* instance,
+      std::vector<sta::Net*> gate_cond_cover,
+      abc::Abc_Ntk_t& abc_network,
+      bool& clk_enable);
+  // Adds instance to an accepted gate whose condition is a subset of
+  // gate_cond, widening that gate's condition to gate_cond.  Returns whether
+  // one was found.
+  bool extendAcceptedGate(sta::Instance* instance,
+                          const std::vector<sta::Net*>& gate_cond,
+                          bool clk_enable,
+                          AcceptedGates& accepted);
+  // Prints the run's counters and times in the "clock_gating" debug group.
+  void reportStats() const;
+  // Prints a message in the "clock_gating" debug group at level.  Unlike
+  // debugPrint, the arguments are evaluated even when the level is off, so
+  // use debugPrint when an argument is expensive to build.
+  template <typename... Args>
+  void debug(const int level, const char* message, const Args&... args) const
+  {
+    if (logger_->debugCheck(utl::CGT, "clock_gating", level)) {
+      logger_->debug(utl::CGT, "clock_gating", message, args...);
+    }
+  }
+
   void searchClockGates(sta::Instance* instance,
                         std::vector<sta::Net*>& good_gate_conds,
                         std::vector<sta::Net*>::iterator begin,
