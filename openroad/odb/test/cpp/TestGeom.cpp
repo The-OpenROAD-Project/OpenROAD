@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <limits>
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
@@ -33,6 +35,15 @@ TEST(geom, test_oct)
   EXPECT_EQ(oct.getDir(), Oct::OCT_DIR::RIGHT);
   oct.init(Point(0, 0), Point(400, -400), 40);
   EXPECT_EQ(oct.getDir(), Oct::OCT_DIR::LEFT);
+}
+TEST(geom, test_point_manhattan_distance)
+{
+  EXPECT_EQ(Point::manhattanDistance(Point(1, 2), Point(4, -2)), 7);
+  // The coordinate differences exceed the int range.
+  constexpr int kMax = std::numeric_limits<int>::max();
+  constexpr int kMin = std::numeric_limits<int>::min();
+  EXPECT_EQ(Point::manhattanDistance(Point(kMin, kMin), Point(kMax, kMax)),
+            2 * (int64_t{kMax} - kMin));
 }
 TEST(geom, test_sbox_shapes)
 {
