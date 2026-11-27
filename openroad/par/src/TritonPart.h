@@ -141,7 +141,8 @@ class TritonPart
                        float path_snaking_factor,
                        float timing_exp_factor,
                        float extra_delay,
-                       bool guardband_flag);
+                       bool guardband_flag,
+                       bool extra_delay_specified);
 
   // The cost introduced by a cut hyperedge e is e_wt_factors
   // dot_product hyperedge_weights_[e]. This parameter is used by
@@ -346,7 +347,8 @@ class TritonPart
       = 1.0;  // the cost of introducing a snaking timing path, see our paper
               // for detailed explanation of snaking timing paths
   float timing_exp_factor_ = 2.0;  // exponential factor
-  float extra_delay_ = 1;          // extra delay introduced by cut
+  bool extra_delay_specified_ = false;
+  float extra_delay_ = 1;  // extra delay introduced by cut
 
   // initial partitioning related parameters
   int num_initial_solutions_

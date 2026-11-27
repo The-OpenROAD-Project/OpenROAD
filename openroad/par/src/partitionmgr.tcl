@@ -748,7 +748,8 @@ proc triton_part_design { args } {
     $max_num_vcycle \
     $num_coarsen_solutions \
     $num_vertices_threshold_ilp \
-    $global_net_threshold
+    $global_net_threshold \
+    [info exists keys(-extra_delay)]
 }
 
 
@@ -956,7 +957,8 @@ proc evaluate_part_design_solution { args } {
     $extra_delay \
     $guardband_flag \
     $e_wt_factors \
-    $v_wt_factors
+    $v_wt_factors \
+    [info exists keys(-extra_delay)]
 }
 
 
