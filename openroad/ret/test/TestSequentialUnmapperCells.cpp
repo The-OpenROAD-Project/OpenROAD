@@ -36,7 +36,9 @@ TEST_F(SequentialUnmapperCellTest, FixtureLoads)
 }
 
 // The base cell must be the plain posedge flop, not the smaller
-// inverting-storage DFF_P_ND and not the smaller negedge DFF_N.
+// inverting-storage DFF_P_ND, not the smaller DFF_P_2CK with its second
+// clock pin, not the smaller DFF_P_SL with an input a new register would
+// leave open, and not the smaller negedge DFF_N.
 TEST_F(SequentialUnmapperCellTest, PicksPlainPosedgeBase)
 {
   ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic, kNegedge}));
@@ -48,6 +50,26 @@ TEST_F(SequentialUnmapperCellTest, PicksPlainPosedgeBase)
   ASSERT_NE(unmapper.getNegedgeSequentialMaster(), nullptr);
   EXPECT_EQ(unmapper.getNegedgeSequentialMaster()->getName(),
             std::string("DFF_N"));
+}
+
+// A flop with a second pin marked as a clock is left alone: the unmapper
+// tells the clock pin of a cell from its other pins by the mark.
+TEST_F(SequentialUnmapperCellTest, SkipsSecondClockPin)
+{
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic}));
+  makeInputPorts({"d1", "g1", "clk"});
+  tst::InstOptions op;
+  op.iterms = {{"d1", "D"}, {"g1", "CK2"}, {"clk", "CK"}, {"q1", "Q"}};
+  makeInst(block_, getDb()->findMaster("DFF_P_2CK"), "ff1", op);
+  makeOutputPort("q1");
+
+  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
+  ASSERT_TRUE(unmapper.prepare());
+  unmapper.run();
+  expectSane();
+  EXPECT_EQ(countMaster("DFF_P_2CK"), 1);
+  EXPECT_EQ(countMaster("DFF_P"), 0);
+  EXPECT_NE(block_->findInst("ff1"), nullptr);
 }
 
 // DFF_P is already the base cell: rebuilt as-is, loads and port follow.

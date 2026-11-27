@@ -10,6 +10,7 @@ TESTS = [
     "retime_basic",
     "retime_bus_input",
     "retime_clock_errors",
+    "retime_clock_marked",
     "retime_constant_data",
     "retime_disable_timing",
     "retime_dont_touch",

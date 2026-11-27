@@ -53,7 +53,8 @@ Registers move by class, read from the liberty `next_state` function:
 These registers never move:
 
 - latches, scan cells, multi-bit and negative-edge registers, and registers
-  clocked by more than one pin;
+  clocked by more than one pin or with a second pin marked as a clock (LEF
+  `USE CLOCK`, liberty `clock : true`);
 - registers with a live asynchronous set or reset, with an input left
   unconnected or on a net with a second driver (a tri-state bus), or with a
   data input that is a constant (a tie cell, case analysis);
@@ -94,9 +95,10 @@ These gates are never crossed:
 
 A register whose set or reset is tied inactive moves as the base flip-flop,
 and the tie cells only it read are removed unless one of the reasons above
-holds them in place. New cells never use a `dont_use` cell, so an enable or
-inverting register of such a cell is unmapped when it moves; tie cells
-ignore `set_dont_use`, as `repair_tie_fanout` does. The design must have one
+holds them in place. New cells never use a `dont_use` cell or a cell that
+would be left with an open input, so an enable or inverting register of
+such a cell is unmapped when it moves; tie cells ignore `set_dont_use`, as
+`repair_tie_fanout` does. The design must have one
 clock defined with `create_clock`; gated copies of it are fine.
 
 ```tcl

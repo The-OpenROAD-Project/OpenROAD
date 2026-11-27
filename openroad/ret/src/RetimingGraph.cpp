@@ -711,7 +711,7 @@ void RetimingGraph::fenceDontTouch()
     for (const EdgePhys& phys : phys_[u]) {
       odb::dbNet* net = chainNet(phys);
       for (odb::dbInst* flop : phys.flops) {
-        odb::dbNet* clock = registerClockNet(flop);
+        odb::dbNet* clock = regClass(flop).clock;
         if (isDontTouch(flop)
             || net_clock.emplace(net, clock).first->second != clock) {
           fixed_nets.insert(net);
@@ -730,7 +730,7 @@ void RetimingGraph::fenceDontTouch()
       }
       const EdgePhys& phys = phys_[u][k];
       for (odb::dbInst* flop : phys.flops) {
-        fanin_clocks[target].insert(registerClockNet(flop));
+        fanin_clocks[target].insert(regClass(flop).clock);
       }
       if (!phys.flops.empty() && fixed_nets.contains(chainNet(phys))) {
         pinned_[target] = true;

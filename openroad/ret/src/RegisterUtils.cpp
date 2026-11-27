@@ -101,13 +101,23 @@ bool isNegedge(const sta::Sequential* seq)
          && seq->clock()->op() == sta::FuncExpr::Op::not_;
 }
 
-bool hasSimpleClock(const sta::Sequential* seq)
+odb::dbMTerm* clockMTerm(const sta::Sequential* seq, odb::dbMaster* master)
 {
   const sta::FuncExpr* clock = seq->clock();
   if (clock != nullptr && clock->op() == sta::FuncExpr::Op::not_) {
     clock = clock->left();
   }
-  return clock != nullptr && clock->op() == sta::FuncExpr::Op::port;
+  if (clock == nullptr || clock->op() != sta::FuncExpr::Op::port) {
+    return nullptr;
+  }
+  odb::dbMTerm* pin = master->findMTerm(clock->port()->name().c_str());
+  const auto marked = [](odb::dbMTerm* mterm) {
+    return mterm->getSigType() == odb::dbSigType::CLOCK;
+  };
+  const bool only_mark
+      = pin != nullptr && marked(pin)
+        && std::ranges::count_if(master->getMTerms(), marked) == 1;
+  return only_mark ? pin : nullptr;
 }
 
 std::optional<bool> outputInverted(const sta::FuncExpr* func,
@@ -813,10 +823,31 @@ bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst)
     return true;
   }
   const sta::Sequential* seq = singleSequential(sta, inst);
-  if (seq == nullptr || !seq->isRegister() || !hasSimpleClock(seq)) {
+  if (seq == nullptr || !seq->isRegister()
+      || clockMTerm(seq, inst->getMaster()) == nullptr) {
     return true;
   }
   return hasLiveAsyncControl(sta, inst, seq);
+}
+
+bool hasUnreadInput(const sta::LibertyCell* cell, const sta::Sequential* seq)
+{
+  std::vector<const sta::LibertyPort*> read;
+  if (seq != nullptr) {
+    for (const sta::FuncExpr* expr :
+         {seq->data(), seq->clock(), seq->clear(), seq->preset()}) {
+      collectPorts(expr, read);
+    }
+  }
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const sta::LibertyPort* port = port_iter.next();
+    if (port->direction()->isInput()
+        && std::ranges::find(read, port) == read.end()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool inactiveAsyncControls(const sta::LibertyCell* cell,
@@ -826,19 +857,9 @@ bool inactiveAsyncControls(const sta::LibertyCell* cell,
   std::vector<const sta::LibertyPort*> controls;
   collectPorts(seq->clear(), controls);
   collectPorts(seq->preset(), controls);
-  if (controls.empty() || controls.size() > kMaxTruthTableInputs) {
+  if (controls.empty() || controls.size() > kMaxTruthTableInputs
+      || hasUnreadInput(cell, seq)) {
     return false;
-  }
-  std::vector<const sta::LibertyPort*> known = controls;
-  collectPorts(seq->data(), known);
-  collectPorts(seq->clock(), known);
-  sta::LibertyCellPortIterator port_iter(cell);
-  while (port_iter.hasNext()) {
-    const sta::LibertyPort* port = port_iter.next();
-    if (port->direction()->isInput()
-        && std::ranges::find(known, port) == known.end()) {
-      return false;
-    }
   }
 
   const uint32_t rows = 1u << controls.size();
@@ -960,19 +981,17 @@ bool isNegedgeRegister(sta::dbSta* sta, odb::dbInst* inst)
   return seq != nullptr && seq->isRegister() && isNegedge(seq);
 }
 
-odb::dbITerm* registerClockPin(odb::dbInst* inst)
+odb::dbITerm* registerClockPin(sta::dbSta* sta, odb::dbInst* inst)
 {
-  for (odb::dbITerm* iterm : inst->getITerms()) {
-    if (iterm->getSigType() == odb::dbSigType::CLOCK) {
-      return iterm;
-    }
-  }
-  return nullptr;
+  const sta::Sequential* seq = singleSequential(sta, inst);
+  odb::dbMTerm* clock
+      = seq != nullptr ? clockMTerm(seq, inst->getMaster()) : nullptr;
+  return clock != nullptr ? inst->getITerm(clock) : nullptr;
 }
 
-odb::dbNet* registerClockNet(odb::dbInst* inst)
+odb::dbNet* registerClockNet(sta::dbSta* sta, odb::dbInst* inst)
 {
-  odb::dbITerm* clock = registerClockPin(inst);
+  odb::dbITerm* clock = registerClockPin(sta, inst);
   return clock != nullptr ? clock->getNet() : nullptr;
 }
 
@@ -1022,7 +1041,7 @@ RegisterClass registerClass(sta::dbSta* sta,
                             rsz::Resizer* resizer)
 {
   RegisterClass cls;
-  cls.clock = registerClockNet(inst);
+  cls.clock = registerClockNet(sta, inst);
   cls.scan = isScanCell(sta, inst) || inst->getScanInst() != nullptr;
   const sta::Sequential* seq = singleSequential(sta, inst);
   if (seq == nullptr || !seq->isRegister()) {
@@ -1042,11 +1061,13 @@ RegisterClass registerClass(sta::dbSta* sta,
     return cls;
   }
   cls.output = out_pin != nullptr ? out_pin->getMTerm() : nullptr;
-  // A cell with asynchronous controls or one that is not usable is never the
-  // cell of a new register, so it does not keep its class.
-  const bool keeps_cell
-      = seq->clear() == nullptr && seq->preset() == nullptr
-        && isUsableCell(sta->getDbNetwork()->libertyCell(inst), resizer);
+  // A cell with asynchronous controls, one that is not usable or one with an
+  // input its sequential does not read is never the cell of a new register,
+  // so it does not keep its class.
+  const sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
+  const bool keeps_cell = seq->clear() == nullptr && seq->preset() == nullptr
+                          && isUsableCell(cell, resizer)
+                          && !hasUnreadInput(cell, seq);
   if (shape.kind == RegisterKind::kPlain) {
     const bool loads_see_complement = shape.data_inverted != out_inverted;
     if (!loads_see_complement) {

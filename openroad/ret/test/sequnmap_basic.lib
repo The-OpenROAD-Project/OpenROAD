@@ -10,6 +10,10 @@
 /*   DFF_P     base register */
 /*   DFF_P_QN  output side inverter */
 /*   DFF_P_ND  stores !D, input side inverter, area TRAP below DFF_P */
+/*   DFF_P_2CK a second pin marked as a clock, area TRAP below DFF_P: never the base, */
+/*             never unmapped */
+/*   DFF_P_SL  an input the sequential does not read, area TRAP below DFF_P: a new cell */
+/*             of it would leave that input open */
 /*   DFFE_PP   state feedback */
 /*   DFF_PN0   async clear */
 /* No timing tables on purpose: decompose reads FUNCTIONS, not delays. */
@@ -150,6 +154,57 @@ library (sequnmap_basic) {
     pin (QN) {
       direction : output;
       function : "IQN";
+    }
+  }
+
+  cell (DFF_P_2CK) {
+    area : 3.0;
+    ff (IQ, IQN) {
+      clocked_on : "CK";
+      next_state : "D";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (CK2) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+    }
+  }
+
+  cell (DFF_P_SL) {
+    area : 2.5;
+    ff (IQ, IQN) {
+      clocked_on : "CK";
+      next_state : "D";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (SL) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
     }
   }
 

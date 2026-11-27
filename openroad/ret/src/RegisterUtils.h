@@ -38,8 +38,11 @@ bool isUsableCell(const sta::LibertyCell* cell, rsz::Resizer* resizer);
 const sta::LibertyPort* libertyPort(sta::dbSta* sta, odb::dbITerm* pin);
 
 bool isNegedge(const sta::Sequential* seq);
-// Clocked by one pin or its inverse, not by an expression such as CK & EN.
-bool hasSimpleClock(const sta::Sequential* seq);
+// The pin the cell is clocked on.  nullptr when liberty clocks it on an
+// expression such as CK & EN, or when that pin is not the cell's one pin
+// marked as a clock (LEF USE CLOCK, or liberty clock : true): what rebuilds
+// a register tells its clock pin from the others by the mark.
+odb::dbMTerm* clockMTerm(const sta::Sequential* seq, odb::dbMaster* master);
 
 // Whether the output whose function is `func` reads the state inverted;
 // nullopt when it does not read the state.
@@ -135,7 +138,7 @@ std::vector<odb::dbInst*> portDelayReferenceCells(sta::dbSta* sta);
 bool isScanCell(sta::dbSta* sta, odb::dbInst* inst);
 
 // A scan cell, a cell with an input left open, one that is not a register
-// clocked by one pin, or one with a live asynchronous control.
+// with one clock pin (clockMTerm), or one with a live asynchronous control.
 bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst);
 
 // An asynchronous set or reset that is not tied to its inactive value.
@@ -152,6 +155,10 @@ struct PinConstant
   bool high;
 };
 using PinConstants = std::vector<PinConstant>;
+// The cell has an input that its sequential does not read as data, clock or
+// asynchronous control; without a sequential, any input.  A new cell of it
+// would be left with that input open.
+bool hasUnreadInput(const sta::LibertyCell* cell, const sta::Sequential* seq);
 bool inactiveAsyncControls(const sta::LibertyCell* cell,
                            const sta::Sequential* seq,
                            PinConstants& constants);
@@ -165,8 +172,9 @@ void discardRegister(sta::dbSta* sta, odb::dbInst* inst, Discards& discards);
 bool isRegisterDataPin(sta::dbSta* sta, odb::dbITerm* pin);
 odb::dbITerm* registerDataPin(sta::dbSta* sta, odb::dbInst* inst);
 bool isNegedgeRegister(sta::dbSta* sta, odb::dbInst* inst);
-odb::dbITerm* registerClockPin(odb::dbInst* inst);
-odb::dbNet* registerClockNet(odb::dbInst* inst);
+// By clockMTerm().
+odb::dbITerm* registerClockPin(sta::dbSta* sta, odb::dbInst* inst);
+odb::dbNet* registerClockNet(sta::dbSta* sta, odb::dbInst* inst);
 
 // Registers move together across a gate only when they are one class.
 //   plain      next_state is one input pin; rebuilt as the base cell.

@@ -175,16 +175,17 @@ SequentialUnmapper::BaseRegister SequentialUnmapper::baseRegister(
     return {};
   }
   const sta::Sequential* seq = singleSequential(cell);
-  if (seq == nullptr || !seq->isRegister() || !hasSimpleClock(seq)
-      || isNegedge(seq) != negedge || seq->output() == nullptr
-      || seq->outputInv() == nullptr) {
+  if (seq == nullptr || !seq->isRegister() || isNegedge(seq) != negedge
+      || seq->output() == nullptr || seq->outputInv() == nullptr
+      || hasUnreadInput(cell, seq)) {
     return {};
   }
   const sta::FuncExpr* data = seq->data();
   const sta::LibertyPort* q_port = statePort(cell, seq);
   odb::dbMaster* master = db_->findMaster(cell->name().c_str());
   if (data == nullptr || data->op() != sta::FuncExpr::Op::port
-      || q_port == nullptr || master == nullptr || hasScanPin(master)) {
+      || q_port == nullptr || master == nullptr || hasScanPin(master)
+      || clockMTerm(seq, master) == nullptr) {
     return {};
   }
   odb::dbMTerm* data_pin = master->findMTerm(data->port()->name().c_str());
@@ -312,25 +313,26 @@ SequentialUnmapper::TieCell SequentialUnmapper::findTieCell(
       = one ? sta::FuncExpr::Op::one : sta::FuncExpr::Op::zero;
   TieCell best;
   for (sta::LibertyCell* cell : libertyCells(sta_)) {
-    if (!usableCell(cell, /*tie=*/true) || cell->isSequential()) {
+    if (!usableCell(cell, /*tie=*/true) || cell->isSequential()
+        || hasUnreadInput(cell, nullptr)) {
       continue;
     }
     sta::LibertyCellPortIterator port_iter(cell);
     while (port_iter.hasNext()) {
       sta::LibertyPort* port = port_iter.next();
       const sta::FuncExpr* func = port->function();
-      if (!port->direction()->isOutput() || func == nullptr
-          || func->op() != op) {
+      // An output that always drives the constant: not a tri-state one.
+      if (!port->direction()->isOutput() || func == nullptr || func->op() != op
+          || port->tristateEnable() != nullptr) {
         continue;
       }
       odb::dbMaster* candidate = db_->findMaster(cell->name().c_str());
-      if (candidate != nullptr
+      odb::dbMTerm* output = candidate != nullptr
+                                 ? candidate->findMTerm(port->name().c_str())
+                                 : nullptr;
+      if (output != nullptr
           && (best.master == nullptr || cell->area() < best.area)) {
-        best = {
-            .master = candidate,
-            .output = candidate->findMTerm(port->name().c_str()),
-            .area = cell->area(),
-        };
+        best = {.master = candidate, .output = output, .area = cell->area()};
       }
     }
   }
@@ -374,7 +376,9 @@ std::vector<SequentialUnmapper::Register> SequentialUnmapper::collectRegisters(
       continue;
     }
     const sta::Sequential* seq = singleSequential(sta_, inst);
-    if (seq == nullptr || (seq->isRegister() && !hasSimpleClock(seq))) {
+    if (seq == nullptr
+        || (seq->isRegister()
+            && clockMTerm(seq, inst->getMaster()) == nullptr)) {
       ++untouched.other;
     } else if (!seq->isRegister()) {
       ++untouched.latches;
@@ -449,7 +453,7 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
   out_inv_port_ = seq->outputInv();
 
   const std::vector<odb::dbITerm*> out_pins = collectRegisterNets(inst);
-  odb::dbNet* clock_net = registerClockNet(inst);
+  odb::dbNet* clock_net = registerClockNet(sta_, inst);
   const BaseRegister& base = isNegedge(seq) ? negedge_seq_ : seq_;
   if (base.master == nullptr || clock_net == nullptr || out_pins.empty()
       || !canSynth(seq->data())) {
@@ -463,7 +467,7 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   odb::dbInst* flop = makeCell(sta_, parent_, "unmap_ff", base.master);
-  odb::dbITerm* clock_pin = registerClockPin(flop);
+  odb::dbITerm* clock_pin = registerClockPin(sta_, flop);
   if (clock_pin == nullptr) {
     logger_->warn(utl::RET,
                   13,

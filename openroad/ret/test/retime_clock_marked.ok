@@ -1,0 +1,8 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[INFO RET-0014] Retiming graph: 23 gates, 20 edges, 6 registers, 13 pinned gates, 0 fenced registers.
+[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.1316, TNS -0.1576, registers 6, placed 0, resized 0.
+r1: CLK on clk, DE on en
+r2: CLK on clk, DE on en
+r4: CLK on clk, DE on en2
+r6: CLK on clk, DE on en

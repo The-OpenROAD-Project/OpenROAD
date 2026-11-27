@@ -382,7 +382,7 @@ odb::dbNet* Retimer::findClockNet(odb::dbBlock* block) const
 {
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->getMaster()->isSequential()) {
-      odb::dbNet* clock = registerClockNet(inst);
+      odb::dbNet* clock = registerClockNet(sta_, inst);
       if (clock != nullptr) {
         return clock;
       }
@@ -659,11 +659,12 @@ void Retimer::connectRegister(odb::dbInst* ff,
       = cls != nullptr ? cls->data : unmapper_->getBaseSequentialDMTerm();
   odb::dbMTerm* output
       = cls != nullptr ? cls->output : unmapper_->getBaseSequentialQMTerm();
+  odb::dbITerm* clock = registerClockPin(sta_, ff);
   for (odb::dbITerm* iterm : ff->getITerms()) {
     if (iterm->getSigType().isSupply()) {
       continue;
     }
-    if (iterm->getSigType() == odb::dbSigType::CLOCK) {
+    if (iterm == clock) {
       connectPin(iterm, clock_net, mod_nets);
     } else if (iterm->getMTerm() == data) {
       connectPin(iterm, in, mod_nets);
@@ -786,7 +787,7 @@ Retimer::Chain Retimer::planChain(const RetimingGraph& graph,
                          group.driver_net->getName());
         }
         if (chain.clock_net == nullptr) {
-          chain.clock_net = registerClockNet(reg);
+          chain.clock_net = cls->clock;
         }
       }
     }

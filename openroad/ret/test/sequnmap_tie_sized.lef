@@ -196,6 +196,44 @@ MACRO TIE0x1
   END Y
 END TIE0x1
 
+MACRO TIE0Z
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.4 BY 1.0 ;
+  SITE core ;
+  PIN EN
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.45 0.15 0.55 ;
+    END
+  END EN
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.25 0.45 0.35 0.55 ;
+    END
+  END Y
+END TIE0Z
+
+MACRO TIE0NP
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.4 BY 1.0 ;
+  SITE core ;
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.25 0.45 0.35 0.55 ;
+    END
+  END Y
+END TIE0NP
+
 MACRO MULTIE
   CLASS CORE ;
   ORIGIN 0 0 ;

@@ -140,6 +140,8 @@ class SequentialUnmapper
   void reportTiedBase() const;
   // The smallest cell that is `op` of this many input pins.
   odb::dbMaster* smallestGate(sta::FuncExpr::Op op, int inputs) const;
+  // The smallest cell without inputs whose output always drives the
+  // constant and has a pin in LEF.
   TieCell findTieCell(bool one) const;
   const TieCell& tieCell(const bool one) const { return one ? tie1_ : tie0_; }
 

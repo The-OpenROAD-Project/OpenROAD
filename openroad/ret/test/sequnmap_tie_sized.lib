@@ -2,8 +2,9 @@
 /* sequnmap_tie_sized.lib: hand sized liberty for unit testing SequentialUnmapper. */
 /* Tie discovery, sizing case: several single output ties per constant, x2 listed BEFORE x1 */
 /* so a first match scan picks the wrong one. The smallest, TIE1x1 and TIE0x1 at area 1.0, */
-/* must win and MULTIE at area 3.0 must LOSE. DFF_P_TIE0 and DFF_P_TIE1 carry the constant */
-/* leaves, DFF_P, INV, AND2, OR2 support prepare. */
+/* must win and MULTIE at area 3.0 must LOSE. Two smaller cells must LOSE too: TIE0Z drives */
+/* its constant through a tri-state output, and the output of TIE0NP has no pin in the LEF. */
+/* DFF_P_TIE0 and DFF_P_TIE1 carry the constant leaves, DFF_P, INV, AND2, OR2 support prepare. */
 /* No timing tables on purpose: decompose reads FUNCTIONS, not delays. */
 /* ========================================================================== */
 library (sequnmap_tie_sized) {
@@ -111,6 +112,27 @@ library (sequnmap_tie_sized) {
   cell (TIE0x1) {
     area : 1.0;
     pin (Y) {
+      direction : output;
+      function : "0";
+    }
+  }
+
+  cell (TIE0Z) {
+    area : 0.5;
+    pin (EN) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Y) {
+      direction : output;
+      function : "0";
+      three_state : "!EN";
+    }
+  }
+
+  cell (TIE0NP) {
+    area : 0.25;
+    pin (Z) {
       direction : output;
       function : "0";
     }
