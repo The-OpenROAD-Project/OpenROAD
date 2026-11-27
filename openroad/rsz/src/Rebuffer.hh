@@ -223,7 +223,11 @@ class Rebuffer : public sta::dbStaState
   struct DriverChoices
   {
     sta::LibertyCellSeq cells;
+    // Limit on driver + buffer leakage; nullopt when no limit applies.
     std::optional<float> leakage_budget;
+    // Leakage of the current driver with the reference tree; equal-area
+    // swaps on a passing net may not exceed it.
+    std::optional<float> reference_leakage;
   };
   // The candidate trees for one net, with the slack of each tree for each
   // driver cell and the side-load slack of each cell computed on first use.
@@ -256,8 +260,10 @@ class Rebuffer : public sta::dbStaState
       const DriverChoices& choices,
       FixedDelay relaxation,
       TreeDriverEvaluation& eval);
+  // The cells `current_cell` may be resized to, with leakage limits measured
+  // against `current_cell` driving `reference_tree`.
   DriverChoices driverChoices(sta::LibertyCell* current_cell,
-                              const BufferedNetPtr& timing_tree);
+                              const BufferedNetPtr& reference_tree);
   // Leakage of each buffer of `tree` in visit order; nullopt when a buffer
   // has no leakage data.
   std::optional<std::vector<float>> bufferLeakages(const BufferedNetPtr& tree);
@@ -266,10 +272,21 @@ class Rebuffer : public sta::dbStaState
   std::optional<float> netLeakage(
       sta::LibertyCell* cell,
       const std::optional<std::vector<float>>& buffer_leakages);
+  // netLeakage() of `cell` driving tree `tree_index` of `eval`.
+  std::optional<float> treeNetLeakage(TreeDriverEvaluation& eval,
+                                      sta::LibertyCell* cell,
+                                      size_t tree_index);
   bool withinLeakageBudget(TreeDriverEvaluation& eval,
                            const DriverChoices& choices,
                            sta::LibertyCell* cell,
                            size_t tree_index);
+  // Whether `cell` driving tree `tree_index` keeps the net leakage within
+  // choices.reference_leakage, which equal-area swaps on a passing net must.
+  bool withinReferenceLeakage(TreeDriverEvaluation& eval,
+                              const DriverChoices& choices,
+                              sta::LibertyCell* current_cell,
+                              sta::LibertyCell* cell,
+                              size_t tree_index);
   std::optional<FixedDelay> slackWithDriverCell(TreeDriverEvaluation& eval,
                                                 sta::LibertyCell* cell,
                                                 size_t tree_index);

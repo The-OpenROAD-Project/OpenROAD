@@ -601,7 +601,17 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
         trees.push_back(withoutFirstBuffer(tree));
       }
     }
-    const DriverChoices choices = driverChoices(current_cell, timing_tree);
+    // Anchor the whole-net leakage budget to the baseline tree on passing
+    // nets so dropped timing-tree buffers do not create a phantom leakage
+    // allowance, and the baseline with the current driver always fits it.
+    // The budget is a multiple of the leakage of the current driver plus the
+    // reference tree's buffers, so one leaky buffer in the timing tree would
+    // let a net that already passes swap its driver to a leakier VT for
+    // slack it does not need.  chooseTreeAndDriver() also keeps equal-area
+    // swaps on a passing net within the reference leakage itself.
+    const BnetPtr& leakage_ref_tree
+        = slack_target >= FixedDelay::ZERO ? area_tree : timing_tree;
+    const DriverChoices choices = driverChoices(current_cell, leakage_ref_tree);
     // Evaluated lazily; the planned trees are appended to `trees` below,
     // before any tree leakage is read.
     TreeDriverEvaluation eval(trees);
@@ -753,26 +763,26 @@ BnetPtr Rebuffer::withoutFirstBuffer(const BnetPtr& tree)
 }
 
 Rebuffer::DriverChoices Rebuffer::driverChoices(sta::LibertyCell* current_cell,
-                                                const BnetPtr& timing_tree)
+                                                const BnetPtr& reference_tree)
 {
   // The sizing leakage limit applies to the net, the driver and its buffers
-  // together, relative to the current driver with the timing tree.  Applied
+  // together, relative to the current driver with `reference_tree`.  Applied
   // to the driver alone it refuses an upsized driver that replaces buffers
   // and lowers the net's leakage.
+  const std::optional<float> current
+      = netLeakage(current_cell, bufferLeakages(reference_tree));
   const std::optional<double> limit = resizer_->sizing_leakage_limit_;
-  if (limit) {
-    const std::optional<float> current
-        = netLeakage(current_cell, bufferLeakages(timing_tree));
-    if (current) {
-      return {
-          .cells = resizer_->getSwappableCellsAnyLeakage(current_cell),
-          .leakage_budget = static_cast<float>(*limit * *current),
-      };
-    }
+  if (limit && current) {
+    return {
+        .cells = resizer_->getSwappableCellsAnyLeakage(current_cell),
+        .leakage_budget = static_cast<float>(*limit * *current),
+        .reference_leakage = current,
+    };
   }
   return {
       .cells = resizer_->getSwappableCells(current_cell),
       .leakage_budget = std::nullopt,
+      .reference_leakage = current,
   };
 }
 
@@ -822,6 +832,21 @@ std::optional<float> Rebuffer::netLeakage(
   return leakage;
 }
 
+std::optional<float> Rebuffer::treeNetLeakage(TreeDriverEvaluation& eval,
+                                              sta::LibertyCell* cell,
+                                              const size_t tree_index)
+{
+  // Collect the buffer leakages of every tree once per evaluation.
+  if (eval.buffer_leakages.empty()) {
+    eval.buffer_leakages.reserve(eval.trees.size());
+    for (const BnetPtr& tree : eval.trees) {
+      eval.buffer_leakages.push_back(tree ? bufferLeakages(tree)
+                                          : std::nullopt);
+    }
+  }
+  return netLeakage(cell, eval.buffer_leakages[tree_index]);
+}
+
 bool Rebuffer::withinLeakageBudget(TreeDriverEvaluation& eval,
                                    const DriverChoices& choices,
                                    sta::LibertyCell* cell,
@@ -830,16 +855,24 @@ bool Rebuffer::withinLeakageBudget(TreeDriverEvaluation& eval,
   if (!choices.leakage_budget) {
     return true;
   }
-  if (eval.buffer_leakages.empty()) {
-    eval.buffer_leakages.reserve(eval.trees.size());
-    for (const BnetPtr& tree : eval.trees) {
-      eval.buffer_leakages.push_back(tree ? bufferLeakages(tree)
-                                          : std::nullopt);
-    }
-  }
-  const std::optional<float> leakage
-      = netLeakage(cell, eval.buffer_leakages[tree_index]);
+  const std::optional<float> leakage = treeNetLeakage(eval, cell, tree_index);
   return !leakage || *leakage <= *choices.leakage_budget;
+}
+
+bool Rebuffer::withinReferenceLeakage(TreeDriverEvaluation& eval,
+                                      const DriverChoices& choices,
+                                      sta::LibertyCell* current_cell,
+                                      sta::LibertyCell* cell,
+                                      const size_t tree_index)
+{
+  // Compared on the cells alone when tree leakage is unknown.
+  std::optional<float> cand_leak = treeNetLeakage(eval, cell, tree_index);
+  std::optional<float> limit_leak = choices.reference_leakage;
+  if (!cand_leak || !limit_leak) {
+    cand_leak = resizer_->cellLeakage(cell);
+    limit_leak = resizer_->cellLeakage(current_cell);
+  }
+  return !cand_leak || !limit_leak || *cand_leak <= *limit_leak;
 }
 
 std::optional<FixedDelay> Rebuffer::slackWithDriverCell(
@@ -939,9 +972,17 @@ BnetPtr Rebuffer::chooseTreeAndDriver(TreeDriverEvaluation& eval,
         continue;
       }
       // An equal-area swap must gain real slack to be worth a resize, which
-      // costs an upstream timing update.
-      if (area < best_area
-          || *slack > best_slack + FixedDelay(kEqualAreaMinGain, resizer_)) {
+      // costs an upstream timing update.  On a passing net with a pick
+      // already made, take the slack-only gain only if net leakage stays
+      // within the reference leakage, so extra positive slack at equal area
+      // does not raise leakage above the baseline.
+      const bool better
+          = area < best_area
+            || (*slack > best_slack + FixedDelay(kEqualAreaMinGain, resizer_)
+                && (slack_target < FixedDelay::ZERO || best_tree == nullptr
+                    || withinReferenceLeakage(
+                        eval, choices, current_cell, cell, i)));
+      if (better) {
         if (cell != current_cell
             && upstreamSideLoadSlack(eval, cell) < slack_target) {
           return;
