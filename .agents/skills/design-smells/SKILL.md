@@ -189,12 +189,14 @@ clang-tidy.
 
 ```bash
 bin=$(bazelisk info bazel-bin)
-find "$bin/openroad/<module>" -name '*.AspectRulesLintClangTidy.out*' -delete
+if [ -d "$bin/openroad/<module>" ]; then
+  find "$bin/openroad/<module>" -name '*.AspectRulesLintClangTidy.out*' -delete
+fi
 bazelisk build --config=lint -- //openroad/<module>/...
 bash tools/lint/collect_clang_tidy.sh "$bin/openroad/<module>" $out/tidy.txt
 ```
 
-Pass the module's directory under `bazel-bin`, not `bazel-bin` itself.
+`$out` is the scratch directory from step 1. Pass the module's directory under `bazel-bin`, not `bazel-bin` itself.
 Stale outputs from other modules make the collector report tool
 failures. Fix the findings on lines you changed, and the include-cleaner
 findings your change caused, such as a header you made unused. Then
