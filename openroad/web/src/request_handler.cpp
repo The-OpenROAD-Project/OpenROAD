@@ -5533,11 +5533,19 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
-    std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
-    auto paths = requestedReport(
-        *timing_report_,
-        req.json,
-        static_cast<int>(req.json.at("max_paths").as_int64()));
+    const int64_t max_paths = req.json.at("max_paths").as_int64();
+    if (max_paths < 0 || max_paths > TimingReport::kMaxPaths) {
+      return errorResponse(req.id,
+                           "\"max_paths\" is outside [0, "
+                               + std::to_string(TimingReport::kMaxPaths) + "]");
+    }
+    std::vector<TimingPathSummary> paths;
+    {
+      // Only STA needs the lock; serializing up to kMaxPaths paths does not.
+      const std::scoped_lock lock(tcl_eval_->mutex);
+      paths = requestedReport(
+          *timing_report_, req.json, static_cast<int>(max_paths));
+    }
     writePayload(resp, serializeTimingPaths(paths));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;

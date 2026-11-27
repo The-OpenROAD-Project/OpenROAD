@@ -59,6 +59,17 @@ WebSocket carries a small binary framing with JSON or PNG payloads.
   `ws://HOST wss://HOST` are there because browsers older than CSP Level 3
   (Safari before 15.4, say) do not let `'self'` match a WebSocket; a `Host`
   a CSP source cannot spell, such as an IPv6 literal, leaves them out.
+- An HTTP connection whose request has not fully arrived 30 s after it
+  opened, or after the previous response on a keep-alive connection, is
+  closed, and so is one that takes none of its response for 60 s. A
+  WebSocket has Boost.Beast's limits instead: 30 s for the handshake, and a
+  close after 300 s with nothing received, with a ping halfway. At most 128
+  connections, WebSockets included, are open at once; past that a new one is
+  closed as soon as it is accepted, and the first such refusal logs
+  `WEB-0138`. The cap keeps the process from running out of file
+  descriptors, but it also counts connections that have not shown the token
+  yet: a local client without it can still take every place and keep the
+  viewer out for as long as it keeps at it.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
 
@@ -670,7 +681,7 @@ Return the worst N timing paths.
 | Field           | Type       | Required | Default    | Description                                                                                                                                                     |
 | --------------- | ---------- | :------: | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `is_setup`      | `bool`     |    ✓     | —          | `true` → setup paths, `false` → hold.                                                                                                                           |
-| `max_paths`     | `int`      |    ✓     | —          | Maximum number of paths to return.                                                                                                                              |
+| `max_paths`     | `int`      |    ✓     | —          | Maximum number of paths to return, 0 to 10000. See below.                                                                                                       |
 | `slack_min`     | `double`   |          | `-FLT_MAX` | Lower edge (inclusive) of a slack histogram bar. See below.                                                                                                     |
 | `slack_max`     | `double`   |          | `+FLT_MAX` | Upper edge (exclusive) of a slack histogram bar. See below.                                                                                                     |
 | `unconstrained` | `bool`     |          | `false`    | Include paths with no timing constraint. Only in the per-group report.                                                                                          |
@@ -678,11 +689,12 @@ Return the worst N timing paths.
 | `clock_name`    | `string`   |          | `""`       | The slack histogram's clock: without `path_groups`, its path group; with them, the paths it captures in those groups. A name that is no clock returns no paths. |
 
 With none of `slack_min`, `slack_max`, `path_groups`, and `clock_name`, the
-report lists the worst `max_paths` paths of each path group. With any of
-them, it lists the endpoints a `slack_histogram` with the same
-`path_groups` and `clock_name` counts in `[slack_min, slack_max)`, the bar a
-client drills into: the worst path of each, by slack, `max_paths` at most.
-Those endpoints have a finite slack, so `unconstrained` does not apply.
+report lists the worst `max_paths` paths of each path group, at most 10000
+in all. With any of them, it lists the endpoints a `slack_histogram` with
+the same `path_groups` and `clock_name` counts in `[slack_min, slack_max)`,
+the bar a client drills into: the worst path of each, by slack, `max_paths`
+at most. Those endpoints have a finite slack, so `unconstrained` does not
+apply.
 
 A design with no SDC constraints has no constrained path ends, so
 `unconstrained: false` returns an empty `paths` array. This mirrors the

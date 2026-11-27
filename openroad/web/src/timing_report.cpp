@@ -9,6 +9,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <ranges>
 #include <set>
 #include <string>
 #include <utility>
@@ -182,7 +183,8 @@ std::vector<TimingPathSummary> TimingReport::getReport(
     const std::vector<std::string>& path_groups,
     const std::string& clock_name) const
 {
-  if (!sta_) {
+  // findPathEnds needs at least one path per group.
+  if (!sta_ || max_paths <= 0) {
     return {};
   }
   // A slack histogram bar's drill-down.
@@ -220,8 +222,10 @@ std::vector<TimingPathSummary> TimingReport::getReport(
       /*clk_gating_hold*/ false);
 
   std::vector<TimingPathSummary> result;
-  result.reserve(path_ends.size());
-  for (sta::PathEnd* path_end : path_ends) {
+  result.reserve(
+      std::min(path_ends.size(), static_cast<std::size_t>(kMaxPaths)));
+  // max_paths counts per path group; take() bounds the total.
+  for (sta::PathEnd* path_end : path_ends | std::views::take(kMaxPaths)) {
     result.push_back(summarizePathEnd(*path_end));
   }
   return result;
