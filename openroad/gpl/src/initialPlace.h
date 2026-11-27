@@ -45,7 +45,7 @@ class InitialPlace
                std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                std::unique_ptr<AbstractGraphics> graphics,
                utl::Logger* logger);
-  void doBicgstabPlace(int threads);
+  void doConjugateGradientPlace(int threads);
 
  private:
   InitialPlaceVars ipVars_;
@@ -79,7 +79,7 @@ class InitialPlace
   //        SparseMatrix that contains connectivity forces on Y // B2B model is
   //        used
   //
-  // Used the interative BiCGSTAB solver to solve matrix eqs.
+  // Solved with the iterative conjugate gradient solver.
 
   Eigen::VectorXf instLocVecX_, fixedInstForceVecX_;
   Eigen::VectorXf instLocVecY_, fixedInstForceVecY_;

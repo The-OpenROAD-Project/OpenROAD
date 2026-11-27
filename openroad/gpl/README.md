@@ -52,7 +52,13 @@ activity, so that nets that toggle often are kept short and use less switching
 power. The activity is read from `read_saif`, `read_vcd` or
 `set_power_activity` if given, otherwise from the OpenSTA default propagation,
 in the same scene (`set_scene`) that `report_power` uses. The extra weight
-scales with activity. Clock nets are not weighted.
+scales with activity and covers both signal and clock nets. A signal net gets
+it directly. For a clock net, `gpl` predicts the sink clusters that
+`clock_tree_synthesis -sink_clustering_enable` would build at the current
+placement with the `set_cts_config` settings, and adds a virtual leaf net over
+each cluster, weighted by the activity of the clock. The leaf nets are
+predicted at each overflow of `-power_driven_clock_leaf_overflow`, and again
+right after each timing-driven iteration.
 
 When the routability-driven option is enabled, each of its iterations will 
 execute RUDY to provide an estimation of routing congestion. Congested tiles 
@@ -82,7 +88,7 @@ Timing-driven arguments
 - `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`, `keep_resize_below_overflow`, `-timing_driven_repair_timing`, `-timing_driven_repair_tns_end_percent`
 
 Power-driven arguments
-- `-power_driven_net_weight`
+- `-power_driven_net_weight`, `-power_driven_clock_leaf_overflow`
 
 ```tcl
 global_placement
@@ -120,6 +126,7 @@ global_placement
     [-timing_driven_repair_timing]\
     [-timing_driven_repair_tns_end_percent timing_driven_repair_tns_end_percent]\
     [-power_driven_net_weight power_driven_net_weight]\
+    [-power_driven_clock_leaf_overflow power_driven_clock_leaf_overflow]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
@@ -138,7 +145,7 @@ global_placement
 | `-timing_driven` | Enable timing-driven mode. See [link](#timing-driven-arguments) for timing-specific arguments. |
 | `-power_driven` | Enable power-driven mode. See [link](#power-driven-arguments) for power-specific arguments. |
 | `-routability_driven` | Enable routability-driven mode. See [link](#routability-driven-arguments) for routability-specific arguments. |
-| `-skip_initial_place` | Skip the initial placement (Biconjugate gradient stabilized, or BiCGSTAB solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0`. | 
+| `-skip_initial_place` | Skip the initial placement (conjugate gradient solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0`. | 
 | `-skip_nesterov_place` | Skip the nesterov placement. | 
 | `-force_center_initial_place` | Initiate instances at the center of the core (or region) before initial placement, even if they already have a valid ODB location. By default, the placer will use the existing ODB locations if available. |
 | `-incremental` | Enable the incremental global placement. Users would need to tune other parameters (e.g., `init_density_penalty`) with pre-placed solutions. | 
@@ -198,7 +205,8 @@ global_placement
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-power_driven_net_weight` | Set the extra net weight in power-driven mode for a net that toggles once per cycle of the fastest clock. A net gains this value times its toggles per cycle, capped at one toggle. The default value is `1`, and the allowed values are floats `>= 0`. |
+| `-power_driven_net_weight` | Set the extra net weight in power-driven mode for a net that toggles once per cycle of the fastest clock. A signal net gains this value times its toggles per cycle, capped at one toggle. A clock leaf net gains this value times the toggles per cycle of its clock, uncapped. The default value is `1`, and the allowed values are floats `>= 0`. |
+| `-power_driven_clock_leaf_overflow` | Set overflow thresholds for predicting the clock leaf nets in power-driven mode. Allowed value is a Tcl list of integers where each number is `[0, 100]`. Default values are [64, 20]. An empty list disables the clock leaf nets. |
 
 ### Placement Configuration
 

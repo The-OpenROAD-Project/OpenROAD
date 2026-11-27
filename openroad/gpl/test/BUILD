@@ -285,6 +285,7 @@ cc_test(
     env = GPU_ENV_OFF,
     deps = [
         "//openroad/ant",
+        "//openroad/cts",
         "//openroad/dbSta",
         "//openroad/dbSta:dbNetwork",
         "//openroad/dpl",
@@ -505,6 +506,7 @@ cc_test(
         ":gpl_design_builder",
         "//openroad/gpl",
         "//openroad/odb/src/db",
+        "//openroad/ppl",
         "//openroad/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

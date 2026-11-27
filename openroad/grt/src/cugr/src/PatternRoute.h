@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -112,6 +113,23 @@ class PatternRoutingNode : public PointT
   static std::string getPythonString(
       std::shared_ptr<PatternRoutingNode> routing_dag);
 
+  // Capacitance around this node for the delay cost; see
+  // PatternRoute::computeLoads.
+  struct Load
+  {
+    // Sink pins and estimated wire (F) of the subtree below this node.
+    float subtree_cap = 0.0f;
+    // The part of subtree_cap on the branch that holds the driver.
+    float driver_branch_cap = 0.0f;
+    // For a node with the driver at or below it: everything the node reaches
+    // other than through its driver branch (F), i.e. the load of its vias.
+    float off_driver_cap = 0.0f;
+    bool has_driver = false;
+    bool done = false;
+    bool off_driver_done = false;
+  };
+  Load& getLoad() { return load_; }
+
  private:
   const int index_;
   // childIndex -> pathIndex -> path
@@ -125,6 +143,7 @@ class PatternRoutingNode : public PointT
   std::vector<std::vector<std::pair<int, int>>> best_paths_;
   // best path for each child; layerIndex -> childIndex -> (pathIndex,
   // layerIndex)
+  Load load_;
 };
 
 class PatternRoute
@@ -172,6 +191,17 @@ class PatternRoute
                       std::shared_ptr<PatternRoutingNode>& end,
                       int child_index = -1);
   void calculateRoutingCosts(std::shared_ptr<PatternRoutingNode>& node);
+  // Fill each DAG node's Load from the sink pin caps; a child's paths all
+  // reach the same pins, so its first path stands for them.
+  void computeLoads(const std::shared_ptr<PatternRoutingNode>& node);
+  // Fill off_driver_cap down the driver side from `node`, per path, so a
+  // detour's extra wire stays on its own side of the driver.
+  void computeOffDriverLoads(const std::shared_ptr<PatternRoutingNode>& node);
+  // Capacitance (F) a wire node->path drives: the side away from the driver.
+  double wireLoad(const std::shared_ptr<PatternRoutingNode>& node,
+                  const std::shared_ptr<PatternRoutingNode>& path) const;
+  // Capacitance (F) the vias at `node` drive.
+  double viaLoad(const std::shared_ptr<PatternRoutingNode>& node) const;
   std::shared_ptr<GRTreeNode> getRoutingTree(
       std::shared_ptr<PatternRoutingNode>& node,
       int parent_layer_index = -1);
@@ -186,6 +216,11 @@ class PatternRoute
 
   Constants constants_;
   utl::Logger* logger_;
+
+  // Delay cost inputs, set by run() for a net with positive criticality.
+  bool delay_aware_ = false;
+  robin_hood::unordered_map<PointT, float, PointTHash> pin_caps_;
+  std::optional<PointT> driver_point_;
 };
 
 }  // namespace grt

@@ -21,6 +21,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "ppl/IOPlacer.h"
 #include "tst/fixture.h"
 
 namespace gpl {
@@ -75,7 +76,8 @@ class KnownAnswerTest : public tst::Fixture
  protected:
   PlaceResult place(const PlaceOptions& options)
   {
-    Replace replace{db_.get(), sta_.get(), nullptr, nullptr, nullptr, &logger_};
+    Replace replace{
+        db_.get(), sta_.get(), nullptr, nullptr, nullptr, nullptr, &logger_};
     return replace.doPlace(1, options);
   }
 };
@@ -347,6 +349,80 @@ TEST_F(KnownAnswerTest, StackedInterchangeableCellsSeparate)
   const PlaceResult result = place(options);
   EXPECT_EQ(result.stop, PlaceStop::kConverged);
   EXPECT_LE(result.overflow, options.overflow);
+}
+
+// Under -place_ios, a chain whose only IOs are unplaced reaches no fixed pin,
+// so its block of the initial placement matrix is singular. Initial
+// placement still lines up the anchored chain and leaves the loose one in
+// the core.
+TEST_F(KnownAnswerTest, UnanchoredClusterUnderPlaceIos)
+{
+  using Edge = DesignBuilder::Edge;
+  DesignBuilder builder(db_.get());
+  const std::vector<odb::dbInst*> chain = makeChain(builder, 11);
+  std::vector<odb::dbInst*> loose;
+  for (int i = 0; i < 5; ++i) {
+    loose.push_back(builder.addCell("loose" + std::to_string(i)));
+  }
+  for (std::size_t i = 1; i < loose.size(); ++i) {
+    builder.connect(loose[i - 1], "E", "l" + std::to_string(i));
+    builder.connect(loose[i], "W", "l" + std::to_string(i));
+  }
+  builder.connect(loose.front(), "W", builder.addIo("lin", Edge::kBottom, 0.5));
+  builder.connect(loose.back(), "E", builder.addIo("lout", Edge::kTop, 0.5));
+  odb::dbBlock* block = builder.block();
+  // Unplaced ports are movable under -place_ios.
+  for (const char* name : {"lin", "lout"}) {
+    const auto bpins = block->findBTerm(name)->getBPins();
+    for (odb::dbBPin* bpin :
+         std::vector<odb::dbBPin*>(bpins.begin(), bpins.end())) {
+      odb::dbBPin::destroy(bpin);
+    }
+  }
+  odb::dbStringProperty::create(block, "placer_config_io_pin_hor_layers", "M1");
+  odb::dbStringProperty::create(block, "placer_config_io_pin_ver_layers", "M1");
+
+  PlaceOptions options;
+  options.placeIosMode = true;
+  ppl::IOPlacer pin_placer{db_.get(), &logger_};
+  Replace replace{
+      db_.get(), sta_.get(), nullptr, nullptr, &pin_placer, nullptr, &logger_};
+  replace.doInitialPlace(1, options);
+
+  for (std::size_t i = 1; i < chain.size(); ++i) {
+    EXPECT_LT(center(chain[i - 1]).x(), center(chain[i]).x());
+  }
+  for (odb::dbInst* inst : loose) {
+    EXPECT_TRUE(builder.core().intersects(center(inst))) << inst->getName();
+  }
+}
+
+// Cells on no nets have empty rows in the initial placement matrix. They
+// stay at the core center and do not disturb the solve for the chain.
+TEST_F(KnownAnswerTest, InitialPlaceKeepsCellsOnNoNets)
+{
+  DesignBuilder builder(db_.get());
+  const std::vector<odb::dbInst*> chain = makeChain(builder, 11);
+  // makeUnconnected's names would collide with the chain's.
+  std::vector<odb::dbInst*> unconnected;
+  for (int i = 0; i < 3; ++i) {
+    unconnected.push_back(builder.addCell("spare" + std::to_string(i)));
+  }
+
+  PlaceOptions options;
+  Replace replace{
+      db_.get(), sta_.get(), nullptr, nullptr, nullptr, nullptr, &logger_};
+  replace.doInitialPlace(1, options);
+
+  for (std::size_t i = 1; i < chain.size(); ++i) {
+    EXPECT_LT(center(chain[i - 1]).x(), center(chain[i]).x());
+  }
+  for (odb::dbInst* inst : unconnected) {
+    EXPECT_NEAR(center(inst).x(), builder.core().xCenter(), 1)
+        << inst->getName();
+    EXPECT_NEAR(center(inst).y(), builder.core().yCenter(), 1)
+        << inst->getName();
+  }
 }
 
 }  // namespace

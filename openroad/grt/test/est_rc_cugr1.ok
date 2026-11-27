@@ -46,7 +46,7 @@ metal10    Vertical         2142          2142          0.00%
 Stage 1: Pattern routing.
 Routing statistics
 Wire length:           36832
-Total via count:       2465
+Total via count:       2527
 Total congestion:      0.00
 Min resource:          1.00
 Bottleneck:            (8, 0, 4)
@@ -54,23 +54,23 @@ Bottleneck:            (8, 0, 4)
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 metal1    H         0.00         0.00         0.00         0.00       0.00
-metal2    V     17918.00      1102.00       141.74      1243.74       6.94
-metal3    H     24480.00      1175.00       104.13      1279.13       5.23
-metal4    V     12172.00         2.00         5.45         7.45       0.06
-metal5    H     12240.00        94.00         5.89        99.89       0.82
-metal6    V     12172.00        79.00         2.71        81.71       0.67
+metal2    V     17918.00      1080.00       141.25      1221.25       6.82
+metal3    H     24480.00      1148.00       102.95      1250.95       5.11
+metal4    V     12172.00        10.00         9.48        19.48       0.16
+metal5    H     12240.00       121.00         9.13       130.13       1.06
+metal6    V     12172.00        93.00         3.59        96.59       0.79
 metal7    H      4284.00         0.00         0.00         0.00       0.00
 metal8    V      4284.00         0.00         0.00         0.00       0.00
 metal9    H      2142.00         0.00         0.00         0.00       0.00
 metal10   V      2142.00         0.00         0.00         0.00       0.00
 --------------------------------------------------------------------------
-Total           91834.00      2452.00       259.91      2711.91       2.95
+Total           91834.00      2452.00       266.39      2718.39       2.96
 [INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563
 Net clk
  Pin capacitance: 29.975-33.238
- Wire capacitance: 17.355-17.355
- Total capacitance: 47.331-50.593
+ Wire capacitance: 17.097-17.097
+ Total capacitance: 47.073-50.335
  Number of drivers: 1
  Number of loads: 35
  Number of pins: 36

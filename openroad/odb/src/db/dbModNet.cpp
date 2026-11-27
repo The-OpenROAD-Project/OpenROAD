@@ -143,7 +143,7 @@ void _dbModNet::collectMemInfo(MemInfo& info)
 _dbModNet::~_dbModNet()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
 }
 
@@ -155,12 +155,12 @@ _dbModNet::~_dbModNet()
 
 dbModule* dbModNet::getParent() const
 {
-  _dbModNet* obj = (_dbModNet*) this;
+  const _dbModNet* obj = reinterpret_cast<const _dbModNet*>(this);
   if (obj->parent_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModule*) par->module_tbl_->getPtr(obj->parent_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbModule*>(par->module_tbl_->getPtr(obj->parent_));
 }
 
 // User Code Begin dbModNetPublicMethods

@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <cstring>
 #include <iterator>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -94,6 +95,8 @@ void lefinReader::init()
   rounded_cnt_ = 0;
   rounding_example_.clear();
   rounding_dbu_candidates_.clear();
+  incomplete_props_.clear();
+  pending_layer_refs_.clear();
 
   if (!override_lef_dbu_) {
     lef_units_ = 0;
@@ -808,9 +811,30 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
         supported = false;
       }
     } else if (type.getValue() == dbTechLayerType::IMPLANT) {
-      if (!strcmp(layer->propName(iii), "LEF58_AREA")) {
+      if (!strcmp(layer->propName(iii), "LEF58_MINENCLOSEDAREA")) {
+        valid = lefTechLayerMinEnclosedAreaParser::parse(
+            layer->propValue(iii), l, this);
+      } else if (!strcmp(layer->propName(iii), "LEF58_AREA")) {
         lefTechLayerAreaRuleParser parser(this);
         parser.parse(layer->propValue(iii), l, incomplete_props_);
+      } else if (!strcmp(layer->propName(iii), "LEF58_COREEDGELENGTH")) {
+        valid = lefTechLayerCoreEdgeLengthParser::parse(
+            layer->propValue(iii), l, this, pending_layer_refs_);
+      } else if (!strcmp(layer->propName(iii), "LEF58_CORNERSPACING")) {
+        valid = lefTechLayerCornerSpacingParser::parse(
+            layer->propValue(iii), l, this);
+      } else if (!strcmp(layer->propName(iii), "LEF58_MAXSPACING")) {
+        MaxSpacingParser parser(l, this);
+        parser.parse(layer->propValue(iii));
+      } else if (!strcmp(layer->propName(iii), "LEF58_MINSTEP")) {
+        lefTechLayerMinStepParser minStepParser;
+        valid = minStepParser.parse(layer->propValue(iii), l, this);
+      } else if (!strcmp(layer->propName(iii), "LEF58_SPACING")) {
+        valid = lefTechLayerImplantSpacingParser::parse(
+            layer->propValue(iii), l, this, pending_layer_refs_);
+      } else if (!strcmp(layer->propName(iii), "LEF58_WIDTH")) {
+        valid = lefTechLayerImplantWidthParser::parse(
+            layer->propValue(iii), l, this, pending_layer_refs_);
       } else {
         supported = false;
       }
@@ -848,7 +872,8 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
   if (l->getMinWidth() == 0) {
     if (layer->hasMinwidth()) {
       l->setMinWidth(dbdist(layer->minwidth()));
-    } else if (type == dbTechLayerType::ROUTING) {
+    } else if (type == dbTechLayerType::ROUTING
+               || type == dbTechLayerType::IMPLANT) {
       l->setMinWidth(l->getWidth());
     }
   }
@@ -2490,6 +2515,27 @@ bool lefinReader::readLefInner(const char* lef_file)
     }
   }
   incomplete_props_.clear();
+
+  std::set<const void*> dropped_rules;
+  for (const auto& ref : pending_layer_refs_) {
+    if (dropped_rules.contains(ref.rule_key)) {
+      continue;
+    }
+    if (auto* ref_layer = tech_->findLayer(ref.layer_name.c_str())) {
+      ref.attach(ref_layer);
+    } else {
+      logger_->warn(
+          utl::ODB,
+          568,
+          "dropping {} for layer {} for referencing undefined layer {}",
+          ref.prop_name,
+          ref.owner->getName(),
+          ref.layer_name);
+      dropped_rules.insert(ref.rule_key);
+      ref.drop();
+    }
+  }
+  pending_layer_refs_.clear();
 
   std::string p = lef_file;
   std::vector<std::string> parts;

@@ -76,24 +76,26 @@ void _dbUnfoldedChipBumpInst::collectMemInfo(MemInfo& info)
 
 dbChipBumpInst* dbUnfoldedChipBumpInst::getChipBumpInst() const
 {
-  _dbUnfoldedChipBumpInst* obj = (_dbUnfoldedChipBumpInst*) this;
+  const _dbUnfoldedChipBumpInst* obj
+      = reinterpret_cast<const _dbUnfoldedChipBumpInst*>(this);
   if (obj->chip_bump_inst_ == 0) {
     return nullptr;
   }
-  _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbChipBumpInst*) par->chip_bump_inst_tbl_->getPtr(
-      obj->chip_bump_inst_);
+  _dbDatabase* par = static_cast<_dbDatabase*>(obj->getOwner());
+  return reinterpret_cast<dbChipBumpInst*>(
+      par->chip_bump_inst_tbl_->getPtr(obj->chip_bump_inst_));
 }
 
 dbUnfoldedChipRegionInst* dbUnfoldedChipBumpInst::getParentRegion() const
 {
-  _dbUnfoldedChipBumpInst* obj = (_dbUnfoldedChipBumpInst*) this;
+  const _dbUnfoldedChipBumpInst* obj
+      = reinterpret_cast<const _dbUnfoldedChipBumpInst*>(this);
   if (obj->parent_region_ == 0) {
     return nullptr;
   }
-  _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbUnfoldedChipRegionInst*)
-      par->unfolded_chip_region_inst_tbl_->getPtr(obj->parent_region_);
+  _dbDatabase* par = static_cast<_dbDatabase*>(obj->getOwner());
+  return reinterpret_cast<dbUnfoldedChipRegionInst*>(
+      par->unfolded_chip_region_inst_tbl_->getPtr(obj->parent_region_));
 }
 
 // User Code Begin dbUnfoldedChipBumpInstPublicMethods

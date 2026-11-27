@@ -150,6 +150,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-skip_large_fanout_nets fanout] \
                                   [-allow_congestion] \
                                   [-snapshot_batched_width width] \
+                                  [-congestion_only] \
                                   [-verbose] \
                                   [-start_incremental] \
                                   [-end_incremental] \
@@ -166,7 +167,7 @@ proc global_route { args } {
           -skip_large_fanout_nets -snapshot_batched_width
          } \
     flags {-allow_congestion -resistance_aware -infinite_cap -verbose -start_incremental \
-          -end_incremental -use_cugr}
+          -end_incremental -use_cugr -congestion_only}
 
   sta::check_argc_eq0 "global_route" $args
 
@@ -251,6 +252,16 @@ proc global_route { args } {
     grt::set_res_aware_nets_percentage $res_aware_percentage
   }
 
+  if {
+    [info exists flags(-use_cugr)]
+    && ($resistance_aware || [info exists keys(-res_aware_nets_percentage)]
+      || [info exists keys(-critical_nets_percentage)])
+  } {
+    utl::warn GRT 717 "-critical_nets_percentage, -resistance_aware and\
+      -res_aware_nets_percentage apply to FastRoute only; CUGR is timing\
+      driven whenever timing is available."
+  }
+
   if { [info exists keys(-snapshot_batched_width)] } {
     set snapshot_batched_width $keys(-snapshot_batched_width)
     sta::check_positive_integer "-snapshot_batched_width" \
@@ -259,6 +270,23 @@ proc global_route { args } {
     set snapshot_batched_width 0
   }
   grt::set_snapshot_batched_width $snapshot_batched_width
+  if { [info exists flags(-congestion_only)] } {
+    # An estimate routes nothing, so there are no routes to update
+    # incrementally and no guides to write.
+    set conflicts {}
+    foreach option {-start_incremental -end_incremental} {
+      if { [info exists flags($option)] } {
+        lappend conflicts $option
+      }
+    }
+    if { [info exists keys(-guide_file)] } {
+      lappend conflicts -guide_file
+    }
+    if { $conflicts != {} } {
+      utl::error GRT 344 "-congestion_only cannot be used with [join $conflicts {, }]."
+    }
+  }
+  grt::set_congestion_only [info exists flags(-congestion_only)]
 
   set infinite_cap [info exists flags(-infinite_cap)]
   grt::set_infinite_cap $infinite_cap
@@ -436,7 +464,7 @@ sta::define_cmd_args "global_route_debug" {
   [-tree3D]   # Show The Rectilinear Steiner Tree 3D after layer assignment
   [-edges3D]  # Show edges being rerouted during maze route 3D
   [-cugr_pattern]   # CUGR: show the topology after pattern routing
-  [-cugr_res_aware] # CUGR: show the topology after the resistance-aware re-route
+  [-cugr_critical] # CUGR: show the topology after the critical-net re-route
   [-cugr_detours]   # CUGR: show the topology after pattern routing with detours
   [-cugr_maze]      # CUGR: show the topology after maze routing
   [-cugr_rrr]       # CUGR: show the topology after each iterative RRR iteration
@@ -448,7 +476,7 @@ proc global_route_debug { args } {
   sta::parse_key_args "global_route_debug" args \
     keys {-saveSttInput -net} \
     flags {-st -rst -tree2D -tree3D -edges3D \
-           -cugr_pattern -cugr_res_aware -cugr_detours -cugr_maze -cugr_rrr}
+           -cugr_pattern -cugr_critical -cugr_detours -cugr_maze -cugr_rrr}
 
   sta::check_argc_eq0 "global_route_debug" $args
 
@@ -458,7 +486,7 @@ proc global_route_debug { args } {
   set tree3D [info exists flags(-tree3D)]
   set edges3D [info exists flags(-edges3D)]
   set cugr_pattern [info exists flags(-cugr_pattern)]
-  set cugr_res_aware [info exists flags(-cugr_res_aware)]
+  set cugr_critical [info exists flags(-cugr_critical)]
   set cugr_detours [info exists flags(-cugr_detours)]
   set cugr_maze [info exists flags(-cugr_maze)]
   set cugr_rrr [info exists flags(-cugr_rrr)]
@@ -470,7 +498,7 @@ proc global_route_debug { args } {
       utl::error GRT 231 "Net name not found."
     }
     grt::set_global_route_debug_cmd $net $st $rst $tree2D $tree3D $edges3D
-    grt::set_cugr_debug_cmd $net $cugr_pattern $cugr_res_aware \
+    grt::set_cugr_debug_cmd $net $cugr_pattern $cugr_critical \
       $cugr_detours $cugr_maze $cugr_rrr
     if { [info exists keys(-saveSttInput)] } {
       set file_name $keys(-saveSttInput)
