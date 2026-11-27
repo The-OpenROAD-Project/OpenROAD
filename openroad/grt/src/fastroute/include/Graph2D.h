@@ -189,13 +189,7 @@ class Graph2D
   int getNDRDeficitIfRouted(FrNet* net,
                             int x,
                             int y,
-                            EdgeDirection direction) const
-  {
-    if (net->getEdgeCost() == 1) {
-      return 0;
-    }
-    return getNDRDeficitIfRoutedSlow(net, x, y, direction);
-  }
+                            EdgeDirection direction) const;
   // True when an NDR net using the edge fits no single layer there.
   bool hasNDRDeficit(int x, int y, EdgeDirection direction) const;
   // Deficit of all the NDR nets using the edge.
@@ -213,26 +207,11 @@ class Graph2D
 
   void updateCongList(const std::string& net_name, double edge_cost);
   void printAllElements();
-  int getNDRDeficitIfRoutedSlow(FrNet* net,
-                                int x,
-                                int y,
-                                EdgeDirection direction) const;
   double getCostNDRAware(FrNet* net,
                          int x,
                          int y,
                          double edge_cost,
-                         EdgeDirection direction)
-  {
-    if (net->getEdgeCost() == 1) {
-      return edge_cost;
-    }
-    return getCostNDRAwareSlow(net, x, y, edge_cost, direction);
-  }
-  double getCostNDRAwareSlow(FrNet* net,
-                             int x,
-                             int y,
-                             double edge_cost,
-                             EdgeDirection direction);
+                         EdgeDirection direction);
   int computeNDRDeficit(FrNet* net,
                         int x,
                         int y,

@@ -490,13 +490,13 @@ class FastRouteCore
     if (net->getEdgeCost() == 1) {
       return usage;
     }
-    return getUsageNDRAwareSlow(net, x, y, direction, usage);
+    return getUsageForNDRNet(net, x, y, direction, usage);
   }
-  double getUsageNDRAwareSlow(FrNet* net,
-                              int x,
-                              int y,
-                              EdgeDirection direction,
-                              double usage) const;
+  double getUsageForNDRNet(FrNet* net,
+                           int x,
+                           int y,
+                           EdgeDirection direction,
+                           double usage) const;
   double getEstUsageRedH(FrNet* net, int x, int y) const
   {
     return getUsageNDRAware(

@@ -593,13 +593,10 @@ void Graph2D::updateEstUsageH(const Interval& xi,
   if (xi.lo >= xi.hi) {
     return;
   }
-  const bool non_ndr = net->getEdgeCost() == 1;
   Edge* edge_ptr = &h_edges_[xi.lo][y];
   for (int x = xi.lo; x < xi.hi; x++, edge_ptr += y_grid_) {
-    const double cost = non_ndr
-                            ? usage
-                            : getCostNDRAwareSlow(
-                                  net, x, y, usage, EdgeDirection::Horizontal);
+    const double cost
+        = getCostNDRAware(net, x, y, usage, EdgeDirection::Horizontal);
     Edge& edge = *edge_ptr;
     mutateEdge(edge, EdgeDirection::Horizontal, [cost](Edge& e) {
       e.est_usage += cost;
@@ -665,13 +662,10 @@ void Graph2D::updateEstUsageV(const int x,
   if (yi.lo >= yi.hi) {
     return;
   }
-  const bool non_ndr = net->getEdgeCost() == 1;
   Edge* edge_ptr = &v_edges_[x][yi.lo];
   for (int y = yi.lo; y < yi.hi; y++, ++edge_ptr) {
     const double cost
-        = non_ndr
-              ? usage
-              : getCostNDRAwareSlow(net, x, y, usage, EdgeDirection::Vertical);
+        = getCostNDRAware(net, x, y, usage, EdgeDirection::Vertical);
     Edge& edge = *edge_ptr;
     mutateEdge(edge, EdgeDirection::Vertical, [cost](Edge& e) {
       e.est_usage += cost;
@@ -846,13 +840,10 @@ void Graph2D::updateUsageH(const Interval& xi,
   if (xi.lo >= xi.hi) {
     return;
   }
-  const bool non_ndr = net->getEdgeCost() == 1;
   Edge* edge_ptr = &h_edges_[xi.lo][y];
   for (int x = xi.lo; x < xi.hi; x++, edge_ptr += y_grid_) {
-    const double cost = non_ndr
-                            ? usage
-                            : getCostNDRAwareSlow(
-                                  net, x, y, usage, EdgeDirection::Horizontal);
+    const double cost
+        = getCostNDRAware(net, x, y, usage, EdgeDirection::Horizontal);
     Edge& edge = *edge_ptr;
     mutateEdge(
         edge, EdgeDirection::Horizontal, [cost](Edge& e) { e.usage += cost; });
@@ -892,13 +883,10 @@ void Graph2D::updateUsageV(const int x,
   if (yi.lo >= yi.hi) {
     return;
   }
-  const bool non_ndr = net->getEdgeCost() == 1;
   Edge* edge_ptr = &v_edges_[x][yi.lo];
   for (int y = yi.lo; y < yi.hi; y++, ++edge_ptr) {
     const double cost
-        = non_ndr
-              ? usage
-              : getCostNDRAwareSlow(net, x, y, usage, EdgeDirection::Vertical);
+        = getCostNDRAware(net, x, y, usage, EdgeDirection::Vertical);
     Edge& edge = *edge_ptr;
     mutateEdge(
         edge, EdgeDirection::Vertical, [cost](Edge& e) { e.usage += cost; });
@@ -1206,11 +1194,14 @@ int Graph2D::getNDRDeficit(FrNet* net,
   return it != ndr_nets->end() ? it->second.deficit : 0;
 }
 
-int Graph2D::getNDRDeficitIfRoutedSlow(FrNet* net,
-                                       const int x,
-                                       const int y,
-                                       const EdgeDirection direction) const
+int Graph2D::getNDRDeficitIfRouted(FrNet* net,
+                                   const int x,
+                                   const int y,
+                                   const EdgeDirection direction) const
 {
+  if (net->getEdgeCost() == 1) {
+    return 0;
+  }
   const bool horizontal = direction == EdgeDirection::Horizontal;
   const Edge& edge = horizontal ? h_edges_[x][y] : v_edges_[x][y];
   const auto* ndr_nets = findNDRnets(x, y, direction);
@@ -1240,13 +1231,18 @@ int Graph2D::getEdgeNDRDeficit(const int x,
 // tracks the NDR net takes even when no layer of the edge can host it: the
 // tracks it misses are recorded as its NDR deficit instead, which only the
 // NDR nets pay for (see getNDRDeficitIfRouted).
-double Graph2D::getCostNDRAwareSlow(FrNet* net,
-                                    int x,
-                                    int y,
-                                    const double edge_cost,
-                                    EdgeDirection direction)
+double Graph2D::getCostNDRAware(FrNet* net,
+                                int x,
+                                int y,
+                                const double edge_cost,
+                                EdgeDirection direction)
 {
   const int8_t edgeCost = net->getEdgeCost();
+
+  // No processing needed for nets with 1 edge cost
+  if (edgeCost == 1) {
+    return edge_cost;
+  }
 
   // Get references to the appropriate edge data based on direction
   auto& edge = (direction == EdgeDirection::Horizontal) ? h_edges_[x][y]

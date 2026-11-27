@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -1290,12 +1291,13 @@ std::vector<int> FastRouteCore::getMazeRouteNetOrder(const bool ordering,
   return net_ids_;
 }
 
-double FastRouteCore::getUsageNDRAwareSlow(FrNet* net,
-                                           const int x,
-                                           const int y,
-                                           const EdgeDirection direction,
-                                           const double usage) const
+double FastRouteCore::getUsageForNDRNet(FrNet* net,
+                                        const int x,
+                                        const int y,
+                                        const EdgeDirection direction,
+                                        const double usage) const
 {
+  assert(net->getEdgeCost() != 1);
   const int deficit = graph2d_.getNDRDeficitIfRouted(net, x, y, direction);
   if (deficit == 0) {
     return usage;
