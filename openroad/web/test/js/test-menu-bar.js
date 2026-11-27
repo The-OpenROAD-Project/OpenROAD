@@ -77,6 +77,17 @@ describe('MenuBar', () => {
         assert.equal(ok.textContent, 'Open');
     });
 
+    it('keeps a typed relative path from reading as an option', async () => {
+        const requests = await openFileDialog('Open DB', { path: '/work', entries: [] });
+        const input = document.querySelector('.fb-path-input');
+        input.value = '-final.odb';
+        input.dispatchEvent(new Event('input'));
+        document.querySelector('.modal-buttons .ok').click();
+        await waitForMicrotasks();
+        assert.equal(requests.find(req => req.type === 'tcl_eval').cmd,
+                     'read_db "./-final.odb"');
+    });
+
     it('names the server in the file dialog title', async () => {
         await openFileDialog('Save DB', { path: '/work', entries: [], host: 'farm-42' });
         assert.equal(document.querySelector('.file-browser-dialog h3').textContent,

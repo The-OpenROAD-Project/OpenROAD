@@ -560,6 +560,8 @@ function showPathDialog(app, title, tclCmd) {
     async function submit() {
         const path = pathInput.value.trim();
         if (!path) return;
+        // Without "./", a relative path starting with "-" reads as an option.
+        const arg = path.startsWith('/') ? path : `./${path}`;
 
         okBtn.disabled = true;
         okBtn.textContent = 'Working...';
@@ -568,7 +570,7 @@ function showPathDialog(app, title, tclCmd) {
         try {
             const resp = await app.websocketManager.request({
                 type: 'tcl_eval',
-                cmd: `${tclCmd} ${tclQuote(path)}`,
+                cmd: `${tclCmd} ${tclQuote(arg)}`,
             });
 
             if (resp.is_error) {
