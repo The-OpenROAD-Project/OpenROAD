@@ -127,16 +127,7 @@ write_db $cts_db
 
 set_propagated_clock [all_clocks]
 
-# Global routing is fast enough for the flow regressions.
-# It is NOT FAST ENOUGH FOR PRODUCTION USE.
-set repair_timing_use_grt_parasitics 0
-if { $repair_timing_use_grt_parasitics } {
-  # Global route for parasitics - no guide file requied
-  global_route -congestion_iterations 100
-  estimate_parasitics -global_routing
-} else {
-  estimate_parasitics -placement
-}
+estimate_parasitics -placement
 
 repair_timing -skip_gate_cloning
 
@@ -173,8 +164,28 @@ write_verilog $verilog_file
 pin_access
 
 set route_guide [make_result_file ${design}_${platform}.route_guide]
-global_route -guide_file $route_guide \
-  -congestion_iterations 100 -verbose
+global_route -congestion_iterations 100 -verbose
+
+################################################################
+# Repair design and timing on global routing parasitics
+#
+# As ORFS's global_route.tcl does: the placement estimate above can
+# misjudge a long net badly enough that the routed result fails timing
+# by a large share of the clock period, and only a repair on the global
+# routes sees it.
+
+estimate_parasitics -global_routing
+repair_design -slew_margin $slew_margin -cap_margin $cap_margin
+global_route -start_incremental
+detailed_placement
+global_route -end_incremental -congestion_iterations 100
+
+estimate_parasitics -global_routing
+repair_timing -skip_gate_cloning
+global_route -start_incremental
+detailed_placement
+global_route -end_incremental -congestion_iterations 100 \
+  -guide_file $route_guide
 
 set verilog_file [make_result_file ${design}_${platform}.v]
 write_verilog -remove_cells $filler_cells $verilog_file
