@@ -20,15 +20,15 @@ Clang-Tidy CI fails on any clang-tidy finding in the lines the PR changes; revie
 `bazel-ci` and the flow steps run, in parallel. `bazel-docs`, `bazel-nogui`,
 and the Docker builds run alongside. Each step leaves a log named after it
 (see CI Artifacts). The build and test steps pass `--config=ci` (remote
-cache, needs credentials), `--//:platform=gui` (the local default is
-`cli`), and `--force_pic`. Drop `--config=ci` when reproducing locally;
-keep the other two.
+cache, needs credentials) and `--//:platform=gui` (the local default is
+`cli`); `--force_pic` is set by default in `.bazelrc`. Drop `--config=ci` when
+reproducing locally; keep `--//:platform=gui`.
 
 | Step | Reproduce locally |
 |------|-------------------|
-| `bazel-build-tests` | `bazelisk build --build_tests_only --keep_going --//:platform=gui --force_pic ... //test:<design>_<platform>-tcl_test...` (all 14 flow tests) |
-| `bazel-ci` (all tests) | `bazelisk test --test_output=errors --//:platform=gui --force_pic ...` |
-| `bazel-flow-<design>_<platform>` | `bazelisk test --test_output=errors --//:platform=gui --force_pic //test:<design>_<platform>-tcl_test` |
+| `bazel-build-tests` | `bazelisk build --build_tests_only --keep_going --//:platform=gui ... //test:<design>_<platform>-tcl_test...` (all 14 flow tests) |
+| `bazel-ci` (all tests) | `bazelisk test --test_output=errors --//:platform=gui ...` |
+| `bazel-flow-<design>_<platform>` | `bazelisk test --test_output=errors --//:platform=gui //test:<design>_<platform>-tcl_test` |
 | `bazel-docs` | `bazelisk build //docs:man_pages` |
 | `bazel-nogui` | `bazelisk build --//:platform=cli //:openroad` |
 
@@ -36,6 +36,10 @@ keep the other two.
   explicitly. Each checks `test/<design>_<platform>.metrics_limits`.
 - Jenkins also builds the Docker image on six Linux distros and
   smoke-tests the binary, which exercises `etc/DependencyInstaller.sh`.
+  It passes the `builder` stage an optional `--secret id=bazelrc` holding a
+  temporary `user.bazelrc` so the image build reaches the same remote
+  execution and cache endpoints as the Bazel steps. The comment above that
+  mount in the `Dockerfile` lists what a caller has to get right.
 - `[skip ci]` or `[ci skip]` in the latest commit message skips the
   Bazel build-tests, test, and flow steps and the Docker smoke tests;
   docs, nogui, and the Docker image builds still run.
