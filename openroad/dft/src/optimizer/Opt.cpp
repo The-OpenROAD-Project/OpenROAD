@@ -42,18 +42,6 @@ constexpr int kMaxNeighbors = 50;
 constexpr int kMaxReverseNeighbors = 2 * kMaxNeighbors;
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-// Manhattan distance between two points (int64 to avoid overflow).
-int64_t Dist(const odb::Point& a, const odb::Point& b)
-{
-  const int64_t dx = std::abs(static_cast<int64_t>(a.x()) - b.x());
-  const int64_t dy = std::abs(static_cast<int64_t>(a.y()) - b.y());
-  return dx + dy;
-}
-
-// ---------------------------------------------------------------------------
 // k-Nearest-Neighbor candidate edges
 //
 // For each cell i we precompute the k nearest cells measured by the
@@ -68,7 +56,7 @@ int64_t Dist(const odb::Point& a, const odb::Point& b)
 struct CandidateEdges
 {
   // neighbors[i] = vector of cell indices that are the k nearest neighbors
-  // of cell i, measured by Dist(so[i], si[neighbor]).
+  // of cell i, measured by the distance from so[i] to si[neighbor].
   std::vector<std::vector<int>> neighbors;
   // reverse_neighbors[j] = cells that list j among their neighbors, at most
   // kMaxReverseNeighbors of them, preferring those that rank j nearest.
@@ -106,7 +94,8 @@ struct CandidateEdges
         if (j == i) {
           continue;  // skip self
         }
-        ranked.emplace_back(Dist(scan_out[i], scan_in[j]), j);
+        ranked.emplace_back(
+            odb::Point::manhattanDistance(scan_out[i], scan_in[j]), j);
       }
       std::sort(ranked.begin(), ranked.end());
       const int limit = std::min(keep_k, static_cast<int>(ranked.size()));
@@ -187,35 +176,93 @@ class EdgeSums
   std::vector<int64_t> tree_;
 };
 
-// The chain order shared by the 2-Opt and 3-Opt passes.  identity[pos] is
-// the node id at each position and pos_of[id] its position; si[pos] and
-// so[pos] are the scan-in and scan-out pins of the node at pos.  The first
+// The chain order shared by the 2-Opt and 3-Opt passes.  Node ids index
+// the scan-in and scan-out pin vectors given to the constructor.  The first
 // and last positions never move.
-struct Chain
+class Chain
 {
+ public:
   Chain(std::vector<int> order,
         const std::vector<odb::Point>& si_of_id,
-        const std::vector<odb::Point>& so_of_id)
-      : identity(std::move(order)),
-        pos_of(si_of_id.size()),
-        si(identity.size()),
-        so(identity.size())
+        const std::vector<odb::Point>& so_of_id);
+
+  int size() const { return static_cast<int>(identity_.size()); }
+
+  // The node id at position pos.
+  int idAt(const int pos) const { return identity_[pos]; }
+
+  // The position of node id.
+  int posOf(const int id) const { return pos_of_[id]; }
+
+  // The node ids in chain order.
+  const std::vector<int>& order() const { return identity_; }
+
+  // Wire from the scan-out of the node at position from to the scan-in of
+  // the node at position to.
+  int64_t dist(const int from, const int to) const
   {
-    for (int pos = 0; pos < size(); pos++) {
-      const int id = identity[pos];
-      pos_of[id] = pos;
-      si[pos] = si_of_id[id];
-      so[pos] = so_of_id[id];
-    }
+    return odb::Point::manhattanDistance(so_[from], si_[to]);
   }
 
-  int size() const { return static_cast<int>(identity.size()); }
+  // Reverses the nodes at positions [first, last).
+  void reverse(int first, int last);
 
-  std::vector<int> identity;
-  std::vector<int> pos_of;
-  std::vector<odb::Point> si;
-  std::vector<odb::Point> so;
+  // Rotates the nodes at positions [first, last) so the one at mid comes
+  // first.
+  void rotate(int first, int mid, int last);
+
+ private:
+  // Updates pos_of_ for the nodes at positions [first, last).
+  void updatePositions(int first, int last);
+
+  // identity_[pos] is the node id at pos and pos_of_[id] its position.
+  std::vector<int> identity_;
+  std::vector<int> pos_of_;
+  // Scan-in and scan-out pins of the node at each position.
+  std::vector<odb::Point> si_;
+  std::vector<odb::Point> so_;
 };
+
+Chain::Chain(std::vector<int> order,
+             const std::vector<odb::Point>& si_of_id,
+             const std::vector<odb::Point>& so_of_id)
+    : identity_(std::move(order)),
+      pos_of_(si_of_id.size()),
+      si_(identity_.size()),
+      so_(identity_.size())
+{
+  for (int pos = 0; pos < size(); pos++) {
+    const int id = identity_[pos];
+    pos_of_[id] = pos;
+    si_[pos] = si_of_id[id];
+    so_[pos] = so_of_id[id];
+  }
+}
+
+void Chain::reverse(const int first, const int last)
+{
+  std::reverse(si_.begin() + first, si_.begin() + last);
+  std::reverse(so_.begin() + first, so_.begin() + last);
+  std::reverse(identity_.begin() + first, identity_.begin() + last);
+  updatePositions(first, last);
+}
+
+void Chain::rotate(const int first, const int mid, const int last)
+{
+  std::rotate(si_.begin() + first, si_.begin() + mid, si_.begin() + last);
+  std::rotate(so_.begin() + first, so_.begin() + mid, so_.begin() + last);
+  std::rotate(identity_.begin() + first,
+              identity_.begin() + mid,
+              identity_.begin() + last);
+  updatePositions(first, last);
+}
+
+void Chain::updatePositions(const int first, const int last)
+{
+  for (int pos = first; pos < last; pos++) {
+    pos_of_[identity_[pos]] = pos;
+  }
+}
 
 // Runs a first-improvement local search over positions [0, last].
 // try_move(i, mark) applies an improving move anchored at position i, if
@@ -281,33 +328,28 @@ bool TwoOptScanChain(Chain& chain, const CandidateEdges& candidates)
   if (n < 4) {
     return false;
   }
-  std::vector<int>& identity = chain.identity;
-  std::vector<int>& pos_of = chain.pos_of;
-  std::vector<odb::Point>& si = chain.si;
-  std::vector<odb::Point>& so = chain.so;
-
-  // D(i, j) = Manhattan distance from scan-out of cell i to scan-in of cell j.
-  const auto D = [&](int i, int j) -> int64_t { return Dist(so[i], si[j]); };
+  const auto D
+      = [&chain](const int i, const int j) { return chain.dist(i, j); };
 
   // rev[k] is the extra wire when edge (k-1, k) runs backward.
   std::vector<int64_t> rev(n, 0);
   for (int k = 1; k < n; k++) {
-    rev[k] = Dist(so[k], si[k - 1]) - D(k - 1, k);
+    rev[k] = D(k, k - 1) - D(k - 1, k);
   }
   EdgeSums rev_sums(rev);
   const auto update_rev = [&](const int k) {
-    const int64_t value = Dist(so[k], si[k - 1]) - D(k - 1, k);
+    const int64_t value = D(k, k - 1) - D(k - 1, k);
     rev_sums.add(k, value - rev[k]);
     rev[k] = value;
   };
 
   // Applies the first improving move that reconnects position i, if any.
   const auto try_move = [&](const int i, const auto& mark) {
-    const int id_i1 = identity[i + 1];  // cell at position i+1
+    const int id_i1 = chain.idAt(i + 1);  // cell at position i+1
 
     // Iterate over k-NN of cell id_i1 (measured by so → si distance).
     for (const int neighbor_id : candidates.neighbors[id_i1]) {
-      const int j = pos_of[neighbor_id];
+      const int j = chain.posOf(neighbor_id);
       // j must index the second removed edge (j, j+1), so j ∈ [i+2, n-2].
       if (j < i + 2 || j > n - 2) {
         continue;
@@ -318,12 +360,7 @@ bool TwoOptScanChain(Chain& chain, const CandidateEdges& candidates)
       const int64_t gain = D(i, i + 1) + D(j, j + 1) - D(i, j) - D(i + 1, j + 1)
                            - rev_sums.range(i + 2, j);
       if (gain > 0) {
-        std::reverse(si.begin() + i + 1, si.begin() + j + 1);
-        std::reverse(so.begin() + i + 1, so.begin() + j + 1);
-        std::reverse(identity.begin() + i + 1, identity.begin() + j + 1);
-        for (int k = i + 1; k <= j; k++) {
-          pos_of[identity[k]] = k;
-        }
+        chain.reverse(i + 1, j + 1);
         for (int k = i + 1; k <= j + 1; k++) {
           update_rev(k);
         }
@@ -332,8 +369,8 @@ bool TwoOptScanChain(Chain& chain, const CandidateEdges& candidates)
         for (const int p : {i, i + 1, j, j + 1}) {
           mark(p);
           mark(p - 1);
-          for (const int r : candidates.reverse_neighbors[identity[p]]) {
-            mark(pos_of[r] - 1);
+          for (const int r : candidates.reverse_neighbors[chain.idAt(p)]) {
+            mark(chain.posOf(r) - 1);
           }
         }
         return true;
@@ -366,22 +403,18 @@ bool ThreeOptScanChain(Chain& chain, const CandidateEdges& candidates)
   if (n < 6) {
     return false;
   }
-  std::vector<int>& identity = chain.identity;
-  std::vector<int>& pos_of = chain.pos_of;
-  std::vector<odb::Point>& si = chain.si;
-  std::vector<odb::Point>& so = chain.so;
-
-  const auto D = [&](int a, int b) -> int64_t { return Dist(so[a], si[b]); };
+  const auto D
+      = [&chain](const int a, const int b) { return chain.dist(a, b); };
 
   // Applies the first improving move that reconnects position i, if any.
   const auto try_move = [&](const int i, const auto& mark) {
     const int64_t d_i = D(i, i + 1);
-    const int id_i = identity[i];
+    const int id_i = chain.idAt(i);
 
     // Middle loop: after the swap, edge i → j+1 is created, so j+1 should
     // be a neighbor of cell at position i.
     for (const int nb_id : candidates.neighbors[id_i]) {
-      const int j1_pos = pos_of[nb_id];
+      const int j1_pos = chain.posOf(nb_id);
       const int j = j1_pos - 1;
       if (j < i + 2 || j >= n - 3) {
         continue;
@@ -392,11 +425,11 @@ bool ThreeOptScanChain(Chain& chain, const CandidateEdges& candidates)
       }
 
       const int64_t d_j = D(j, j + 1);
-      const int id_j = identity[j];
+      const int id_j = chain.idAt(j);
 
       // Inner loop: after the swap, edge j → k+1 is created.
       for (const int nb2_id : candidates.neighbors[id_j]) {
-        const int k1_pos = pos_of[nb2_id];
+        const int k1_pos = chain.posOf(nb2_id);
         const int k = k1_pos - 1;
         if (k < j + 2 || k >= n - 1) {
           continue;
@@ -409,23 +442,14 @@ bool ThreeOptScanChain(Chain& chain, const CandidateEdges& candidates)
         const int64_t gain = g1 + g2 + g3;
         if (gain > 0) {
           // Swap subtours [i+1..j] and [j+1..k] via rotate.
-          std::rotate(
-              si.begin() + i + 1, si.begin() + j + 1, si.begin() + k + 1);
-          std::rotate(
-              so.begin() + i + 1, so.begin() + j + 1, so.begin() + k + 1);
-          std::rotate(identity.begin() + i + 1,
-                      identity.begin() + j + 1,
-                      identity.begin() + k + 1);
-          for (int m = i + 1; m <= k; m++) {
-            pos_of[identity[m]] = m;
-          }
+          chain.rotate(i + 1, j + 1, k + 1);
           // Moves anchored at a changed edge, or at a cell that lists an
           // end of a changed edge as a neighbor, may now improve.
           for (const int p : {i, i + 1, i + k - j, i + k - j + 1, k, k + 1}) {
             mark(p);
             mark(p - 1);
-            for (const int r : candidates.reverse_neighbors[identity[p]]) {
-              mark(pos_of[r]);
+            for (const int r : candidates.reverse_neighbors[chain.idAt(p)]) {
+              mark(chain.posOf(r));
             }
           }
           return true;
@@ -438,24 +462,13 @@ bool ThreeOptScanChain(Chain& chain, const CandidateEdges& candidates)
   return RunLocalSearch(n - 6, try_move);
 }
 
-}  // namespace
-
-void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
-                            utl::Logger* logger,
-                            const std::optional<odb::Point>& source,
-                            const std::optional<odb::Point>& sink)
+// Orders placed cells greedily: start from the cell nearest the source (or
+// the lower-left one without a source) and repeatedly step to the nearest
+// unvisited cell.
+void NearestNeighborOrder(std::vector<std::unique_ptr<ScanCell>>& cells,
+                          utl::Logger* logger,
+                          const std::optional<odb::Point>& source)
 {
-  // Nothing to order
-  if (cells.empty()) {
-    return;
-  }
-  // No point running this if the cells aren't placed yet
-  for (const auto& cell : cells) {
-    if (!cell->isPlaced()) {
-      return;
-    }
-  }
-
   // Start from the cell nearest the source. Without a source, start from the
   // lower leftmost cell so we don't accidentally start in the middle.
   size_t start_index = 0;
@@ -466,7 +479,8 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
 
   for (size_t i = 0; i < cells.size(); i++) {
     const auto origin = cells[i]->getOrigin();
-    const int64_t dist = source ? Dist(*source, cells[i]->getScanInLocation())
+    const int64_t dist = source ? odb::Point::manhattanDistance(
+                                      *source, cells[i]->getScanInLocation())
                                 : int64_t{origin.x()} + origin.y();
     if (dist < lowest_dist) {
       start_index = i;
@@ -506,6 +520,27 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
   }
   // Replace with sorted vector
   std::swap(cells, result);
+}
+
+}  // namespace
+
+void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
+                            utl::Logger* logger,
+                            const std::optional<odb::Point>& source,
+                            const std::optional<odb::Point>& sink)
+{
+  // Nothing to order
+  if (cells.empty()) {
+    return;
+  }
+  // No point running this if the cells aren't placed yet
+  for (const auto& cell : cells) {
+    if (!cell->isPlaced()) {
+      return;
+    }
+  }
+
+  NearestNeighborOrder(cells, logger, source);
 
   // Node ids 0..n-1 are the cells. The source and sink, when given, are extra
   // nodes pinned to the ends of the order, so the local search accounts for
@@ -551,7 +586,7 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
 
   std::vector<std::unique_ptr<ScanCell>> ordered;
   ordered.reserve(n);
-  for (const int id : chain.identity) {
+  for (const int id : chain.order()) {
     if (id < n) {
       ordered.push_back(std::move(cells[id]));
     }
