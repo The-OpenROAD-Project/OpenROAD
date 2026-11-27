@@ -384,7 +384,7 @@ cc_test(
         "//openroad/odb/src/db",
         "//openroad/sta:opensta_lib",
         "//openroad/stt",
-        "//openroad/tst:db_fixture",
+        "//openroad/tst",
         "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

@@ -18,7 +18,7 @@
 #include "odb/dbTypes.h"
 #include "sta/MinMax.hh"
 #include "stt/SteinerTreeBuilder.h"
-#include "tst/db_fixture.h"
+#include "tst/fixture.h"
 #include "utl/ServiceRegistry.h"
 
 namespace grt {
@@ -49,11 +49,6 @@ class Maze3DTestPeer
   static FrNet* getNet(const FastRouteCore& router, int net_id)
   {
     return router.nets_[net_id];
-  }
-
-  static void updateWorstMetrics(FastRouteCore& router, FrNet* net)
-  {
-    router.updateWorstMetrics(net);
   }
 
   static void routeResistanceAware(FastRouteCore& router)
@@ -129,7 +124,7 @@ struct RoutedEdge
 };
 
 // Exercise the 3D search directly with synthetic routed trees.
-class Maze3DTest : public tst::DbFixture
+class Maze3DTest : public tst::Fixture
 {
  protected:
   static constexpr int kXGrid = 3;
@@ -143,7 +138,7 @@ class Maze3DTest : public tst::DbFixture
     auto* chip = odb::dbChip::create(db_.get(), tech_);
     block_ = odb::dbBlock::create(chip, "top");
     router_ = std::make_unique<FastRouteCore>(
-        db_.get(), &logger_, &registry_, &stt_builder_, nullptr);
+        db_.get(), &logger_, &registry_, &stt_builder_, getSta());
     router_->setTileSize(100);
     router_->setGridsAndLayers(kXGrid, kYGrid, kNumLayers);
     router_->addLayerDirection(0, odb::dbTechLayerDir::HORIZONTAL);
@@ -165,22 +160,26 @@ class Maze3DTest : public tst::DbFixture
     skipped_net_ = addNet("skipped", {});
   }
 
-  int addNet(const char* name, const std::vector<GPoint3D>& grids)
+  int addNet(const char* name,
+             const std::vector<GPoint3D>& grids,
+             bool is_clock = false)
   {
     if (grids.empty()) {
-      return addTreeNet(name, {}, {}, {});
+      return addTreeNet(name, {}, {}, {}, is_clock);
     }
-    return addTreeNet(name, {grids.front(), grids.back()}, {}, {{0, 1, grids}});
+    return addTreeNet(
+        name, {grids.front(), grids.back()}, {}, {{0, 1, grids}}, is_clock);
   }
 
   int addTreeNet(const char* name,
                  const std::vector<GPoint3D>& pins,
                  const std::vector<GPoint3D>& steiner_points,
-                 const std::vector<RoutedEdge>& edges)
+                 const std::vector<RoutedEdge>& edges,
+                 bool is_clock = false)
   {
     auto* db_net = odb::dbNet::create(block_, name);
     FrNet* net = router_->addNet(db_net,
-                                 /*is_clock=*/false,
+                                 is_clock,
                                  /*is_local=*/pins.empty(),
                                  /*driver_idx=*/0,
                                  /*cost=*/1,
@@ -366,7 +365,7 @@ class Maze3DTest : public tst::DbFixture
     router_->setResistanceAware(true);
   }
 
-  int addDetourNet(const char* name, float slack, bool is_res_aware = false)
+  int addDetourNet(const char* name, float slack, bool is_clock = false)
   {
     const int net_id = addNet(name,
                               {{0, 2, 0},
@@ -377,15 +376,10 @@ class Maze3DTest : public tst::DbFixture
                                {2, 1, 0},
                                {2, 1, 1},
                                {2, 2, 1},
-                               {2, 2, 0}});
+                               {2, 2, 0}},
+                              is_clock);
     FrNet* net = Maze3DTestPeer::getNet(*router_, net_id);
     net->setSlack(slack);
-    net->setIsResAware(is_res_aware);
-    net->setResistance(10.0);
-    net->setNetLength(2);
-    if (is_res_aware) {
-      Maze3DTestPeer::updateWorstMetrics(*router_, net);
-    }
     return net_id;
   }
 
@@ -602,78 +596,58 @@ TEST_F(Maze3DTest, PlanarRouteAddsCrossingViaOnce)
   EXPECT_EQ(route.size(), 5);
 }
 
-TEST_F(Maze3DTest, IncrementalZeroOverflowSkipsNonResAwareNonNegativeSlack)
+TEST_F(Maze3DTest, IncrementalResistanceAwareSkipsOnlyUnconstrainedNonClockNets)
 {
   enableResistanceAware();
+  const int uncon_net = addDetourNet("unconstrained", sta::INF);
+  const int clock_net
+      = addDetourNet("unconstrained_clock", sta::INF, /*is_clock=*/true);
   const int pos_net = addDetourNet("pos_slack", 1.0f);
   const int zero_net = addDetourNet("zero_slack", 0.0f);
+  const int neg_net = addDetourNet("neg_slack", -1.0f);
+  const auto uncon_tree = tree(uncon_net);
+
+  ASSERT_NO_THROW(Maze3DTestPeer::routeResistanceAware(*router_));
+
+  const std::vector<GPoint3D> direct{{0, 2, 0}, {1, 2, 0}, {2, 2, 0}};
+  expectRoute(uncon_net, uncon_tree.edges[0].route.grids);
+  expectRoute(clock_net, direct);
+  expectRoute(pos_net, direct);
+  expectRoute(zero_net, direct);
+  expectRoute(neg_net, direct);
+  EXPECT_EQ(router_->totalOverflow(), 0);
+}
+
+TEST_F(Maze3DTest, InitialResistanceAwareSkipsNonNegativeSlackAndUnconstrained)
+{
+  router_->setIncrementalGrt(false);
+  enableResistanceAware();
   const int uncon_net = addDetourNet("unconstrained", sta::INF);
+  const int pos_net = addDetourNet("pos_slack", 1.0f);
+  const int zero_net = addDetourNet("zero_slack", 0.0f);
+  const int neg_net = addDetourNet("neg_slack", -1.0f);
+  const auto uncon_tree = tree(uncon_net);
   const auto pos_tree = tree(pos_net);
   const auto zero_tree = tree(zero_net);
-  const auto uncon_tree = tree(uncon_net);
-  const auto original_usage = usage();
 
   ASSERT_NO_THROW(Maze3DTestPeer::routeResistanceAware(*router_));
 
+  const std::vector<GPoint3D> direct{{0, 2, 0}, {1, 2, 0}, {2, 2, 0}};
+  expectRoute(uncon_net, uncon_tree.edges[0].route.grids);
   expectRoute(pos_net, pos_tree.edges[0].route.grids);
   expectRoute(zero_net, zero_tree.edges[0].route.grids);
-  expectRoute(uncon_net, uncon_tree.edges[0].route.grids);
-  EXPECT_EQ(usage(), original_usage);
-  EXPECT_EQ(router_->totalOverflow(), 0);
-}
-
-TEST_F(Maze3DTest, IncrementalZeroOverflowRoutesResAwareAndNegativeSlack)
-{
-  enableResistanceAware();
-  const int res_pos_net = addDetourNet("res_pos", 1.0f, /*is_res_aware=*/true);
-  const int res_uncon_net
-      = addDetourNet("res_uncon", sta::INF, /*is_res_aware=*/true);
-  const int neg_net = addDetourNet("neg_slack", -1.0f);
-  const int skip_net = addDetourNet("skip_pos", 1.0f);
-  const auto skip_tree = tree(skip_net);
-
-  ASSERT_NO_THROW(Maze3DTestPeer::routeResistanceAware(*router_));
-
-  const std::vector<GPoint3D> direct{{0, 2, 0}, {1, 2, 0}, {2, 2, 0}};
-  expectRoute(res_pos_net, direct);
-  expectRoute(res_uncon_net, direct);
   expectRoute(neg_net, direct);
-  expectRoute(skip_net, skip_tree.edges[0].route.grids);
   EXPECT_EQ(router_->totalOverflow(), 0);
 }
 
-TEST_F(Maze3DTest, IncrementalWithOverflowRoutesNonResAwareAndSkipsAfterClear)
+TEST_F(Maze3DTest, NonResistanceAwareRoutesUnconstrainedNets)
 {
-  enableResistanceAware();
-  const int pos_net = addDetourNet("pos_slack", 1.0f);
   const int uncon_net = addDetourNet("unconstrained", sta::INF);
-  // Create 3D overflow on the detour edge without refreshing total_overflow_.
-  router_->addAdjustment(1, 1, 2, 1, 1, 0, true);
 
-  ASSERT_NO_THROW(Maze3DTestPeer::routeResistanceAware(*router_));
+  ASSERT_NO_THROW(route({uncon_net}));
 
   const std::vector<GPoint3D> direct{{0, 2, 0}, {1, 2, 0}, {2, 2, 0}};
-  expectRoute(pos_net, direct);
   expectRoute(uncon_net, direct);
-
-  // Pass 1 cleared all 3D overflow; Pass 2 must refresh total_overflow_ to 0
-  // and skip newly added non-resistance-aware non-negative-slack nets.
-  const int post_clear_net = addNet("post_clear_pos",
-                                    {{0, 0, 0},
-                                     {0, 0, 1},
-                                     {0, 1, 1},
-                                     {0, 1, 0},
-                                     {1, 1, 0},
-                                     {1, 1, 1},
-                                     {1, 0, 1},
-                                     {1, 0, 0},
-                                     {2, 0, 0}});
-  Maze3DTestPeer::getNet(*router_, post_clear_net)->setSlack(1.0f);
-  const auto post_clear_tree = tree(post_clear_net);
-
-  ASSERT_NO_THROW(Maze3DTestPeer::routeResistanceAware(*router_));
-
-  expectRoute(post_clear_net, post_clear_tree.edges[0].route.grids);
   EXPECT_EQ(router_->totalOverflow(), 0);
 }
 

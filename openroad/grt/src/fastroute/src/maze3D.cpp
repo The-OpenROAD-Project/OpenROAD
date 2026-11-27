@@ -11,6 +11,7 @@
 #include "DataType.h"
 #include "FastRoute.h"
 #include "odb/db.h"
+#include "sta/MinMax.hh"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -663,9 +664,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     // More flexible during repair stages
     setDetourPenalty(is_incremental_grt_ ? kLowDetourPenalty
                                          : kHighDetourPenalty);
-    if (is_incremental_grt_) {
-      getOverflow3D();
-    }
   }
 
   // Don't need to reroute every net during first GRT run, let it for the
@@ -706,12 +704,15 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
     // Enable resistance aware routing only if the net needs it
     resistance_aware_ = enable_resistance_aware_ && net->isResAware();
-    // Don't reroute nets with non-negative slack in initial GRT, or
-    // non-resistance-aware nets during zero-overflow incremental GRT.
-    if (enable_resistance_aware_ && net->getSlack() >= 0
-        && (!is_incremental_grt_
-            || (total_overflow_ == 0 && !net->isResAware()))) {
-      continue;
+    if (enable_resistance_aware_) {
+      // Skip unconstrained non-clock nets (also excluded from res-aware in
+      // updateSlacks) and, in initial GRT, nets with non-negative slack.
+      const bool is_unconstrained_net
+          = net->getSlack() == sta::INF && !net->isClock();
+      if (is_unconstrained_net
+          || (!is_incremental_grt_ && net->getSlack() >= 0)) {
+        continue;
+      }
     }
 
     // Precompute per-layer step costs for this net. (0,0)-(1,0) represents a
