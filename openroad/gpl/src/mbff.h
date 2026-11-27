@@ -217,6 +217,9 @@ class MBFF
                             const std::vector<Tray>& trays,
                             const std::vector<std::pair<int, int>>& mapping,
                             const Mask& array_mask);
+  // Warn about the SDC constraints left on flops about to be destroyed.
+  // Only the D/Q/QN pin constraints move to the tray.
+  void WarnDroppedConstraints(const std::vector<odb::dbInst*>& flops);
 
   // seperate flops by clock net and ArrayMask
   void SeparateFlops(std::vector<std::vector<Flop>>& ffs);

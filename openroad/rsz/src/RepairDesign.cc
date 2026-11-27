@@ -1680,20 +1680,21 @@ void RepairDesign::repairNetWire(
       // in terms of the wire segment's length (in Elmore approx.).
       //
       // We solve a quadratic eq. to find the maximum conforming length.
-      float a = wire_res * wire_cap * resizer_->slew_shape_factor_ / 2;
-      float b = (r_drvr * wire_cap)
-                + (wire_res * ref_cap * resizer_->slew_shape_factor_);
-      float c = (r_drvr * ref_cap) - max_load_slew_margined;
-      float l = 0.0;
-      if (a > 1e-12) {  // Quadratic case
-        const float discriminant = b * b - 4 * a * c;
+      // Compute in double with the cancellation-free formulation
+      // l = -2c / (b + sqrt(b^2 - 4ac)). For b > 0 and c <= 0, this avoids
+      // catastrophic subtraction when 4ac is small relative to b^2 and
+      // smoothly reduces to -c / b as a -> 0.
+      const double a = wire_res * wire_cap * resizer_->slew_shape_factor_ / 2.0;
+      const double b = (r_drvr * wire_cap)
+                       + (wire_res * ref_cap * resizer_->slew_shape_factor_);
+      const double c = (r_drvr * ref_cap) - max_load_slew_margined;
+      double l = -1.0;
+      if (c <= 0.0) {
+        const double discriminant = b * b - 4.0 * a * c;
         if (discriminant >= 0.0) {
-          l = (-b + sqrt(discriminant)) / (2 * a);
+          const double denom = b + std::sqrt(discriminant);
+          l = (denom > 0.0) ? (-2.0 * c) / denom : 0.0;
         }
-      } else if (b > 1e-12) {
-        // a * l^2 + b * l + c = 0 becomes
-        // b * l + c = 0 when a is very small
-        l = -c / b;
       }
       if (l >= 0.0) {
         split_length = min(split_length, metersToDbu(l));

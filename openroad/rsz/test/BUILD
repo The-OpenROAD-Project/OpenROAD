@@ -40,6 +40,7 @@ TESTS = [
     "gain_buffering3",
     "gcd_resize",
     "insert_buffer",
+    "insert_buffer_grt",
     "insert_buffer_hier",
     "liberty_dont_use",
     "pinswap_flat",

@@ -8,7 +8,6 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 470 components and 2159 component-terminals.
 [INFO ODB-0133]     Created 416 nets and 1216 connections.
-[WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
 [DEBUG GRT-via_geom] via M1->M2 [VIA12]: encl lower=72x88 upper=112x72 -> len lower=176.0 upper=224.0 -> demand lower=0.0762 upper=0.0970
 [DEBUG GRT-via_geom] via M2->M3 [VIA23]: encl lower=112x72 upper=72x112 -> len lower=224.0 upper=224.0 -> demand lower=0.0970 upper=0.0970
 [DEBUG GRT-via_geom] via M3->M4 [VIA34]: encl lower=72x136 upper=160x96 -> len lower=272.0 upper=320.0 -> demand lower=0.1177 upper=0.1385

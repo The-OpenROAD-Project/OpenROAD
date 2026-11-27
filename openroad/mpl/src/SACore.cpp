@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "SimulatedAnnealingCore.h"
+#include "SACore.h"
 
 #include <algorithm>
 #include <cmath>
@@ -29,23 +29,18 @@ namespace mpl {
 using std::string;
 
 template <class T>
-SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
-                                                  const odb::Rect& outline,
-                                                  const std::vector<T>& macros,
-                                                  const SACoreWeights& weights,
-                                                  float pos_swap_prob,
-                                                  float neg_swap_prob,
-                                                  float double_swap_prob,
-                                                  float exchange_prob,
-                                                  // Fast SA hyperparameter
-                                                  float init_prob,
-                                                  int max_num_step,
-                                                  int num_perturb_per_step,
-                                                  unsigned seed,
-                                                  MplObserver* graphics,
-                                                  utl::Logger* logger,
-                                                  odb::dbBlock* block)
-    : outline_(outline), graphics_(graphics), block_(block)
+SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
+    PhysicalHierarchy* tree,
+    const odb::Rect& outline,
+    const std::vector<T>& macros,
+    const SACoreWeights& weights,
+    const SACoreActionProbs& action_probs,
+    const SAHyperparams& hyperparams,
+    unsigned seed,
+    MplObserver* graphics,
+    utl::Logger* logger,
+    odb::dbBlock* block)
+    : outline_(outline), generator_(seed), graphics_(graphics), block_(block)
 {
   penalties_ = {
       {.name = "Area", .weight = weights.area},
@@ -55,20 +50,30 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
       {.name = "Fence", .weight = weights.fence},
   };
 
-  pos_swap_prob_ = pos_swap_prob;
-  neg_swap_prob_ = neg_swap_prob;
-  double_swap_prob_ = double_swap_prob;
-  exchange_prob_ = exchange_prob;
+  actions_ = {
+      // Swaps two macros' positions within the positive sequence only.
+      {
+          .probability = action_probs.pos_swap,
+          .perturb = [this] { singleSeqSwap(true); },
+      },
+      // Swaps two macros' positions within the negative sequence only.
+      {
+          .probability = action_probs.neg_swap,
+          .perturb = [this] { singleSeqSwap(false); },
+      },
+      // Swaps two macros' positions in both sequences.
+      {
+          .probability = action_probs.double_swap,
+          .perturb = [this] { doubleSeqSwap(); },
+      },
+      // Swaps which macros occupy two positions, in both sequences.
+      {
+          .probability = action_probs.exchange,
+          .perturb = [this] { exchangeMacros(); },
+      },
+  };
 
-  init_prob_ = init_prob;
-  max_num_step_ = max_num_step;
-  num_perturb_per_step_ = num_perturb_per_step;
-
-  // generate random
-  std::mt19937 rand_gen(seed);
-  generator_ = rand_gen;
-  std::uniform_real_distribution<float> distribution(0.0, 1.0);
-  distribution_ = distribution;
+  hyperparams_ = hyperparams;
 
   logger_ = logger;
   macros_ = macros;
@@ -200,232 +205,6 @@ std::vector<T> SimulatedAnnealingCore<T>::getMacros() const
   return macros_;
 }
 
-// Private functions
-template <class T>
-void SimulatedAnnealingCore<T>::calAreaPenalty()
-{
-  Penalty& area_penalty = penalties_[kArea];
-  area_penalty.value = block_->dbuAreaToMicrons(getArea())
-                       / block_->dbuAreaToMicrons(outline_.area());
-  if (graphics_) {
-    graphics_->setPenalty(area_penalty);
-  }
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::calOutlinePenalty()
-{
-  const int max_width = std::max(outline_.dx(), width_);
-  const int max_height = std::max(outline_.dy(), height_);
-  Penalty& outline_penalty = penalties_[kOutline];
-  outline_penalty.value
-      = (max_width * static_cast<int64_t>(max_height)) - outline_.area();
-  // normalization
-  outline_penalty.value = outline_penalty.value / outline_.area();
-  if (graphics_) {
-    graphics_->setPenalty(outline_penalty);
-  }
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::calWirelength()
-{
-  if (penalties_[kWirelength].weight <= 0.0) {
-    return;
-  }
-
-  Penalty& wirelength_penalty = penalties_[kWirelength];
-  wirelength_penalty.value = computeNetsWireLength(nets_);
-
-  if (graphics_) {
-    graphics_->setPenalty(wirelength_penalty);
-  }
-}
-
-template <class T>
-float SimulatedAnnealingCore<T>::computeNetsWireLength(
-    const BundledNetList& nets) const
-{
-  float nets_wire_length = 0.0;
-  float nets_weight_sum = 0.0;
-
-  for (const auto& net : nets_) {
-    nets_weight_sum += net.weight;
-  }
-
-  if (nets_weight_sum != 0.0) {
-    for (const auto& net : nets) {
-      const T& source = macros_[net.terminals.first];
-      const T& target = macros_[net.terminals.second];
-
-      if (target.isClusterOfUnplacedIOPins()) {
-        nets_wire_length
-            += computeWLForClusterOfUnplacedIOPins(source, target, net.weight);
-      } else {
-        const int x1 = source.getPinX();
-        const int y1 = source.getPinY();
-        const int x2 = target.getPinX();
-        const int y2 = target.getPinY();
-
-        nets_wire_length
-            += net.weight * (std::abs(x2 - x1) + std::abs(y2 - y1));
-      }
-    }
-
-    nets_wire_length
-        = nets_wire_length / nets_weight_sum / (outline_.dx() + outline_.dy());
-  }
-
-  return nets_wire_length;
-}
-
-template <class T>
-int64_t SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
-    const T& macro,
-    const T& unplaced_ios,
-    const float net_weight) const
-{
-  // To generate maximum cost.
-  const int max_dist = die_area_.margin() / 2;
-
-  if (isOutsideTheOutline(macro)) {
-    return net_weight * max_dist;
-  }
-
-  const odb::Point macro_location(macro.getPinX(), macro.getPinY());
-  int64_t smallest_distance;
-  if (unplaced_ios.getCluster()->isClusterOfUnconstrainedIOPins()) {
-    if (available_regions_for_unconstrained_pins_.empty()) {
-      logger_->critical(
-          utl::MPL,
-          47,
-          "There's no available region for the unconstrained pins!");
-    }
-
-    smallest_distance = computeDistToNearestRegion(
-        macro_location, available_regions_for_unconstrained_pins_, nullptr);
-  } else {
-    Cluster* cluster = unplaced_ios.getCluster();
-    const BoundaryRegion& constraint = io_cluster_to_constraint_.at(cluster);
-    smallest_distance
-        = computeDistToNearestRegion(macro_location, {constraint}, nullptr);
-  }
-
-  return net_weight * smallest_distance;
-}
-
-// We consider the macro outside the outline based on the location of
-// the pin to avoid too many checks.
-template <class T>
-bool SimulatedAnnealingCore<T>::isOutsideTheOutline(const T& macro) const
-{
-  return macro.getPinX() > outline_.dx() || macro.getPinY() > outline_.dy();
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::calFencePenalty()
-{
-  // Initialization
-  Penalty& fence_penalty = penalties_[kFence];
-  fence_penalty.value = 0.0;
-  if (penalties_[kFence].weight <= 0.0 || fences_.empty()) {
-    return;
-  }
-
-  for (const auto& [id, bbox] : fences_) {
-    const int lx = macros_[id].getX();
-    const int ly = macros_[id].getY();
-    const int ux = lx + macros_[id].getWidth();
-    const int uy = ly + macros_[id].getHeight();
-    // check if the macro is valid
-    if (macros_[id].getWidth() * macros_[id].getHeight() == 0) {
-      continue;
-    }
-    // check if the fence is valid
-    if (macros_[id].getWidth() > (bbox.xMax() - bbox.xMin())
-        || macros_[id].getHeight() > (bbox.yMax() - bbox.yMin())) {
-      continue;
-    }
-    // check how much the macro is far from no fence violation
-    const int max_x_dist = ((bbox.xMax() - bbox.xMin()) - (ux - lx)) / 2;
-    const int max_y_dist = ((bbox.yMax() - bbox.yMin()) - (uy - ly)) / 2;
-    const int x_dist = std::abs(bbox.xCenter() - ((lx + ux) / 2));
-    const int y_dist = std::abs(bbox.yCenter() - ((ly + uy) / 2));
-    // calculate x and y direction independently
-    const int width = x_dist <= max_x_dist ? 0 : (x_dist - max_x_dist);
-    const int height = y_dist <= max_y_dist ? 0 : (y_dist - max_y_dist);
-    const float width_ratio = width / static_cast<float>(outline_.dx());
-    const float height_ratio = height / static_cast<float>(outline_.dy());
-    fence_penalty.value
-        += (width_ratio * width_ratio) + (height_ratio * height_ratio);
-  }
-  // normalization
-  fence_penalty.value = fence_penalty.value / fences_.size();
-  if (graphics_) {
-    graphics_->setPenalty(fence_penalty);
-  }
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::calGuidancePenalty()
-{
-  // Initialization
-  Penalty& guidance_penalty = penalties_[kGuidance];
-  guidance_penalty.value = 0.0;
-  if (penalties_[kGuidance].weight <= 0.0 || guides_.empty()) {
-    return;
-  }
-
-  for (const auto& [id, guide] : guides_) {
-    odb::Rect overlap;
-    macros_[id].getBBox().intersection(guide, overlap);
-
-    // maximum overlap area
-    int64_t penalty
-        = std::min(macros_[id].getWidth(), guide.dx())
-          * static_cast<int64_t>(std::min(macros_[id].getHeight(), guide.dy()));
-
-    // subtract overlap
-    if (overlap.dx() > 0 && overlap.dy() > 0) {
-      penalty -= (overlap.area());
-    }
-
-    guidance_penalty.value += block_->dbuAreaToMicrons(penalty);
-  }
-
-  guidance_penalty.value = guidance_penalty.value / guides_.size();
-
-  if (graphics_) {
-    graphics_->setPenalty(guidance_penalty);
-  }
-}
-
-template <class T>
-float SimulatedAnnealingCore<T>::calNormCost() const
-{
-  float cost = 0.0f;
-  for (const Penalty& penalty : penalties_) {
-    cost += penalty.weight * penalty.value / penalty.normalization_factor;
-  }
-  return cost;
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::savePenalties()
-{
-  for (Penalty& penalty : penalties_) {
-    penalty.pre_value = penalty.value;
-  }
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::restorePenalties()
-{
-  for (Penalty& penalty : penalties_) {
-    penalty.value = penalty.pre_value;
-  }
-}
-
 // Determine the positions of macros based on sequence pair
 template <class T>
 void SimulatedAnnealingCore<T>::packFloorplan()
@@ -503,6 +282,67 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   if (graphics_) {
     graphics_->saStep(macros_);
   }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::perturb()
+{
+  if (macros_.empty()) {
+    return;
+  }
+
+  const float op = distribution_(generator_);
+  const Action* selected = &actions_.back();
+  float cumulative_probability = 0.0f;
+  for (const Action& action : actions_) {
+    cumulative_probability += action.probability;
+    if (op <= cumulative_probability) {
+      selected = &action;
+      break;
+    }
+  }
+
+  selected->perturb();
+
+  packFloorplan();
+  calPenalty();
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::saveState()
+{
+  if (macros_.empty()) {
+    return;
+  }
+
+  pre_macros_ = macros_;
+  pre_pos_seq_ = pos_seq_;
+  pre_neg_seq_ = neg_seq_;
+
+  pre_width_ = width_;
+  pre_height_ = height_;
+
+  savePenalties();
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::restoreState()
+{
+  if (macros_.empty()) {
+    return;
+  }
+
+  // To reduce the runtime, here we do not call PackFloorplan
+  // again. So when we need to generate the final floorplan out,
+  // we need to call PackFloorplan again at the end of SA process.
+  std::swap(pos_seq_, pre_pos_seq_);
+  std::swap(neg_seq_, pre_neg_seq_);
+  std::swap(macros_, pre_macros_);
+
+  width_ = pre_width_;
+  height_ = pre_height_;
+
+  restorePenalties();
 }
 
 // SingleSeqSwap
@@ -601,83 +441,6 @@ float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::report(const Penalty& penalty) const
-{
-  logger_->report(
-      "{:>15s} | {:>8.4f} | {:>7.4f} | {:>14.4f} | {:>7.4f} ",
-      penalty.name,
-      penalty.weight,
-      penalty.value,
-      penalty.normalization_factor,
-      penalty.weight * penalty.value / penalty.normalization_factor);
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::reportWeights() const
-{
-  logger_->report(
-      "\n  Penalty Type  |  Weight  |  Value  |  Norm. Factor  |  Cost");
-  logger_->report(
-      "---------------------------------------------------------------");
-  for (const Penalty& penalty : penalties_) {
-    report(penalty);
-  }
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::reportTotalCost() const
-{
-  logger_->report(
-      "---------------------------------------------------------------");
-  logger_->report("  Total Cost  {:>49.4f} \n", getNormCost());
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::reportLocations() const
-{
-  if constexpr (std::is_same_v<T, HardMacro>) {
-    logger_->report("     Id     |                                Location");
-  } else {
-    logger_->report(" Cluster Id |                                Location");
-  }
-
-  logger_->report("-----------------------------------------------------");
-
-  // First the moveable macros. I.e., those from the sequence pair.
-  for (const int macro_id : pos_seq_) {
-    int display_id;
-    if constexpr (std::is_same_v<T, SoftMacro>) {
-      const SoftMacro& soft_macro = macros_[macro_id];
-      Cluster* cluster = soft_macro.getCluster();
-      display_id = cluster->getId();
-    } else {
-      display_id = macro_id;
-    }
-
-    const T& macro = macros_[macro_id];
-    logger_->report("{:>11d} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
-                    display_id,
-                    block_->dbuToMicrons(macro.getX()),
-                    block_->dbuToMicrons(macro.getY()),
-                    block_->dbuToMicrons(macro.getWidth()),
-                    block_->dbuToMicrons(macro.getHeight()));
-  }
-
-  // Then, the fixed terminals.
-  const int number_of_moveable_macros = static_cast<int>(pos_seq_.size());
-  for (int i = number_of_moveable_macros; i < macros_.size(); ++i) {
-    const T& macro = macros_[i];
-    logger_->report("{:>11s} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
-                    "fixed",
-                    block_->dbuToMicrons(macro.getX()),
-                    block_->dbuToMicrons(macro.getY()),
-                    block_->dbuToMicrons(macro.getWidth()),
-                    block_->dbuToMicrons(macro.getHeight()));
-  }
-  logger_->report("");
-}
-
-template <class T>
 void SimulatedAnnealingCore<T>::initialize()
 {
   initSequencePair();
@@ -691,7 +454,7 @@ void SimulatedAnnealingCore<T>::initialize()
   MplObserver* save_graphics = graphics_;
   graphics_ = nullptr;
 
-  for (int i = 0; i < num_perturb_per_step_; i++) {
+  for (int i = 0; i < hyperparams_.num_perturb_per_step; i++) {
     saveState();
     perturb();
     if (!invalid_states_allowed_ && !isValid()) {
@@ -733,8 +496,8 @@ void SimulatedAnnealingCore<T>::initialize()
   }
 
   if (cost_list.size() > 1 && delta_cost > 0.0) {
-    init_temperature_
-        = (-1.0) * (delta_cost / (cost_list.size() - 1)) / std::log(init_prob_);
+    init_temperature_ = (-1.0) * (delta_cost / (cost_list.size() - 1))
+                        / std::log(hyperparams_.init_prob);
   } else {
     init_temperature_ = 1.0;
   }
@@ -748,13 +511,13 @@ void SimulatedAnnealingCore<T>::fastSA()
   int step = 1;
   float temperature = init_temperature_;
   const float min_t = 1e-10;
-  const float t_factor
-      = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
+  const float t_factor = std::exp(std::log(min_t / init_temperature_)
+                                  / hyperparams_.max_num_step);
 
   updateBestResult(cost);
 
-  while (step <= max_num_step_) {
-    for (int i = 0; i < num_perturb_per_step_; i++) {
+  while (step <= hyperparams_.max_num_step) {
+    for (int i = 0; i < hyperparams_.num_perturb_per_step; i++) {
       saveState();
       perturb();
       cost = calNormCost();
@@ -855,16 +618,6 @@ void SimulatedAnnealingCore<T>::useBestResult()
     graphics_->doNotSkip();
   }
   calPenalty();
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::writeCostFile(
-    const std::string& file_name) const
-{
-  std::ofstream file(file_name);
-  for (auto i = 0; i < cost_list_.size(); i++) {
-    file << T_list_[i] << "  " << cost_list_[i] << '\n';
-  }
 }
 
 template class SimulatedAnnealingCore<SoftMacro>;

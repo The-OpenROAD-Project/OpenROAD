@@ -1806,11 +1806,8 @@ void NesterovBaseCommon::updateDbGCells()
       for (Instance* inst : gCell->insts()) {
         odb::dbInst* db_inst = inst->dbInst();
         db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-
-        // pad awareness on X coordinates
-        db_inst->setLocation(gCell->dCx() - inst->dx() / 2
-                                 + pbc_->siteSizeX() * pbc_->getPadLeft(),
-                             gCell->dCy() - inst->dy() / 2);
+        const odb::Point loc = inst->dbLocationAt(gCell->dCx(), gCell->dCy());
+        db_inst->setLocation(loc.x(), loc.y());
       }
     }
   }

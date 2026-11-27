@@ -37,3 +37,4 @@ Skills are located in `.agents/skills/` (with `.claude/skills` symlink for Claud
 | `add-test` | Add integration/unit tests registered in Bazel | `/add-test <module> [description]` |
 | `review-pr` | Draft local PR review notes (correctness > QoR > testing); human posts | `/review-pr <pr#-or-url>` |
 | `run-web-viewer` | Launch the web viewer on a design and drive it in headless Chrome; screenshots | `/run-web-viewer` |
+| `design-smells` | Find design smells (Feature Envy, God/Data Class, Message Chains, Shotgun Surgery, Data Clumps, ...) via libclang metrics, then triage | `/design-smells <module>` |
