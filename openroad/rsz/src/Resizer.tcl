@@ -240,20 +240,25 @@ proc repair_tie_fanout { args } {
     sta::check_positive_float "-separation" $separation
     set separation [sta::distance_ui_sta $separation]
   }
+  if { [info exists keys(-max_fanout)] } {
+    utl::warn RSZ 3284 "-max_fanout is deprecated and its value is ignored."
+  }
   set verbose [info exists flags(-verbose)]
 
   sta::check_argc_eq1 "repair_tie_fanout" $args
-  set lib_port [lindex $args 0]
+  set lib_port_arg [lindex $args 0]
+  set lib_port $lib_port_arg
   if { ![sta::is_object $lib_port] } {
-    set lib_port [get_lib_pins [lindex $args 0]]
+    set lib_port [get_lib_pins $lib_port_arg]
     if { [llength $lib_port] > 1 } {
       # multiple libraries match the lib port arg; use any
       set lib_port [lindex $lib_port 0]
     }
   }
-  if { $lib_port != "" } {
-    rsz::repair_tie_fanout_cmd $lib_port $separation $verbose
+  if { $lib_port == "" } {
+    utl::error RSZ 3285 "No library port matched '$lib_port_arg'."
   }
+  rsz::repair_tie_fanout_cmd $lib_port $separation $verbose
 }
 
 

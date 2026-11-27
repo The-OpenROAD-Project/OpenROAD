@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0131]     Created 6 components and 23 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 6 connections.
+[WARNING RSZ-3284] -max_fanout is deprecated and its value is ignored.
+[INFO RSZ-0042] Inserted 5 tie LOGIC1_X1 instances.

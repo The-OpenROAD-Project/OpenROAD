@@ -192,7 +192,7 @@ of the tie high/low cell.
 ```tcl
 repair_tie_fanout 
     [-separation dist]
-    [-max_fanout fanout]
+    [-max_fanout fanout] (deprecated)
     [-verbose]
     lib_port
 ```
@@ -202,6 +202,7 @@ repair_tie_fanout
 | Switch Name | Description |
 | ----- | ----- |
 | `-separation` | Tie high/low insts are separated from the load by this value (Liberty units, usually microns). |
+| `-max_fanout` | Deprecated. The passed value is ignored. |
 | `-verbose` | Enable verbose logging of repair progress. |
 | `lib_port` | Tie high/low port, which can be a library/cell/port name or object returned by `get_lib_pins`. |
 
