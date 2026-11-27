@@ -354,7 +354,7 @@ def regression_test(
     Args:
         name: The base name of the test (without extension).
         **kwargs: Additional keyword arguments to pass to the regression_rule_test.
-            `openroad` picks the binary to run, //:openroad by default.
+            `openroad` picks the binary to run, //:openroad_unstamped by default.
     """
 
     # TODO: we should _not_ have the magic to figure out if tcl or py exists
@@ -373,7 +373,10 @@ def regression_test(
     size = _pop(kwargs, "size", "small")
     test_type = _pop(kwargs, "test_type", "")
     tags = _pop(kwargs, "tags", [])
-    openroad = _pop(kwargs, "openroad", "//:openroad")
+
+    # Keep the version stamp out of regression test inputs so a new commit
+    # does not invalidate the test cache.
+    openroad = _pop(kwargs, "openroad", "//:openroad_unstamped")
 
     # Default every regression test to the GPU_ENV_OFF pin: on a GPU build
     # (--config=gpu) the runtime gate defaults on, and any test that runs

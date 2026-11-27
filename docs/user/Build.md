@@ -102,15 +102,15 @@ Pass these options to `bazelisk build` or `bazelisk run`.
 | `-c opt`                       | Optimized build. This is the default.        |
 | `-c dbg`                       | Debug build.                                 |
 | `--cxxopt=<flag>`              | Additional compiler flags.                   |
-| `--config=release`             | Embed the git version string.                |
+| `--config=release`             | Stamp the OpenSTA commit and man page dates. |
 | `--jobs=<N>`                   | Limit the number of parallel build jobs.     |
 | `//:install -- <dir>`          | Install into `<dir>`.                        |
 
 Bazel downloads its own toolchain and libraries, so you do not need to point it to the Tcl or `zlib` libraries.
 
-To embed the real git version string, add `--config=release`:
+The installed `openroad` reports the `git describe --dirty` version:
 
-    bazelisk run --config=release --//:platform=gui //:install
+    bazelisk run --//:platform=gui //:install
 
 ### Using `etc/Build.sh`
 
