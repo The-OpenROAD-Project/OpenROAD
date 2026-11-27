@@ -21,9 +21,8 @@
 [INFO ODB-0131]     Created 141 components and 538 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 282 connections.
 [INFO ODB-0133]     Created 150 nets and 254 connections.
-[INFO PEX-0018] Extracted 122 nets from 5281 boxes: 337 net pairs coupled, 489 grounded.
+[INFO PEX-0018] Extracted 122 nets from 5214 boxes: 276 net pairs coupled, 432 grounded.
 [WARNING PEX-0038] 28 pins are on no wire of their net and have no node in its parasitics.
-[WARNING PEX-0019] 61 pin or special-wire shapes are on no node of their net; their capacitance is on the net's first node.
 [ERROR PEX-0020] Net no_such_net is not in the design.
 [ERROR PEX-0021] Net VDD has no parasitics.
 [ERROR PEX-0025] Net no_such_net is not in the design.

@@ -34,7 +34,19 @@ struct NetWindowOptions
   // cut ends lie farther out than anything the halo selects. Negative: half
   // the targets' height.
   double margin = -1;
+  // Instance pins as context: a cell's pins are counted in its library
+  // timing model, not in the net. Every neighbor's instance pins join the
+  // grounded obstructions, and each target's own form a net of their own
+  // (named by pinsNetName), trimmed clear of the nets' shapes as
+  // obstructions are. The target's routing then has the total of its
+  // capacitance row less its coupling to that net, which is at the
+  // target's potential.
+  bool pins_as_context = false;
 };
+
+// The name of the net that holds the instance pins of target `net` when
+// the pins are context.
+std::string pinsNetName(std::string_view net);
 
 // Conductors around some nets of a block, the targets, in µm: every shape
 // of the target nets, and the neighbours within the window. Neighbours are the
@@ -47,7 +59,10 @@ struct NetWindow
 {
   Geometry geometry;
   std::vector<int> targets;  // net indices in `geometry`
-  double height = 0;         // of the targets' highest box
+  // Per target, the net of its instance pins when they are context; -1 for
+  // none.
+  std::vector<int> pins;
+  double height = 0;  // of the targets' highest box
   double halo = 0;
   double margin = 0;
   int neighbours = 0;  // nets other than the targets
