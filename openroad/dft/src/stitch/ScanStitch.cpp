@@ -91,7 +91,6 @@ void ScanStitch::Stitch(odb::dbBlock* block,
   }
 
   // Let's connect the first cell
-  first_scan_cell->connectScanEnable(scan_enable_driver);
   first_scan_cell->connectScanIn(scan_in_driver);
 
   // If the chain has a single cell, then there is nothing else to connect
