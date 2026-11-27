@@ -15,6 +15,12 @@ library (check_ip_liberty_pins) {
     pin (Z) {
       direction : output;
       function : "A";
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (scalar) { values ("0.1"); }
+        cell_fall (scalar) { values ("0.1"); }
+      }
     }
     pg_pin (VDD) {
       pg_type : primary_power;
@@ -51,6 +57,49 @@ library (check_ip_liberty_pins) {
     pin (A) {
       capacitance : 0.001;
       direction : input;
+    }
+    pg_pin (VDD) {
+      pg_type : primary_power;
+      voltage_name : VDD;
+    }
+  }
+
+  cell (lef_lib_no_timing) {
+    area : 1;
+    pin (A) {
+      capacitance : 0.001;
+      direction : input;
+    }
+    pin (Z) {
+      direction : output;
+      function : "A";
+    }
+    pg_pin (VDD) {
+      pg_type : primary_power;
+      voltage_name : VDD;
+    }
+  }
+
+  cell (lef_lib_clock_exempt) {
+    area : 1;
+    pin (CK) {
+      capacitance : 0.001;
+      direction : input;
+      clock : true;
+    }
+    pin (A) {
+      capacitance : 0.001;
+      direction : input;
+    }
+    pin (Z) {
+      direction : output;
+      function : "A";
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (scalar) { values ("0.1"); }
+        cell_fall (scalar) { values ("0.1"); }
+      }
     }
     pg_pin (VDD) {
       pg_type : primary_power;

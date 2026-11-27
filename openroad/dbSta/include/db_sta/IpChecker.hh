@@ -107,6 +107,9 @@ class IpChecker
   // LEF/LIB-CHK-011-013: Check Liberty pin presence, direction, and area
   void checkLibertyPins(odb::dbMaster* master);
 
+  // LEF/LIB-CHK-013: Check every non-clock signal pin has Liberty timing arcs
+  void checkLibertyTimingArcs(odb::dbMaster* master);
+
   // Helper: Check if a pin shape has at least one accessible edge
   bool hasAccessibleEdge(odb::dbMaster* master,
                          const odb::Rect& pin_rect,

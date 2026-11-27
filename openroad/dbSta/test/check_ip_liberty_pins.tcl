@@ -12,9 +12,17 @@ proc expect_check_ip_pass { master_name } {
   }
 }
 
-proc expect_check_ip_fail { master_name } {
-  if { ![catch { check_ip -master $master_name } err] } {
+proc expect_check_ip_fail { master_name { expected_id "" } } {
+  set failed [catch {
+    tee -quiet -variable log [list check_ip -master $master_name]
+  }]
+  if { !$failed } {
     puts "FAIL: expected $master_name to fail"
+    exit 1
+  }
+  if { $expected_id != "" && [string first $expected_id $log] == -1 } {
+    puts "FAIL: expected $master_name to report $expected_id"
+    puts $log
     exit 1
   }
 }
@@ -24,9 +32,11 @@ expect_check_ip_pass lef_lib_cell_missing
 read_liberty check_ip_liberty_pins.lib
 
 expect_check_ip_pass lef_lib_pins_match
+expect_check_ip_pass lef_lib_clock_exempt
 expect_check_ip_fail lef_lib_pin_missing
 expect_check_ip_fail lef_lib_cell_missing
 expect_check_ip_fail lef_lib_direction_mismatch
 expect_check_ip_fail lef_lib_area_mismatch
+expect_check_ip_fail lef_lib_no_timing CHK-0123
 
 puts "pass"
