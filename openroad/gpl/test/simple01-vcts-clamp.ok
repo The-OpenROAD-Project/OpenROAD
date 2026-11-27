@@ -153,9 +153,9 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       350 |   0.1378 |  2.570023e+03 |   +0.31% |  6.82e-07 |      
       360 |   0.1176 |  2.580577e+03 |   +0.41% |  1.01e-06 |      
       370 |   0.0999 |  2.594672e+03 |   +0.55% |  1.48e-06 |      
-      370 |   0.0999 |  2.594672e+03 |          |  1.54e-06 |      
+      371 |   0.0998 |  2.594019e+03 |          |  1.60e-06 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 370
+[INFO GPL-1001] Global placement finished at iteration 371
 [INFO GPL-1002] Placed Cell Area              632.3804
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.6400 (cell_area / free_area)
@@ -165,5 +165,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1011] Original area (um^2): 600.99
 [INFO GPL-1013] Total timing-driven delta area: 31.39 (+5.22%)
 [INFO GPL-1014] Final placement area: 632.38 (+5.22%)
-[INFO GPL-1018] Final HPWL (um): 2594.77
+[INFO GPL-1018] Final HPWL (um): 2594.08
 worst slack max 1.28

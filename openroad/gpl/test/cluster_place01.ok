@@ -68,9 +68,9 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       210 |   0.1585 |  2.971622e+03 |   +0.81% |  3.58e-07 |      
       220 |   0.1354 |  2.987858e+03 |   +0.55% |  5.27e-07 |      
       230 |   0.1143 |  3.005209e+03 |   +0.58% |  7.77e-07 |      
-      238 |   0.0994 |  3.014915e+03 |          |  1.10e-06 |      
+      239 |   0.0991 |  3.015032e+03 |          |  1.14e-06 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 238
+[INFO GPL-1001] Global placement finished at iteration 239
 [INFO GPL-1002] Placed Cell Area              619.7347
 [INFO GPL-1003] Available Free Area          1142.7360
 [INFO GPL-1004] Minimum Feasible Density        0.5500 (cell_area / free_area)

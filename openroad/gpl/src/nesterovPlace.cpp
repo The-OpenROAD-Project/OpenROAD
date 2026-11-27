@@ -1672,6 +1672,7 @@ void NesterovPlace::updateNextIter(int iter)
   for (auto& nb : nbVec_) {
     const bool updates = !nb->isConverged();
     nb->updateNextIter(iter);
+    nb->settleOnIterate(iter);
     if (updates) {
       updated_hpwl = nb->getIterHpwl();
     }
