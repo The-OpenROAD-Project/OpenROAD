@@ -1,0 +1,20 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: retime_supply_rails.lef, created 1 library cells
+[INFO RET-0014] Retiming graph: 30 gates, 26 edges, 9 registers, 15 pinned gates, 0 fenced registers.
+[INFO RET-0008] Unmapped 3 registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.0646 |       -0.1323 |         9
+     1 |        9 |      1 |    9 |     -0.0526 |       -0.0834 |         9
+     2 |        1 |      1 |    1 |     -0.0526 |       -0.0763 |         9
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 10, rounds 2, WNS -0.0526, TNS -0.0763, registers 9, placed 0, resized 0.
+r2 (DFF_X1): VDD=VDD_A VSS=VSS
+r3 (DFF_X1): VDD=VDD_A VSS=VSS
+r4 (DFF_X1): VDD=VDD_A VSS=VSS
+r5 (DFF_X1): VDD=VDD_A VSS=VSS
+ret_ff_4 (DFFP_X1): VGND=VSS VPB=VDD_A VPWR=VDD_A
+ret_ff_5 (DFFP_X1): VGND=VSS VPB=VDD_B VPWR=VDD_B
+ret_ff_7 (DFFP_X1): VGND=VSS VPB=open VPWR=VDD_A
+ret_ff_8 (DFFP_X1): VGND=VSS VPB=VDD_A VPWR=VDD_A
+rs (DFFP_X1): VGND=VSS VPB=VBIAS VPWR=VDD_A

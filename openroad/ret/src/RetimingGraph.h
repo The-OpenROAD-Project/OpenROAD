@@ -57,8 +57,9 @@ class RetimingGraph
                 rsz::Resizer* resizer,
                 utl::Logger* logger);
 
-  // move_named_registers: RetimeOptions.
-  void build(bool move_named_registers);
+  // move_named_registers: RetimeOptions.  new_cells: the cells a retiming
+  // can create.
+  void build(bool move_named_registers, std::vector<odb::dbMaster*> new_cells);
   // sources: the gates whose fanout registers changed.  gates_changed: gates
   // were appended or dropped.  Returns the gates whose edges were read again.
   std::vector<int> update(std::vector<int> sources, bool gates_changed);
@@ -92,6 +93,9 @@ class RetimingGraph
   bool moveKeepsClass(const std::vector<odb::dbInst*>& registers, int v) const;
 
   bool isDontTouch(odb::dbInst* reg) const;
+  // Every supply pin of a new cell finds its net on the register: the pin
+  // of its name, or the one net of the pins of its kind.
+  bool suppliesFit(odb::dbInst* reg) const;
   // The net an edge's registers start on; the driver net when it has none.
   odb::dbNet* chainNet(const EdgePhys& phys) const;
 
@@ -182,6 +186,9 @@ class RetimingGraph
   std::vector<std::vector<odb::dbInst*>> fenced_from_;  // per gate
   std::unordered_set<odb::dbInst*> sdc_cells_;
   std::unordered_set<odb::dbNet*> shared_nets_;  // with a second driver
+  std::vector<odb::dbMaster*> new_cells_;
+  // Per register cell: it has every supply pin of the new cells.
+  mutable std::unordered_map<odb::dbMaster*, bool> has_new_supply_pins_;
   // Filled as registers are met.
   mutable std::unordered_map<odb::dbInst*, RegisterClass> reg_class_;
   std::vector<bool> self_dual_;

@@ -1,0 +1,66 @@
+/* DFFP_X1: a D flip-flop for a Nangate45 run whose supply pins have other
+   names than Nangate45's (VPWR, VPB and VGND in the LEF).  With its one
+   output it is the base register, not DFF_X1. */
+library (retime_supply_rails) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  leakage_power_unit : "1nW";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  pulling_resistance_unit : "1kohm";
+  capacitive_load_unit (1,ff);
+  nom_process : 1.00;
+  nom_temperature : 25.00;
+  nom_voltage : 1.10;
+  slew_lower_threshold_pct_fall : 30.00;
+  slew_lower_threshold_pct_rise : 30.00;
+  slew_upper_threshold_pct_fall : 70.00;
+  slew_upper_threshold_pct_rise : 70.00;
+  slew_derate_from_library : 1.00;
+  input_threshold_pct_fall : 50.00;
+  input_threshold_pct_rise : 50.00;
+  output_threshold_pct_fall : 50.00;
+  output_threshold_pct_rise : 50.00;
+
+  cell (DFFP_X1) {
+    area : 6.00;
+    ff ("IQ", "IQN") {
+      clocked_on : "CK";
+      next_state : "D";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 1.0;
+      timing () {
+        related_pin : "CK";
+        timing_type : setup_rising;
+        rise_constraint (scalar) { values ("0.03"); }
+        fall_constraint (scalar) { values ("0.03"); }
+      }
+      timing () {
+        related_pin : "CK";
+        timing_type : hold_rising;
+        rise_constraint (scalar) { values ("0.00"); }
+        fall_constraint (scalar) { values ("0.00"); }
+      }
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 1.0;
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      max_capacitance : 60.0;
+      timing () {
+        related_pin : "CK";
+        timing_type : rising_edge;
+        cell_rise (scalar) { values ("0.08"); }
+        cell_fall (scalar) { values ("0.08"); }
+        rise_transition (scalar) { values ("0.01"); }
+        fall_transition (scalar) { values ("0.01"); }
+      }
+    }
+  }
+}

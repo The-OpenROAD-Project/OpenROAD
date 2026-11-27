@@ -110,6 +110,7 @@ std::optional<odb::Rect> RetimerPlacer::neighborBox(odb::dbInst* inst) const
   for (odb::dbITerm* iterm : inst->getITerms()) {
     odb::dbNet* net = iterm->getNet();
     if (net == nullptr || net->getSigType().isSupply()
+        || iterm->getSigType().isSupply()
         || iterm->getSigType() == odb::dbSigType::CLOCK) {
       continue;
     }
@@ -139,7 +140,8 @@ void RetimerPlacer::moveTo(odb::dbInst* inst, const int x, const int y)
                          y - static_cast<int>(master->getHeight()) / 2});
   for (odb::dbITerm* iterm : inst->getITerms()) {
     odb::dbNet* net = iterm->getNet();
-    if (net != nullptr && !net->getSigType().isSupply()) {
+    if (net != nullptr && !net->getSigType().isSupply()
+        && !iterm->getSigType().isSupply()) {
       estimate_parasitics_->parasiticsInvalid(net);
     }
   }
@@ -262,6 +264,7 @@ RetimerPlacer::PinSlack RetimerPlacer::pinSlack(odb::dbInst* inst) const
   for (odb::dbITerm* iterm : inst->getITerms()) {
     odb::dbNet* net = iterm->getNet();
     if (net == nullptr || net->getSigType().isSupply()
+        || iterm->getSigType().isSupply()
         || iterm->getSigType() == odb::dbSigType::CLOCK) {
       continue;
     }

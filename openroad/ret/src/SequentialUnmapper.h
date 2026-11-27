@@ -79,6 +79,8 @@ class SequentialUnmapper
   {
     return tieCell(one).output;
   }
+  // The cells a new instance can be, of those prepare() found.
+  std::vector<odb::dbMaster*> newCellMasters() const;
 
  private:
   struct Register

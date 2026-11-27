@@ -35,8 +35,10 @@ other cell keeps its placement. Each new cell is placed at the center of the
 bounding box of the placed cells it connects to, for detailed placement to
 legalize, and a new register with negative slack takes the best of its
 equivalent cells. Estimated parasitics of the nets that changed are
-refreshed. A new cell takes the supply nets of the cell it replaces, pin
-by pin name; `global_connect` connects any that remain. Run `retime` before
+refreshed. A new cell takes the supply nets of the cell it replaces: a
+supply pin the net of the pin of that name, and a pin with no such name the
+net of the pins of its kind, power or ground. `global_connect` connects any
+that remain. Run `retime` before
 clock tree synthesis and routing. A design is left as it is, with a warning,
 when it has routing, route guides or special wires on a net that is not a
 supply, parasitics read from SPEF, or annotated delays (`read_sdf`,
@@ -59,8 +61,10 @@ These registers never move:
 - latches, scan cells, multi-bit and negative-edge registers, and registers
   clocked by more than one pin or with a second pin marked as a clock (LEF
   `USE CLOCK`, liberty `clock : true`);
-- registers with a tri-state output (liberty `three_state`), and registers
-  of a cell whose LEF pins are not its liberty pins;
+- registers with a tri-state output (liberty `three_state`), registers of a
+  cell whose LEF pins are not its liberty pins, and registers whose power
+  pins, or ground pins, are on different nets when a cell `retime` creates
+  has a supply pin of another name;
 - registers with a live asynchronous set or reset, with an input left
   unconnected or on a net with a second driver (a tri-state bus), or with a
   data input that is a constant (a tie cell, case analysis) or that a
@@ -83,15 +87,16 @@ These registers never move:
   more than 256 registers with no gate in between.
 
 Registers that one net feeds and gates read are rebuilt together on one
-clock net, so such a register also stays when another of them stays or is on
-another clock net. In a hierarchical netlist (`link_design -hier`) a
-register stays inside its module.
+clock net and the same supply nets, so such a register also stays when
+another of them stays, is on another clock net or has a supply pin on
+another net. In a hierarchical netlist (`link_design -hier`) a register
+stays inside its module.
 
 These gates are never crossed:
 
 - a gate fed through a register that stays, connected to a primary input or
   output, driving a control pin of a register, or reachable by registers on
-  different clock nets;
+  different clock nets or different supply nets;
 - a gate that drives or reads a net with a second driver, and a cell that
   is not a plain combinational gate: a tri-state driver, an isolation cell,
   a level shifter, a macro, a pad, or a cell without a liberty function;

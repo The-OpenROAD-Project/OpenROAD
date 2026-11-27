@@ -251,7 +251,21 @@ bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
 {
   return fenced_.contains(reg) || sdc_cells_.contains(reg) || isHeld(reg)
          || isDontTouchRegister(sta_, reg) || readsSharedNet(reg)
-         || hasConstantData(reg);
+         || hasConstantData(reg) || !suppliesFit(reg);
+}
+
+bool RetimingGraph::suppliesFit(odb::dbInst* reg) const
+{
+  odb::dbMaster* master = reg->getMaster();
+  auto it = has_new_supply_pins_.find(master);
+  if (it == has_new_supply_pins_.end()) {
+    const bool has_all
+        = std::ranges::all_of(new_cells_, [master](odb::dbMaster* cell) {
+            return hasSupplyPinsOf(master, cell);
+          });
+    it = has_new_supply_pins_.emplace(master, has_all).first;
+  }
+  return it->second || supplyNets(reg).has_value();
 }
 
 const RegisterClass& RetimingGraph::regClass(odb::dbInst* reg) const
@@ -336,9 +350,12 @@ void RetimingGraph::addGates()
   }
 }
 
-void RetimingGraph::build(const bool move_named_registers)
+void RetimingGraph::build(const bool move_named_registers,
+                          std::vector<odb::dbMaster*> new_cells)
 {
   findClockPeriod();
+  new_cells_ = std::move(new_cells);
+  has_new_supply_pins_.clear();
 
   nodes_.clear();
   index_.clear();
@@ -699,24 +716,24 @@ void RetimingGraph::markDontTouch(odb::dbInst* inst, const int id)
 
 namespace {
 
-// The clock nets of the registers that reach a gate through its inputs,
-// counted up to the second.
-struct ReachingClocks
+// The domains (sameDomain: clock net and supply pins) of the registers that
+// reach a gate through its inputs, counted up to the second.
+struct ReachingDomains
 {
-  odb::dbNet* first = nullptr;
+  const RegisterClass* first = nullptr;
   int count = 0;
 
   // True when it grew.
-  bool add(odb::dbNet* clock)
+  bool add(const RegisterClass* reg)
   {
-    if (count > 1 || (count == 1 && clock == first)) {
+    if (count > 1 || (count == 1 && sameDomain(*reg, *first))) {
       return false;
     }
-    first = count == 0 ? clock : first;
+    first = count == 0 ? reg : first;
     ++count;
     return true;
   }
-  bool add(const ReachingClocks& other)
+  bool add(const ReachingDomains& other)
   {
     const bool grew = other.count > 0 && add(other.first);
     if (other.count > 1 && count < 2) {
@@ -732,24 +749,24 @@ struct ReachingClocks
 void RetimingGraph::fenceDontTouch()
 {
   const int n = size();
-  // A don't-touch register or a second clock net keeps every register that
+  // A don't-touch register or a second domain keeps every register that
   // starts on the same net in place.
   std::unordered_set<odb::dbNet*> fixed_nets;
-  std::unordered_map<odb::dbNet*, odb::dbNet*> net_clock;
+  std::unordered_map<odb::dbNet*, const RegisterClass*> net_domain;
   for (int u = 0; u < n; ++u) {
     for (const EdgePhys& phys : phys_[u]) {
       odb::dbNet* net = chainNet(phys);
       for (odb::dbInst* flop : phys.flops) {
-        odb::dbNet* clock = regClass(flop).clock;
+        const RegisterClass* reg = &regClass(flop);
         if (isDontTouch(flop)
-            || net_clock.emplace(net, clock).first->second != clock) {
+            || !sameDomain(*net_domain.emplace(net, reg).first->second, *reg)) {
           fixed_nets.insert(net);
         }
       }
     }
   }
 
-  std::vector<ReachingClocks> fanin_clocks(nodes_.size());
+  std::vector<ReachingDomains> fanin_domains(nodes_.size());
   for (int u = 0; u < n; ++u) {
     const int edge_count = static_cast<int>(adj_[u].size());
     for (int k = 0; k < edge_count; ++k) {
@@ -759,17 +776,17 @@ void RetimingGraph::fenceDontTouch()
       }
       const EdgePhys& phys = phys_[u][k];
       for (odb::dbInst* flop : phys.flops) {
-        fanin_clocks[target].add(regClass(flop).clock);
+        fanin_domains[target].add(&regClass(flop));
       }
       if (!phys.flops.empty() && fixed_nets.contains(chainNet(phys))) {
         pinned_[target] = true;
       }
     }
   }
-  // A gate passes its clocks on each time they grow, twice at most.
+  // A gate passes its domains on each time they grow, twice at most.
   std::vector<int> open;
   for (int u = 0; u < n; ++u) {
-    if (fanin_clocks[u].count > 0) {
+    if (fanin_domains[u].count > 0) {
       open.push_back(u);
     }
   }
@@ -777,13 +794,13 @@ void RetimingGraph::fenceDontTouch()
     const int u = open.back();
     open.pop_back();
     for (const Edge& e : adj_[u]) {
-      if (e.weight == 0 && fanin_clocks[e.target].add(fanin_clocks[u])) {
+      if (e.weight == 0 && fanin_domains[e.target].add(fanin_domains[u])) {
         open.push_back(e.target);
       }
     }
   }
   for (int v = 0; v < n; ++v) {
-    if (fanin_clocks[v].count > 1) {
+    if (fanin_domains[v].count > 1) {
       pinned_[v] = true;
     }
   }

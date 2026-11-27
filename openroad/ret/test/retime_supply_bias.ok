@@ -1,0 +1,11 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: retime_supply_bias.lef, created 6 library cells
+[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 2 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.0700 |       -0.0700 |         2
+     1 |        3 |      1 |    3 |      0.0200 |        0.0000 |         2
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 3, rounds 1, WNS 0.0200, TNS 0.0000, registers 2, placed 0, resized 0.
+r2 (BDFF_X1): VGND=VSS VPB=VBIAS VPWR=VDD
+ret_ff_1 (BDFF_X1): VGND=VSS VPB=VBIAS VPWR=VDD

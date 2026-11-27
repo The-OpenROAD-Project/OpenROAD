@@ -66,8 +66,33 @@ void sortUnique(std::vector<int>& values);
 std::vector<odb::dbInst*> inIdOrder(
     const std::unordered_set<odb::dbInst*>& cells);
 
-// like: the cell the new one replaces or serves.  Its supply pins give the
-// nets of the new cell's supply pins of the same name.
+// The net of a cell's power pins and that of its ground pins; nullptr: none
+// of them is connected.
+struct SupplyNets
+{
+  odb::dbNet* power = nullptr;
+  odb::dbNet* ground = nullptr;
+};
+// nullopt when the pins of one kind are on different nets.
+std::optional<SupplyNets> supplyNets(odb::dbInst* inst);
+
+// A cell's supply pins by pin name, each with its net (nullptr: open).
+struct SupplyPin
+{
+  odb::dbMTerm* pin;
+  odb::dbNet* net;
+};
+using SupplyPins = std::vector<SupplyPin>;
+SupplyPins supplyPins(odb::dbInst* inst);
+// The same pin names on the same nets.
+bool sameSupply(const SupplyPins& a, const SupplyPins& b);
+// Every supply pin of `other` has a pin of its name and kind on `master`.
+bool hasSupplyPinsOf(odb::dbMaster* master, odb::dbMaster* other);
+
+// like: the cell the new one replaces or serves.  A supply pin of the new
+// cell takes the net of like's pin of that name, open included; without
+// such a pin, the net of like's pins of its kind (power, ground) when they
+// are on one net.
 odb::dbInst* makeCell(sta::dbSta* sta,
                       sta::Instance* parent,
                       const char* base_name,
@@ -228,6 +253,7 @@ struct RegisterClass
   odb::dbMTerm* data = nullptr;
   odb::dbMTerm* output = nullptr;  // the output pin the loads read
   odb::dbNet* clock = nullptr;
+  SupplyPins supply;
   std::vector<EnablePin> enables;  // by pin name
   bool negedge = false;            // never moves
   bool scan = false;  // a scan cell or in a scan chain: never moves
@@ -237,6 +263,9 @@ struct RegisterClass
 RegisterClass registerClass(sta::dbSta* sta,
                             odb::dbInst* inst,
                             rsz::Resizer* resizer = nullptr);
+// On one clock net and with the same supply pins on the same nets: what
+// registers that become one, or are rebuilt as one chain, have in common.
+bool sameDomain(const RegisterClass& a, const RegisterClass& b);
 bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b);
 // An enable or inverting register keeps its own cell across a move.
 bool keepsClass(const RegisterClass& cls);

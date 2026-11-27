@@ -197,23 +197,83 @@ std::vector<odb::dbInst*> inIdOrder(
   return ordered;
 }
 
+std::optional<SupplyNets> supplyNets(odb::dbInst* inst)
+{
+  SupplyNets nets;
+  for (odb::dbITerm* pin : inst->getITerms()) {
+    odb::dbNet* net = pin->getNet();
+    if (!pin->getSigType().isSupply() || net == nullptr) {
+      continue;
+    }
+    odb::dbNet*& of_kind
+        = pin->getSigType() == odb::dbSigType::POWER ? nets.power : nets.ground;
+    if (of_kind != nullptr && of_kind != net) {
+      return std::nullopt;
+    }
+    of_kind = net;
+  }
+  return nets;
+}
+
+SupplyPins supplyPins(odb::dbInst* inst)
+{
+  SupplyPins pins;
+  for (odb::dbITerm* pin : inst->getITerms()) {
+    if (pin->getSigType().isSupply()) {
+      pins.push_back({.pin = pin->getMTerm(), .net = pin->getNet()});
+    }
+  }
+  std::ranges::sort(pins, [](const SupplyPin& a, const SupplyPin& b) {
+    return strcmp(a.pin->getConstName(), b.pin->getConstName()) < 0;
+  });
+  return pins;
+}
+
+bool sameSupply(const SupplyPins& a, const SupplyPins& b)
+{
+  return std::ranges::equal(a, b, [](const SupplyPin& x, const SupplyPin& y) {
+    return x.net == y.net
+           && strcmp(x.pin->getConstName(), y.pin->getConstName()) == 0;
+  });
+}
+
+bool hasSupplyPinsOf(odb::dbMaster* master, odb::dbMaster* other)
+{
+  return std::ranges::all_of(other->getMTerms(), [master](odb::dbMTerm* pin) {
+    odb::dbMTerm* same = master->findMTerm(pin->getConstName());
+    return !pin->getSigType().isSupply()
+           || (same != nullptr && same->getSigType() == pin->getSigType());
+  });
+}
+
 namespace {
 
 void connectSupplyLike(odb::dbInst* inst, odb::dbInst* like)
 {
-  for (odb::dbITerm* pin : like->getITerms()) {
-    odb::dbNet* net = pin->getNet();
-    if (!pin->getSigType().isSupply() || net == nullptr
-        || !net->getSigType().isSupply()) {
+  const std::optional<SupplyNets> of_kind = supplyNets(like);
+  for (odb::dbITerm* pin : inst->getITerms()) {
+    const odb::dbSigType kind = pin->getSigType();
+    if (!kind.isSupply()) {
       continue;
     }
-    odb::dbITerm* same = inst->findITerm(pin->getMTerm()->getConstName());
-    if (same != nullptr && same->getSigType() == pin->getSigType()) {
-      same->connect(net);
-      // As global_connect leaves it.
-      if (pin->isSpecial()) {
-        same->setSpecial();
-      }
+    odb::dbITerm* same = like->findITerm(pin->getMTerm()->getConstName());
+    odb::dbNet* net = nullptr;
+    if (same != nullptr && same->getSigType() == kind) {
+      net = same->getNet();
+    } else if (of_kind.has_value()) {
+      net = kind == odb::dbSigType::POWER ? of_kind->power : of_kind->ground;
+    }
+    if (net == nullptr) {
+      continue;
+    }
+    pin->connect(net);
+    // Marked as like's pins on that net are: global_connect marks them.
+    const bool special
+        = std::ranges::any_of(like->getITerms(), [net](odb::dbITerm* on_net) {
+            return on_net->getNet() == net && on_net->isSpecial();
+          });
+    if (special) {
+      pin->setSpecial();
     }
   }
 }
@@ -1149,6 +1209,7 @@ RegisterClass registerClass(sta::dbSta* sta,
 {
   RegisterClass cls;
   cls.clock = registerClockNet(sta, inst);
+  cls.supply = supplyPins(inst);
   cls.scan = isScanCell(sta, inst) || inst->getScanInst() != nullptr;
   const sta::Sequential* seq = singleSequential(sta, inst);
   if (seq == nullptr || !seq->isRegister()) {
@@ -1197,19 +1258,24 @@ bool keepsClass(const RegisterClass& cls)
          || cls.kind == RegisterKind::kInverting;
 }
 
+bool sameDomain(const RegisterClass& a, const RegisterClass& b)
+{
+  return a.clock == b.clock && sameSupply(a.supply, b.supply);
+}
+
 bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b)
 {
-  if (a.kind != b.kind) {
+  if (a.kind != b.kind || !sameDomain(a, b)) {
     return false;
   }
   switch (a.kind) {
     case RegisterKind::kPlain:
-      return a.clock == b.clock;
+      return true;
     case RegisterKind::kEnable:
-      return a.master == b.master && a.clock == b.clock && a.output == b.output
+      return a.master == b.master && a.output == b.output
              && a.enables == b.enables;
     case RegisterKind::kInverting:
-      return a.master == b.master && a.clock == b.clock && a.output == b.output;
+      return a.master == b.master && a.output == b.output;
     case RegisterKind::kOther:
       return false;
   }

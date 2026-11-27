@@ -154,6 +154,24 @@ bool SequentialUnmapper::prepare()
   return ok;
 }
 
+std::vector<odb::dbMaster*> SequentialUnmapper::newCellMasters() const
+{
+  std::vector<odb::dbMaster*> masters;
+  for (odb::dbMaster* master : {
+           seq_.master,
+           inv_master_,
+           and2_master_,
+           or2_master_,
+           tie1_.master,
+           tie0_.master,
+       }) {
+    if (master != nullptr) {
+      masters.push_back(master);
+    }
+  }
+  return masters;
+}
+
 void SequentialUnmapper::reportTiedBase() const
 {
   std::string ties;
