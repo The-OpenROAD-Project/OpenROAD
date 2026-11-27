@@ -173,8 +173,8 @@ class TimingReport
       const std::vector<std::string>& path_groups = {},
       const std::string& clock_name = "") const;
 
-  // The `bins` count the union of `path_groups` (every group when empty);
-  // several groups are also stacked in `result.series` over the same bins.
+  // The `bins` count the union of `path_groups` (every group when empty), each
+  // endpoint once in its worst group; several groups also stack in `series`.
   SlackHistogramResult getSlackHistogram(
       bool is_setup,
       const std::string& clock_name = "",

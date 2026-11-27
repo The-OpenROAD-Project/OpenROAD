@@ -17,6 +17,7 @@
 #include "boost/json/array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "endpoint_slack.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "sta/Clock.hh"
@@ -300,16 +301,19 @@ static float snapBinInterval(float exact_interval)
   return static_cast<float>(nice_coeff * mag);
 }
 
-// Worst path end per endpoint in `group` (any group when null), optionally
-// captured by `clk`.  Mirrors staGuiInterface's visitor.
+// Worst path end per endpoint in the path group named `group` (any group when
+// empty), optionally captured by `clk`.  Mirrors staGuiInterface's visitor.
 class PathGroupSlackVisitor : public sta::PathEndVisitor
 {
  public:
-  PathGroupSlackVisitor(const sta::PathGroup* group,
+  PathGroupSlackVisitor(std::string group,
                         const sta::Clock* clk,
                         const bool keep_path_end,
                         sta::Sta* sta)
-      : group_(group), clk_(clk), keep_path_end_(keep_path_end), sta_(sta)
+      : group_(std::move(group)),
+        clk_(clk),
+        keep_path_end_(keep_path_end),
+        sta_(sta)
   {
   }
 
@@ -323,12 +327,9 @@ class PathGroupSlackVisitor : public sta::PathEndVisitor
     if (clk_ && path_end->targetClk(sta_) != clk_) {
       return;
     }
-    if (group_ != nullptr) {
-      const sta::PathGroupSeq groups
-          = sta_->cmdScene()->mode()->pathGroups(path_end);
-      if (std::ranges::find(groups, group_) == groups.end()) {
-        return;
-      }
+    if (!group_.empty()
+        && !sta::PathGroups::inPathGroupNamed(path_end, group_, sta_)) {
+      return;
     }
     const float slack = path_end->slack(sta_);
     if (slack < worst_slack_) {
@@ -354,7 +355,7 @@ class PathGroupSlackVisitor : public sta::PathEndVisitor
   }
 
  private:
-  const sta::PathGroup* group_;
+  const std::string group_;
   const sta::Clock* clk_;
   const bool keep_path_end_;
   sta::Sta* sta_;
@@ -363,36 +364,14 @@ class PathGroupSlackVisitor : public sta::PathEndVisitor
   std::unique_ptr<sta::PathEnd> worst_path_end_;
 };
 
-// Ensure path groups exist so findPathGroup works.
-static void ensurePathGroups(sta::dbSta* sta, bool is_setup)
-{
-  sta::StringSeq empty_names;
-  for (sta::Mode* mode : sta->modes()) {
-    mode->makePathGroups(1,
-                         1,
-                         false,
-                         false,
-                         -sta::INF,
-                         sta::INF,
-                         empty_names,
-                         is_setup,
-                         !is_setup,
-                         false,
-                         false,
-                         false,
-                         false,
-                         false);
-  }
-}
-
 namespace {
 
 // An endpoint as a slack histogram counts it: its worst slack (user units) in
-// `group`, or in any group when null.
+// the path group of its series.
 struct EndpointSlack
 {
   sta::Vertex* vertex;
-  const sta::PathGroup* group;
+  std::size_t series;
   float slack;
 };
 
@@ -403,61 +382,41 @@ using SlackSeries
 struct HistogramSlacks
 {
   SlackSeries series;
+  // The path group each series counts, parallel to `series` (any when empty).
+  std::vector<std::string> groups;
   int total_endpoints = 0;
   int unconstrained_count = 0;
 };
 
 }  // namespace
 
-// Adds the series of `path_group`, else of `clk`'s default group, using the
-// path group visitor pattern.  The path groups must be current.
-static void collectFilteredSlacks(sta::dbSta* sta,
-                                  const bool is_setup,
-                                  const std::string& path_group,
-                                  const sta::Clock* clk,
-                                  HistogramSlacks& result)
+// The worst slack (STA units) of each endpoint in the path group named `group`,
+// optionally captured by `clk`; `vertices` gets their vertices.
+static EndpointSlacks collectFilteredSlacks(
+    sta::dbSta* sta,
+    const bool is_setup,
+    const std::string& group,
+    const sta::Clock* clk,
+    std::map<const sta::Pin*, sta::Vertex*>& vertices)
 {
-  std::vector<EndpointSlack>& slacks
-      = result.series.emplace_back(path_group, std::vector<EndpointSlack>{})
-            .second;
+  EndpointSlacks slacks;
   const sta::MinMax* min_max
       = is_setup ? sta::MinMax::max() : sta::MinMax::min();
-  const float time_scale = sta->units()->timeUnit()->scale();
-
-  // Find the path group.
-  sta::PathGroups* groups = sta->cmdScene()->mode()->pathGroups();
-  const sta::PathGroup* pg = nullptr;
-  if (!path_group.empty()) {
-    pg = groups->findPathGroup(path_group, min_max);
-  } else if (clk) {
-    pg = groups->findPathGroup(clk, min_max);
-  }
-
-  if (!pg) {
-    return;
-  }
-
   sta::VisitPathEnds visit_ends(sta);
   const sta::SceneSet scenes = sta::Scene::sceneSet(sta->scenes());
-  PathGroupSlackVisitor visitor(pg, clk, /*keep_path_end=*/false, sta);
+  PathGroupSlackVisitor visitor(group, clk, /*keep_path_end=*/false, sta);
 
   for (sta::Vertex* vertex : sta->endpoints()) {
     visit_ends.visitPathEnds(
         vertex, scenes, min_max->asMinMaxAll(), /*filtered=*/false, &visitor);
-    // Counts only this group's endpoints (hasSlack() is false for the rest);
-    // an endpoint in several requested groups counts once in each.
+    // hasSlack() is false for endpoints outside this path group.
     if (visitor.hasSlack()) {
-      result.total_endpoints++;
-      const float slack = visitor.worstSlack();
-      if (slack >= sta::INF || slack <= -sta::INF) {
-        result.unconstrained_count++;
-      } else {
-        slacks.push_back(
-            {.vertex = vertex, .group = pg, .slack = slack / time_scale});
-      }
+      slacks[vertex->pin()] = visitor.worstSlack();
+      vertices[vertex->pin()] = vertex;
     }
     visitor.reset();
   }
+  return slacks;
 }
 
 // Shared bin geometry so an aggregate histogram and its per-group series use
@@ -548,8 +507,10 @@ static void collectUnfilteredSlacks(sta::dbSta* sta,
                                     const bool is_setup,
                                     HistogramSlacks& result)
 {
+  const std::size_t series = result.series.size();
   std::vector<EndpointSlack>& slacks
       = result.series.emplace_back("", std::vector<EndpointSlack>{}).second;
+  result.groups.emplace_back();
   const sta::MinMax* min_max
       = is_setup ? sta::MinMax::max() : sta::MinMax::min();
   const sta::SceneSeq scenes = sta->scenes();
@@ -557,7 +518,7 @@ static void collectUnfilteredSlacks(sta::dbSta* sta,
   const float time_scale = sta->units()->timeUnit()->scale();
   sta::VisitPathEnds visit_ends(sta);
   PathGroupSlackVisitor visitor(
-      /*group=*/nullptr, /*clk=*/nullptr, /*keep_path_end=*/false, sta);
+      /*group=*/"", /*clk=*/nullptr, /*keep_path_end=*/false, sta);
   for (sta::Vertex* vertex : sta->endpoints()) {
     result.total_endpoints++;
     float slack = sta::INF;
@@ -582,7 +543,7 @@ static void collectUnfilteredSlacks(sta::dbSta* sta,
       continue;
     }
     slacks.push_back(
-        {.vertex = vertex, .group = nullptr, .slack = slack / time_scale});
+        {.vertex = vertex, .series = series, .slack = slack / time_scale});
   }
 }
 
@@ -616,13 +577,48 @@ static HistogramSlacks collectHistogramSlacks(
     collectUnfilteredSlacks(sta, is_setup, result);
     return result;
   }
-  // Each makePathGroups replaces the groups of the last one, so this is once.
-  ensurePathGroups(sta, is_setup);
-  if (path_groups.empty()) {
-    collectFilteredSlacks(sta, is_setup, /*path_group=*/"", clk, result);
+  // One series per group in `path_groups`, else one for clk's default group.
+  const std::vector<std::string> names
+      = path_groups.empty() ? std::vector<std::string>{""} : path_groups;
+  std::vector<EndpointSlacks> per_group;
+  std::map<const sta::Pin*, sta::Vertex*> vertices;
+  per_group.reserve(names.size());
+  result.groups.reserve(names.size());
+  for (const std::string& name : names) {
+    const std::string& group = name.empty() && clk ? clk->name() : name;
+    // A name that is no path group counts no endpoints.
+    per_group.push_back(
+        sta->isPathGroupName(group, sta->cmdScene()->sdc())
+            ? collectFilteredSlacks(sta, is_setup, group, clk, vertices)
+            : EndpointSlacks{});
+    result.series.emplace_back(name, std::vector<EndpointSlack>{});
+    result.groups.push_back(group);
   }
-  for (const std::string& group : path_groups) {
-    collectFilteredSlacks(sta, is_setup, group, clk, result);
+  std::vector<const EndpointSlacks*> group_slacks;
+  group_slacks.reserve(per_group.size());
+  for (const EndpointSlacks& slacks : per_group) {
+    group_slacks.push_back(&slacks);
+  }
+
+  // An endpoint in several groups counts once, in the group where it is worst.
+  const auto winners = assignEndpointsToWorstGroup(group_slacks);
+  const float time_scale = sta->units()->timeUnit()->scale();
+  for (sta::Vertex* vertex : sta->endpoints()) {
+    const auto it = winners.find(vertex->pin());
+    if (it == winners.end() || vertices.at(vertex->pin()) != vertex) {
+      continue;
+    }
+    const EndpointGroupSlack& winner = it->second;
+    result.total_endpoints++;
+    if (winner.slack >= sta::INF || winner.slack <= -sta::INF) {
+      result.unconstrained_count++;
+    } else {
+      result.series[winner.group].second.push_back({
+          .vertex = vertex,
+          .series = winner.group,
+          .slack = winner.slack / time_scale,
+      });
+    }
   }
   return result;
 }
@@ -660,7 +656,8 @@ std::vector<TimingPathSummary> TimingReport::endpointReport(
   std::vector<TimingPathSummary> result;
   result.reserve(bar.size());
   for (const EndpointSlack& s : bar) {
-    PathGroupSlackVisitor visitor(s.group, clk, /*keep_path_end=*/true, sta_);
+    PathGroupSlackVisitor visitor(
+        slacks.groups[s.series], clk, /*keep_path_end=*/true, sta_);
     visit_ends.visitPathEnds(
         s.vertex, scenes, side, /*filtered=*/false, &visitor);
     if (const std::unique_ptr<sta::PathEnd> path_end

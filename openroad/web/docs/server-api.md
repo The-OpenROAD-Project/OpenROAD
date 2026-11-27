@@ -753,8 +753,9 @@ Histogram of endpoint slacks for one side of the timing report.
 | `path_groups` | `string[]` |          | If non-empty, one stacked `series` per group; `bins` count their union. Takes precedence over `path_group`.                                             |
 | `clock_name`  | `string`   |          | If non-empty, restrict to the endpoints this clock captures, in its own path group when no group is given. A name that is no clock counts no endpoints. |
 
-Each endpoint counts once per group, with its worst slack, in the bin
-`[lower, upper)` that holds it. A `timing_report` with a bin's `lower` and
+Each endpoint counts once, in the bin `[lower, upper)` that holds its worst
+slack; with several `path_groups`, in the group where that slack is (ties go
+to the earlier group). A `timing_report` with a bin's `lower` and
 `upper` as `slack_min` and `slack_max`, and the same `path_groups` and
 `clock_name`, lists that bin's endpoints.
 
@@ -771,7 +772,8 @@ Each endpoint counts once per group, with its worst slack, in the bin
 ```
 
 `series` is present only when `path_groups` has more than one group; each
-entry's `counts` parallels `bins`.
+entry's `counts` parallels `bins`, and the `counts` of a bin sum to its
+`bins[i].count`.
 
 ### `chart_filters`
 
