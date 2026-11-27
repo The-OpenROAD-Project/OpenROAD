@@ -38,6 +38,8 @@ using qi::lexeme;
 using ascii::char_;
 using ascii::space;
 
+namespace {
+
 void setNewInput(const std::string& input, cut::BlifParser* parser)
 {
   if (input != "\\") {
@@ -107,6 +109,8 @@ bool parse(std::string::iterator first,
   bool valid = qi::phrase_parse(first, last, rule, space);
   return valid;
 }
+
+}  // namespace
 
 }  // namespace blif_parser
 

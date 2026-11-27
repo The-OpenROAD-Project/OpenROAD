@@ -2,7 +2,7 @@
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -23,6 +23,8 @@ COMPULSORY_TESTS = [
     "scan_replace_clock_mismatch_sky130",
     "scan_replace_dont_use_sky130",
     "scan_replace_inverted_data_sky130",
+    "scan_replace_renamed_port_sky130",
+    "scan_replace_sdc_sky130",
     "scan_replace_state_binding_sky130",
     "scandef_core_sky130",
     "scandef_sky130",
@@ -87,6 +89,9 @@ filegroup(
                 "one_cell_reset_sky130.def",
             ],
             "scan_replace_dont_use_sky130": [
+                "one_cell_sky130.def",
+            ],
+            "scan_replace_sdc_sky130": [
                 "one_cell_sky130.def",
             ],
             "scan_replace_state_binding_sky130": [
@@ -203,15 +208,9 @@ cc_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "dft_man_tcl_check",
-    srcs = ["dft_man_tcl_check.py"],
-    data = ["//openroad/dft:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "dft",
 )
 
 doc_check_test(

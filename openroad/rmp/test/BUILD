@@ -2,7 +2,7 @@
 # Copyright (c) 2022-2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -11,6 +11,7 @@ COMPULSORY_TESTS = [
     "aes_nangate45",
     "blif_reader",
     "blif_reader_const",
+    "blif_reader_no_tie",
     "blif_reader_sequential",
     "blif_writer",
     "blif_writer_consts",
@@ -203,15 +204,9 @@ cc_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "rmp_man_tcl_check",
-    srcs = ["rmp_man_tcl_check.py"],
-    data = ["//openroad/rmp:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "rmp",
 )
 
 doc_check_test(

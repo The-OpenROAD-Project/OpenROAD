@@ -24,11 +24,6 @@ class MetalLayer
   // Min spacing to a neighbour on this layer; used for the via-demand model.
   int getSpacing() const { return spacing_; }
   odb::dbTechLayer* getTechLayer() const { return tech_layer_; }
-  // Sheet resistance (ohms/square) of this routing layer.
-  double getResistance() const { return resistance_; }
-  // Per-cut resistance (ohms) of the via layer just above this routing
-  // layer, i.e. the via from this layer to the next routing layer up.
-  double getViaResistance() const { return via_resistance_; }
   int getTrackLocation(int track_index) const;
   IntervalT rangeSearchTracks(const IntervalT& loc_range,
                               bool include_bound = true) const;
@@ -49,8 +44,6 @@ class MetalLayer
   int width_;
   int min_width_;
   int spacing_ = 0;
-  double resistance_ = 0.0;
-  double via_resistance_ = 0.0;
 
   // tracks
   int first_track_loc_;

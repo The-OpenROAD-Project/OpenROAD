@@ -27,6 +27,7 @@ global_route
     [-skip_large_fanout_nets fanout]
     [-allow_congestion]
     [-snapshot_batched_width width]
+    [-congestion_only]
     [-verbose]
     [-start_incremental]
     [-end_incremental]
@@ -45,17 +46,18 @@ global_route
 | `-congestion_report_file` | Set the file name to save the congestion report. The file generated can be read by the DRC viewer in the GUI (e.g., `report_file.rpt`). |
 | `-congestion_report_iter_step` | Set the number of iterations to report. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-grid_origin` | Set the (x, y) origin of the routing grid in DBU. For example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each x--, y- direction. |
-| `-critical_nets_percentage` | Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-critical_nets_percentage` | Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). The default value is `10`, and the allowed values are integers `[0, MAX_INT]`. FastRoute only: CUGR is timing driven whenever timing is available and ignores it. |
 | `-skip_large_fanout_nets` | Skips routing for nets with a fanout higher than the specified limit. Nets above this pin count threshold are ignored by the global router and will not have routing guides, meaning they will also be skipped during detailed routing. This option is useful in debugging or estimation flows where high-fanout nets (such as pre-CTS clock nets) can be ignored. The default value is 0, indicating no fanout limit. The default value is `MAX_INT`. The allowed values are integers `[0, MAX_INT]`. |
 | `-allow_congestion` | Allow global routing results to be generated with remaining congestion. The default is false. |
 | `-verbose` | This flag enables the full reporting of the global routing. |
 | `-start_incremental` | This flag initializes the GRT listener to get the net modified. The default is false. |
 | `-end_incremental` | This flag run incremental GRT with the nets modified. The default is false. |
 | `-use_cugr` | This flag run GRT using CUGR as the router solver. NOTE: this is not ready for production. |
-| `-resistance_aware` | This flag enables resistance-aware layer assignment and 3D routing. NOTE: this is not ready for production. |
-| `-res_aware_nets_percentage` | Set the percentage of resistance-aware nets (e.g. `-res_aware_nets_percentage 100` (for 100%)). The default value is `15` with resistance-aware enabled and `0` otherwise, and the allowed values are floats between `[0, 100]`. |
+| `-resistance_aware` | FastRoute: this flag enables resistance-aware layer assignment and 3D routing. NOTE: this is not ready for production. CUGR always charges nets with negative slack for their wire delay, scaled by criticality, and ignores this flag. |
+| `-res_aware_nets_percentage` | FastRoute: set the percentage of resistance-aware nets (e.g. `-res_aware_nets_percentage 100` (for 100%)). The default value is `15` with resistance-aware enabled and `0` otherwise, and the allowed values are floats between `[0, 100]`. CUGR ignores it. |
 | `-infinite_cap` | Enables "infinite" gcell capacity for testing purpose. NOTE: this is not recommended for production flows. |
 | `-snapshot_batched_width` | Set the semantic width of snapshot-batched routing (max batches per wave). The default is `0`, preserving the non-batched behavior. Set a positive integer to enable batched routing; allowed values are integers `[1, MAX_INT]`. Execution width still follows `set_thread_count`. NOTE: this is not recommended for production flows; it is intended for exploration and research projects. |
+| `-congestion_only` | Run FastRoute's initial 2D L-route congestion pass only, skipping rip-up/reroute, 3D layer assignment, and route guide generation. Useful for fast floorplan congestion estimation. An estimate that overflows is reported as a warning (GRT-0343), not as an error, with or without `-allow_congestion`. It cannot be combined with `-start_incremental`, `-end_incremental` or `-guide_file` (GRT-0344). The default is false. |
 
 ### Set Routing Layers
 
@@ -360,7 +362,7 @@ global_route_debug
     [-tree3D]
 	[-edges3D]
     [-cugr_pattern]
-    [-cugr_res_aware]
+    [-cugr_critical]
     [-cugr_detours]
     [-cugr_maze]
     [-cugr_rrr]
@@ -378,7 +380,7 @@ global_route_debug
 | `-tree3D` | Show the 3D Rectilinear Steiner Tree post-layer assignment. |
 | `-edges3D` | Show each edge being rerouted post-layer assignment. |
 | `-cugr_pattern` | CUGR: topology after pattern routing (stage 1). |
-| `-cugr_res_aware` | CUGR: topology after the resistance-aware re-route (stage 2). |
+| `-cugr_critical` | CUGR: topology after the re-route of nets with negative slack (stage 2). |
 | `-cugr_detours` | CUGR: topology after pattern routing with detours (stage 3). |
 | `-cugr_maze` | CUGR: topology after maze routing (stage 4). |
 | `-cugr_rrr` | CUGR: topology after each rip-up and re-route iteration (stage 5). |

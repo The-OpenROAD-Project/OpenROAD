@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "MplObserver.h"
-#include "SimulatedAnnealingCore.h"
+#include "SACore.h"
 #include "clusterEngine.h"
 #include "mpl-util.h"
 #include "object.h"
@@ -33,15 +33,9 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   float notch_h_threshold,
                   float notch_v_threshold,
                   // action prob
-                  float pos_swap_prob,
-                  float neg_swap_prob,
-                  float double_swap_prob,
-                  float exchange_prob,
-                  float resize_prob,
-                  // Fast SA hyperparameter
-                  float init_prob,
-                  int max_num_step,
-                  int num_perturb_per_step,
+                  const SACoreActionProbs& action_probs,
+                  const SASoftActionsProbs& soft_action_probs,
+                  const SAHyperparams& hyperparams,
                   unsigned seed,
                   MplObserver* graphics,
                   utl::Logger* logger,
@@ -50,18 +44,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void run() override;
   bool isValid() const override;
 
-  // accessors
-  float getBoundaryPenalty() const;
-  float getNormBoundaryPenalty() const;
-  float getNotchPenalty() const;
-  float getNormNotchPenalty() const;
-  float getSoftBlockagePenalty() const;
-  float getNormSoftBlockagePenalty() const;
-
-  void printResults() const;  // just for test
-
-  // Initialize the SA worker
-  void initialize() override;
   // adjust the size of MixedCluster to fill the empty space
   void fillDeadSpace() override;
   void attemptMacroClusterAlignment();
@@ -87,12 +69,17 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
     bool operator==(const NotchVicinity&) const = default;
   };
 
-  float calNormCost() const override;
-  void calPenalty() override;
+  // Appended to penalties_ after the base class's own terms.
+  enum PenaltyKind : size_t
+  {
+    kBoundary = SimulatedAnnealingCore<SoftMacro>::kFence + 1,
+    kSoftBlockage,
+    kFixedMacros,
+    kNotch
+  };
 
-  void perturb() override;
-  void saveState() override;
-  void restoreState() override;
+  void calExtraPenalties() override;
+
   // actions used
   void resizeOneCluster();
 
@@ -125,7 +112,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const odb::Point& offset);
 
-  void findFixedMacros();
+  void findFixedMacros() override;
 
   std::vector<odb::Rect> soft_blockages_;
   std::vector<odb::Rect> fixed_macros_;
@@ -140,29 +127,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                      // horizontally
   int adjust_v_th_;  // the threshold for adjust hard macro clusters
                      // vertically
-
-  // additional penalties
-  float boundary_weight_ = 0.0;
-  float soft_blockage_weight_ = 0.0;
-  float notch_weight_ = 0.0;
-  const float fixed_macros_weight_ = 100.0;
-
-  float boundary_penalty_ = 0.0;
-  float notch_penalty_ = 0.0;
-  float soft_blockage_penalty_ = 0.0;
-  float fixed_macros_penalty_ = 0.0;
-
-  float pre_boundary_penalty_ = 0.0;
-  float pre_notch_penalty_ = 0.0;
-  float pre_soft_blockage_penalty_ = 0.0;
-
-  float norm_boundary_penalty_ = 0.0;
-  float norm_notch_penalty_ = 0.0;
-  float norm_soft_blockage_penalty_ = 0.0;
-  float norm_fixed_macros_penalty_ = 0.0;
-
-  // action prob
-  float resize_prob_ = 0.0;
 
   bool enhancements_on_ = false;
   bool centralization_was_reverted_ = false;

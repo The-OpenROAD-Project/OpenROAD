@@ -44,6 +44,8 @@ class Net
   void destroyPins();
   void destroyITermPin(odb::dbITerm* iterm);
   void destroyBTermPin(odb::dbBTerm* bterm);
+  // Gives each port on a same-net pin's metal that pin's grid position.
+  void shareCoveringPinPositions();
   bool hasWires() const { return has_wires_; }
   bool hasStackedVias(odb::dbTechLayer* max_routing_layer);
   void saveLastPinPositions();

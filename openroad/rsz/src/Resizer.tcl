@@ -305,6 +305,10 @@ proc repair_timing { args } {
              -skip_last_gasp -skip_vt_swap -skip_crit_vt_swap -skip_crpr \
              -match_cell_footprint -verbose}
 
+  if { [info exists keys(-libraries)] } {
+    utl::warn RSZ 63 "-libraries is deprecated and its value is ignored."
+  }
+
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
 
@@ -498,6 +502,42 @@ proc report_design_area { args } {
   set util [format %.0f [expr [rsz::utilization] * 100]]
   set area [format %.0f [expr [rsz::design_area] * 1e6 * 1e6]]
   utl::report "Design area ${area} um^2 ${util}% utilization."
+}
+
+sta::define_cmd_args "report_placement_density" {[-region {x1 y1 x2 y2}]}
+
+proc report_placement_density { args } {
+  sta::parse_key_args "report_placement_density" args keys {-region} flags {}
+  sta::check_argc_eq0 "report_placement_density" $args
+
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error RSZ 3214 "No design block found."
+  }
+
+  if { [info exists keys(-region)] } {
+    set region $keys(-region)
+    if { [llength $region] != 4 } {
+      utl::error RSZ 3215 "-region requires 4 values: x1 y1 x2 y2."
+    }
+    lassign $region x1 y1 x2 y2
+    foreach { name value } [list x1 $x1 y1 $y1 x2 $x2 y2 $y2] {
+      sta::check_float $name $value
+    }
+    set x1 [ord::microns_to_dbu $x1]
+    set y1 [ord::microns_to_dbu $y1]
+    set x2 [ord::microns_to_dbu $x2]
+    set y2 [ord::microns_to_dbu $y2]
+  } else {
+    # The core, since that is the only place a cell can go.
+    set core [$block getCoreArea]
+    set x1 [$core xMin]
+    set y1 [$core yMin]
+    set x2 [$core xMax]
+    set y2 [$core yMax]
+  }
+
+  rsz::report_placement_density_cmd $x1 $y1 $x2 $y2
 }
 
 sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]}
@@ -1146,6 +1186,22 @@ proc report_buffers { args } {
   sta::parse_key_args "report_buffers" args keys {} flags {-filtered}
   set filtered [info exists flags(-filtered)]
   rsz::report_buffers_cmd $filtered
+}
+
+sta::define_cmd_args "report_vt_usage" {[-verbose] [-activity_weighted] \
+                                          [-vt_order vt_names] [module_inst]}
+
+proc report_vt_usage { args } {
+  sta::parse_key_args "report_vt_usage" args keys {-vt_order} \
+    flags {-verbose -activity_weighted}
+  sta::check_argc_eq0or1 "report_vt_usage" $args
+  set modinst_name [lindex $args 0]
+  set vt_order {}
+  if { [info exists keys(-vt_order)] } {
+    set vt_order $keys(-vt_order)
+  }
+  rsz::report_vt_usage_cmd $modinst_name $vt_order \
+    [info exists flags(-activity_weighted)] [info exists flags(-verbose)]
 }
 
 sta::define_cmd_args "report_delay_estimator_accuracy" {\

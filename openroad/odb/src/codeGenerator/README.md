@@ -31,18 +31,18 @@ custom logic, kept in clearly marked **User Code** blocks (see
 
 ```shell
 # Regenerate every odb file in place (writes into ../db and ../../include/odb):
-./generate          # wrapper for: python3 gen.py
+./generate          # wrapper for: bazelisk run //openroad/odb/src/codeGenerator:gen
 
 # Keep the intermediate rendered files for inspection:
-python3 gen.py --keep_generated   # leaves them in ./generated/
+./generate --keep_generated   # leaves them in ./generated/
 
 # Preserve empty User Code blocks (see "Adding to an empty section" below):
-python3 gen.py --keep_empty
+./generate --keep_empty
 ```
 
-The generator depends only on `jinja2` (CI pins `jinja2==3.1.6`) and
-`clang-format` (run on every generated C++ file). It must be run from this
-directory.
+The Bazel target supplies `jinja2` (pinned in `bazel/requirements_lock_3_13.txt`)
+and the `clang-format` that `//:fmt_cc_test` uses (run on every generated C++
+file). It works from any directory in the workspace.
 
 > **CI invariant:** running `./generate` on a clean checkout must produce **no
 > git diff**. The workflow `.github/workflows/github-actions-are-odb-files-generated.yml`
@@ -84,7 +84,7 @@ _merge_files()     splice generated sections into the real source files,
 | `schema/**/*.json` | One file per database class (grouped into `chip/`, `tech/`, `gds/`, `scan/` subdirectories). |
 | `templates/*.jinja` | The Jinja2 templates that emit C++. |
 | `test_*.py` | Unit tests (see [Testing](#testing)). |
-| `generate` | Thin shell wrapper: `python3 gen.py`. |
+| `generate` | Thin shell wrapper: `bazelisk run //openroad/odb/src/codeGenerator:gen`. |
 
 ## Schema format
 

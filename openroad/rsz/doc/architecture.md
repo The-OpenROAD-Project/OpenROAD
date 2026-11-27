@@ -47,6 +47,7 @@
   resizer_.runRepairSetupPreamble()
   phases = parseTokens(-phases or "LEGACY LAST_GASP")
   append CRIT_VT_SWAP if a legacy phase is listed and CRIT_VT_SWAP is not
+  append CAPTURE_VT_SWAP if PARALLEL_EVAL is listed and no VT sweep is
   for each phase:
     policy = makePolicyForPhase(phase)
     if (!policy->start()) return false

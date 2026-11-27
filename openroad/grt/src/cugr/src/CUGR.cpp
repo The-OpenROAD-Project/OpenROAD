@@ -41,7 +41,13 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "sta/InputDrive.hh"
+#include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
+#include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
+#include "sta/Transition.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 #include "utl/ServiceRegistry.h"
@@ -53,6 +59,8 @@ namespace grt {
 
 // Sentinel demoteNonCriticalNets writes on non-critical nets; not a slack.
 constexpr float kDemotedSlack = std::numeric_limits<float>::max();
+// Buffers and inverters upstreamCriticality() looks through.
+constexpr int kMaxUpstreamHops = 8;
 // Overflow relief rounds; each grows the candidates and reruns the RRR loop.
 constexpr int kReliefRounds = 5;
 // A relief neighbor's pin box is at most this many gcells from congestion.
@@ -64,6 +72,48 @@ constexpr double kReliefTolerance = 1e-9;
 constexpr double kMaxReliefStretch = 1.25;
 
 namespace {
+
+// Drive resistance (ohm) set on a top-level input port by set_driving_cell
+// or set_drive: the largest over transitions and min/max. Zero when unset.
+float portDriveResistance(const sta::Sdc* sdc, sta::Port* port)
+{
+  const sta::InputDrive* drive = sdc->findInputDrive(port);
+  if (drive == nullptr) {
+    return 0.0f;
+  }
+  float max_res = 0.0f;
+  for (const sta::MinMax* min_max : sta::MinMax::range()) {
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      const sta::LibertyCell* cell;
+      const sta::LibertyPort* from_port;
+      const sta::DriveCellSlews* from_slews;
+      const sta::LibertyPort* to_port;
+      drive->driveCell(rf, min_max, cell, from_port, from_slews, to_port);
+      if (to_port != nullptr) {
+        max_res = std::max(max_res, to_port->driveResistance());
+      } else {
+        float res;
+        bool exists;
+        drive->driveResistance(rf, min_max, res, exists);
+        if (exists) {
+          max_res = std::max(max_res, res);
+        }
+      }
+    }
+  }
+  return max_res;
+}
+
+// External load (F) set on a top-level output port by set_load: the largest
+// over transitions.
+float portLoadCap(const sta::Sdc* sdc, const sta::Port* port)
+{
+  float cap = 0.0f;
+  for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+    cap = std::max(cap, sdc->portExtCap(port, rf, sta::MinMax::max()));
+  }
+  return cap;
+}
 
 // Stable-sorts net indices by less on their nets. Removed (null) nets sort
 // last so the comparator stays a strict weak ordering.
@@ -288,8 +338,11 @@ void CUGR::init(const int min_routing_layer,
                                      min_routing_layer,
                                      max_routing_layer,
                                      clock_nets,
+                                     selected_nets_,
+                                     skip_large_fanout_,
                                      verbose_);
   grid_graph_ = std::make_unique<GridGraph>(design_.get(), constants_, logger_);
+  initLayerRC();
   debugPrint(logger_,
              GRT,
              "report",
@@ -316,15 +369,13 @@ void CUGR::init(const int min_routing_layer,
   }
 }
 
-void CUGR::updateCriticalNets(const std::vector<int>& net_indices,
-                              const bool extend_res_aware)
+void CUGR::updateCriticalNets(const std::vector<int>& net_indices)
 {
   updateNetSlacks(net_indices);
-  // Mark res-aware nets on the real slack, before demotion clobbers it.
-  markResAwareNets(net_indices, extend_res_aware);
-  // Demotion uses a global slack percentile; skip it during incremental.
+  updateCriticality();
+  // Incremental routing keeps the plain slack-then-size order.
   if (!incremental_routing_) {
-    demoteNonCriticalNets(criticalSlackThreshold());
+    demoteNonCriticalNets();
   }
 }
 
@@ -355,7 +406,7 @@ void CUGR::updateNetSlacks(const std::vector<int>& net_indices)
       updateReroutedParasitics(*estimator);
     }
   }
-  // Query every net: the critical threshold is a percentile over all nets.
+  // Query every net: criticality is relative to the worst slack of all nets.
   for (const auto& net : gr_nets_) {
     if (net == nullptr) {
       continue;
@@ -416,33 +467,13 @@ void CUGR::refreshParasiticsForDebug()
   }
 }
 
-float CUGR::criticalSlackThreshold() const
-{
-  std::vector<float> slacks;
-  slacks.reserve(gr_nets_.size());
-  for (const auto& net : gr_nets_) {
-    if (net != nullptr) {
-      slacks.push_back(net->getSlack());
-    }
-  }
-  if (slacks.empty()) {
-    return 0.0f;
-  }
-  std::ranges::stable_sort(slacks);
-  const int threshold_index
-      = std::ceil(slacks.size() * critical_nets_percentage_ / 100);
-  return slacks[std::min(static_cast<size_t>(threshold_index),
-                         slacks.size() - 1)];
-}
-
-void CUGR::demoteNonCriticalNets(const float slack_th)
+void CUGR::demoteNonCriticalNets()
 {
   for (const int& net_index : net_indices_) {
     if (gr_nets_[net_index] == nullptr) {
       continue;
     }
-    if (gr_nets_[net_index]->getSlack() > slack_th
-        && !gr_nets_[net_index]->isResAware()) {
+    if (gr_nets_[net_index]->getCriticality() == 0.0f) {
       gr_nets_[net_index]->setSlack(kDemotedSlack);
     }
   }
@@ -455,169 +486,122 @@ float CUGR::getNetSlack(odb::dbNet* net)
 
 void CUGR::setInitialNetSlacks(const std::vector<int>& net_indices)
 {
-  // Stage 1 routes neutrally; this only computes placement slacks. Res-aware
-  // marking happens in patternRouteResAware() once real 3D trees exist.
-  // During incremental routing only the rerouted nets need refreshing.
+  // Placement slacks (or the previous routes' in incremental routing) set
+  // stage 1's criticalities. During incremental routing only the rerouted
+  // nets need refreshing.
   if (incremental_routing_) {
     refreshNetSlacks(net_indices);
-    return;
+  } else {
+    for (const auto& net : gr_nets_) {
+      if (net == nullptr) {
+        continue;
+      }
+      net->setSlack(getNetSlack(net->getDbNet()));
+    }
   }
+  updateCriticality();
+}
+
+void CUGR::updateCriticality()
+{
+  float worst_slack = 0.0f;
+  if (incremental_routing_) {
+    // Only the rerouted nets have fresh slacks; the others may still hold
+    // the previous route's, so take the worst slack from STA.
+    worst_slack = std::min(
+        worst_slack, static_cast<float>(sta_->worstSlack(sta::MinMax::max())));
+  } else {
+    for (const auto& net : gr_nets_) {
+      if (net != nullptr) {
+        worst_slack = std::min(worst_slack, net->getSlack());
+      }
+    }
+  }
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  const sta::Sdc* sdc = sta_->cmdMode()->sdc();
   for (const auto& net : gr_nets_) {
     if (net == nullptr) {
       continue;
     }
-    float slack = getNetSlack(net->getDbNet());
-    net->setSlack(slack);
-  }
-}
-
-void CUGR::markResAwareNets(const std::vector<int>& net_indices,
-                            const bool extend_res_aware)
-{
-  if (!resistance_aware_) {
-    return;
-  }
-
-  // Existing marks are kept; this only ever adds new critical nets, so the
-  // res-aware set accumulates across calls (like FastRoute updateSlacks).
-
-  // worst_* normalisers for getResAwareScore, computed over the eligible
-  // (non-skipped) nets, matching FastRoute's updateWorstMetrics().
-  worst_slack_ = std::numeric_limits<float>::max();
-  worst_resistance_ = 1.0f;
-  worst_fanout_ = 1;
-  worst_net_length_ = 1;
-
-  // Pass 1: refresh resistance/length and collect eligible candidates (skip
-  // short/single-pin/positive-slack, like FastRoute).
-  std::vector<int> candidates;
-  candidates.reserve(gr_nets_.size());
-  auto evaluateResAwareNet = [&](GRNet* net) {
-    const auto& tree = net->getRoutingTree();
-    net->setResistance(
-        grid_graph_->getNetResistance(tree, net->getNdrWidths()));
-    // Routed-tree planar length when available; bbox half-perimeter is
-    // only a fallback before the first route exists (PatternRoute).
-    net->setNetLength(tree ? grid_graph_->getTreeLength(tree)
-                           : net->getBoundingBox().hp());
-
-    // Match FastRoute: every CLOCK-sigType net counts as clock (incl. leaf
-    // clock nets), so it is force-marked res-aware.
-    const bool is_clock
-        = net->getDbNet()->getSigType() == odb::dbSigType::CLOCK;
-    // A positive slack also excludes unconstrained nets (slack == +inf).
-    const bool is_positive_slack = net->getSlack() > 0.0f && !is_clock;
-    const bool is_short
-        = net->getNetLength() <= constants_.resistance_min_net_length;
-    if (net->getNumPins() < 2 || is_short || is_positive_slack) {
-      return;
+    // A net keeps its peak criticality: the fast route it earns lifts its
+    // slack, and dropping the delay cost then would send it back down.
+    float criticality = net->getCriticality();
+    if (net->getDbNet()->getSigType() == odb::dbSigType::CLOCK) {
+      criticality = 1.0f;
+    } else if (net->getSlack() < 0.0f) {
+      criticality = std::max(criticality,
+                             std::min(1.0f, net->getSlack() / worst_slack));
     }
-
-    worst_resistance_ = std::max(worst_resistance_, net->getResistance());
-    worst_fanout_ = std::max(worst_fanout_, net->getNumPins());
-    worst_net_length_ = std::max(worst_net_length_, net->getNetLength());
-    worst_slack_ = std::min(worst_slack_, net->getSlack());
-    candidates.push_back(net->getIndex());
-  };
-
-  // Incremental routing considers only the rerouted nets.
-  if (incremental_routing_) {
-    for (const int net_index : net_indices) {
-      if (gr_nets_[net_index] != nullptr) {
-        evaluateResAwareNet(gr_nets_[net_index].get());
+    net->setCriticality(criticality);
+    if (criticality > 0.0f && net->getPinCaps().empty()) {
+      std::vector<float> caps(net->getNumPins(), 0.0f);
+      for (const auto& [pin_index, iterm] : net->getITermsByPinIndex()) {
+        const sta::LibertyPort* port
+            = network->libertyPort(network->dbToSta(iterm));
+        if (port == nullptr) {
+          continue;
+        }
+        if (pin_index == net->getDriverPinIndex()) {
+          net->setDriverResistance(port->driveResistance());
+        } else {
+          caps[pin_index] = port->capacitance();
+        }
       }
-    }
-  } else {
-    for (const auto& net : gr_nets_) {
-      if (net != nullptr) {
-        evaluateResAwareNet(net.get());
+      // Top-level ports: an input port drives through its SDC drive and an
+      // output port loads the net with its SDC external load.
+      for (const auto& [pin_index, bterm] : net->getBTermsByPinIndex()) {
+        sta::Port* port = network->port(network->dbToSta(bterm));
+        if (port == nullptr) {
+          continue;
+        }
+        if (pin_index == net->getDriverPinIndex()) {
+          net->setDriverResistance(portDriveResistance(sdc, port));
+        } else {
+          caps[pin_index] = portLoadCap(sdc, port);
+        }
       }
-    }
-  }
-
-  if (!extend_res_aware) {
-    return;
-  }
-
-  // Pass 2: rank eligible candidates by the multi-factor res-aware score
-  // (lower = more critical) and mark the most critical `percentage`.
-  std::vector<std::pair<int, float>> scored;
-  scored.reserve(candidates.size());
-  for (const int index : candidates) {
-    GRNet* net = gr_nets_[index].get();
-    // Clock and NDR nets are always res-aware among the eligible set (short and
-    // positive-slack nets are already skipped above, matching FastRoute).
-    if (net->getDbNet()->getSigType() == odb::dbSigType::CLOCK
-        || net->hasNdr()) {
-      net->setResAware(true);
-    } else if (!net->isResAware()) {
-      // Skip already-marked nets so the res-aware set accumulates.
-      scored.emplace_back(index, getResAwareScore(net));
-    }
-  }
-  std::ranges::stable_sort(scored, [](const auto& lhs, const auto& rhs) {
-    return std::tie(lhs.second, lhs.first) < std::tie(rhs.second, rhs.first);
-  });
-  // Incremental marks all candidates (like FastRoute's percentage == 1).
-  const int count = incremental_routing_
-                        ? static_cast<int>(scored.size())
-                        : static_cast<int>(std::ceil(
-                              scored.size() * res_aware_percentage_ / 100));
-  for (int i = 0; i < count && std::cmp_less(i, scored.size()); i++) {
-    gr_nets_[scored[i].first]->setResAware(true);
-  }
-
-  // Res-aware set-growth instrumentation (-debug_level GRT resAware 1);
-  // level 2 lists the newly-marked nets.
-  if (logger_->debugCheck(GRT, "resAware", 1)) {
-    int total = 0;
-    for (const auto& net : gr_nets_) {
-      if (net != nullptr && net->isResAware()) {
-        total++;
-      }
-    }
-    const int newly = std::min(count, static_cast<int>(scored.size()));
-    logger_->report(
-        "Res-aware growth (markResAwareNets): +{} marked of {} candidates "
-        "-> {} total ({:.2f}%)",
-        newly,
-        scored.size(),
-        total,
-        gr_nets_.empty()
-            ? 0.0f
-            : 100.0f * total / static_cast<float>(gr_nets_.size()));
-    if (logger_->debugCheck(GRT, "resAware", 2)) {
-      for (int i = 0; i < newly; i++) {
-        const GRNet* net = gr_nets_[scored[i].first].get();
-        logger_->report("  + {} slack={:.2f}ps R={:.2f} fanout={} len={}",
-                        net->getName(),
-                        net->getSlack() * 1e12,
-                        net->getResistance(),
-                        net->getNumPins(),
-                        net->getNetLength());
-      }
+      net->setPinCaps(std::move(caps));
     }
   }
 }
 
-float CUGR::getResAwareScore(const GRNet* net) const
+void CUGR::initLayerRC()
 {
-  constexpr float kSlackWeight = 4.0f;
-  constexpr float kResistanceWeight = 1.0f;
-  constexpr float kFanoutWeight = 3.0f;
-  constexpr float kNetLengthWeight = 2.0f;
-
-  // Adapted from FastRoute's getResAwareScore; lower = more critical.
-  const float slack_norm = std::max(std::abs(worst_slack_), 1e-9f);
-  const float slack_term = net->getSlack() / slack_norm * kSlackWeight;
-  const float resistance_term
-      = net->getResistance() / worst_resistance_ * kResistanceWeight;
-  const float fanout_term
-      = static_cast<float>(net->getNumPins()) / worst_fanout_ * kFanoutWeight;
-  const float length_term = static_cast<float>(net->getNetLength())
-                            / worst_net_length_ * kNetLengthWeight;
-
-  return slack_term - resistance_term - fanout_term - length_term;
+  auto* estimator = service_registry_->find<est::ParasiticsService>();
+  if (estimator == nullptr) {
+    return;
+  }
+  odb::dbTech* tech = db_->getTech();
+  const double meters_per_dbu = 1e-6 / tech->getDbUnitsPerMicron();
+  const int num_layers = grid_graph_->getNumLayers();
+  std::vector<double> res_per_dbu(num_layers, 0.0);
+  std::vector<double> cap_per_dbu(num_layers, 0.0);
+  std::vector<double> via_res(num_layers, 0.0);
+  for (int layer_index = 0; layer_index < num_layers; layer_index++) {
+    odb::dbTechLayer* layer = tech->findRoutingLayer(layer_index + 1);
+    if (layer == nullptr) {
+      continue;
+    }
+    double res = 0.0;
+    double cap = 0.0;
+    estimator->layerRC(layer, res, cap);
+    res_per_dbu[layer_index] = res * meters_per_dbu;
+    cap_per_dbu[layer_index] = cap * meters_per_dbu;
+    odb::dbTechLayer* cut = layer->getUpperLayer();
+    if (cut != nullptr && cut->getType() == odb::dbTechLayerType::CUT) {
+      estimator->layerRC(cut, res, cap);
+      via_res[layer_index] = res;
+    }
+  }
+  grid_graph_->setLayerRC(
+      std::move(res_per_dbu), std::move(cap_per_dbu), std::move(via_res));
+  // Only timing-driven runs use the delay cost.
+  if (!grid_graph_->hasDelayModel() && hasTiming()) {
+    logger_->warn(GRT,
+                  718,
+                  "No routing layer has both resistance and capacitance; "
+                  "CUGR routes without wire delay cost.");
+  }
 }
 
 std::vector<double> CUGR::computeNdrCosts(odb::dbNet* db_net) const
@@ -657,7 +641,7 @@ std::vector<double> CUGR::computeNdrCosts(odb::dbNet* db_net) const
 std::vector<int> CUGR::computeNdrWidths(odb::dbNet* db_net) const
 {
   const int num_layers = grid_graph_->getNumLayers();
-  // 0 => "use the layer default width" in getWireResistanceCost.
+  // 0 => "use the layer default width" in getWireDelayCost.
   std::vector<int> widths(std::max(num_layers, 0), 0);
   odb::dbTechNonDefaultRule* ndr = db_net->getNonDefaultRule();
   if (ndr == nullptr) {
@@ -714,12 +698,11 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
     logger_->report("Stage 1: Pattern routing.");
   }
 
-  if (critical_nets_percentage_ != 0) {
+  if (hasTiming()) {
     setInitialNetSlacks(net_indices);
   }
 
-  // Stage 1 is neutral: order by the default slack/bbox key, no res-aware.
-  sortNetIndices(net_indices, /*res_aware_order=*/false);
+  sortNetIndices(net_indices);
   for (const int net_index : net_indices) {
     if (gr_nets_[net_index] == nullptr) {
       continue;
@@ -747,54 +730,32 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
   debugNetTopology(CugrStage::patternRoute, 0);
 }
 
-void CUGR::patternRouteResAware(std::vector<int>& net_indices)
+void CUGR::patternRouteCritical(std::vector<int>& net_indices)
 {
-  if (!resistance_aware_ || critical_nets_percentage_ == 0) {
+  if (!hasTiming() || !grid_graph_->hasDelayModel()) {
     return;
   }
   if (verbose_) {
-    logger_->report("Stage 2: Resistance-aware re-route of critical nets.");
+    logger_->report("Stage 2: Re-route of nets with negative slack.");
   }
 
-  // Stage 1 routed neutrally, so real 3D trees now exist; mark the res-aware
-  // set from their actual per-net resistance.
+  // Time the first routes; their criticalities set the delay cost.
   updateCriticalNets(net_indices);
 
-  std::vector<int> res_aware_nets;
-  for (const auto& net : gr_nets_) {
-    if (net != nullptr && net->isResAware()) {
-      res_aware_nets.push_back(net->getIndex());
+  std::vector<int> critical_nets;
+  for (const int net_index : net_indices) {
+    const GRNet* net = gr_nets_[net_index].get();
+    if (net != nullptr && net->getCriticality() > 0.0f) {
+      critical_nets.push_back(net_index);
     }
   }
-  if (res_aware_nets.empty()) {
-    return;
-  }
+  // Worst slack first, so they get first pick of upper-metal capacity.
+  sortNetIndices(critical_nets);
 
-  // Most critical first, so they get first pick of upper-metal capacity.
-  sortNetIndices(res_aware_nets, /*res_aware_order=*/true);
-
-  // Dump the res-aware nets in the order they are re-routed (their
-  // layer-assignment priority). Enable with -debug_level GRT resAware 1.
-  if (logger_->debugCheck(GRT, "resAware", 1)) {
-    logger_->report("CUGR res-aware nets in layer-assignment priority order:");
-    int rank = 0;
-    for (const int net_index : res_aware_nets) {
-      const GRNet* net = gr_nets_[net_index].get();
-      logger_->report("  {}: {} slack={:.2f}ps R={:.2f} fanout={} len={}",
-                      rank++,
-                      net->getName(),
-                      net->getSlack() * 1e12,
-                      net->getResistance(),
-                      net->getNumPins(),
-                      net->getNetLength());
-    }
-  }
-
-  // Re-route each critical net on real resistance, no detours; later
-  // congestion stages resolve any overflow it introduces.
-  for (const int net_index : res_aware_nets) {
+  // No detours; later congestion stages resolve any overflow it introduces.
+  for (const int net_index : critical_nets) {
     GRNet* net = gr_nets_[net_index].get();
-    if (net == nullptr || net->getNumPins() < 2) {
+    if (net->getNumPins() < 2) {
       continue;
     }
     grid_graph_->removeTreeUsage(net->getRoutingTree(), net->getNdrCosts());
@@ -805,8 +766,8 @@ void CUGR::patternRouteResAware(std::vector<int>& net_indices)
     pattern_route.run();
     grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
   }
-  collectReroutedNets(res_aware_nets);
-  debugNetTopology(CugrStage::patternRouteResAware, 0);
+  collectReroutedNets(critical_nets);
+  debugNetTopology(CugrStage::patternRouteCritical, 0);
 }
 
 void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
@@ -818,7 +779,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
     logger_->report("Stage 3: Pattern routing with detours.");
   }
 
-  if (critical_nets_percentage_ != 0) {
+  if (hasTiming()) {
     updateCriticalNets(net_indices);
   }
 
@@ -858,9 +819,8 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
   }
 
   // The relief's passes skip the slack refresh, which would re-time each one.
-  if (critical_nets_percentage_ != 0 && options.refresh_critical) {
-    // Maze passes keep the resistance-aware set the pattern stages chose.
-    updateCriticalNets(net_indices, /* extend_res_aware= */ false);
+  if (hasTiming() && options.refresh_critical) {
+    updateCriticalNets(net_indices);
   }
 
   // Reroute one net at a time against all others, committing each in turn.
@@ -1006,13 +966,6 @@ std::vector<odb::dbNet*> CUGR::route(bool incremental)
     return {};
   }
 
-  if (resistance_aware_ && critical_nets_percentage_ == 0) {
-    logger_->warn(GRT,
-                  702,
-                  "-resistance_aware has no effect without a non-zero "
-                  "-critical_nets_percentage; no nets are marked critical.");
-  }
-
   std::vector<int> net_indices;
   if (!nets_to_route_.empty()) {
     net_indices = nets_to_route_;
@@ -1043,9 +996,9 @@ std::vector<odb::dbNet*> CUGR::route(bool incremental)
   patternRoute(net_indices);
 
   if (!incremental) {
-    // Stage 2: resistance-aware re-route of the critical nets (full route
-    // only, not congestion-gated; it ignores the congested set).
-    patternRouteResAware(net_indices);
+    // Stage 2: re-route the nets with negative slack (full route only, not
+    // congestion-gated; it ignores the congested set).
+    patternRouteCritical(net_indices);
     updateCongestedNets(net_indices);
   }
 
@@ -1210,8 +1163,8 @@ bool CUGR::debugStageEnabled(const CugrStage stage) const
   switch (stage) {
     case CugrStage::patternRoute:
       return debug_.stages.pattern_route;
-    case CugrStage::patternRouteResAware:
-      return debug_.stages.res_aware;
+    case CugrStage::patternRouteCritical:
+      return debug_.stages.critical;
     case CugrStage::patternRouteWithDetours:
       return debug_.stages.detours;
     case CugrStage::mazeRoute:
@@ -1222,9 +1175,43 @@ bool CUGR::debugStageEnabled(const CugrStage stage) const
   return false;
 }
 
+float CUGR::upstreamCriticality(odb::dbNet* db_net) const
+{
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  odb::dbNet* net = db_net;
+  for (int hop = 0; hop < kMaxUpstreamHops; hop++) {
+    odb::dbITerm* driver = net->getFirstOutput();
+    if (driver == nullptr) {
+      return 0.0f;
+    }
+    odb::dbInst* inst = driver->getInst();
+    const sta::LibertyCell* cell = network->libertyCell(network->dbToSta(inst));
+    if (cell == nullptr || (!cell->isBuffer() && !cell->isInverter())) {
+      return 0.0f;
+    }
+    odb::dbNet* input_net = nullptr;
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (iterm->isInputSignal() && iterm->getNet() != nullptr) {
+        input_net = iterm->getNet();
+        break;
+      }
+    }
+    if (input_net == nullptr) {
+      return 0.0f;
+    }
+    if (const auto it = db_net_map_.find(input_net); it != db_net_map_.end()) {
+      return it->second->getCriticality();
+    }
+    // The input net is new as well; keep looking upstream.
+    net = input_net;
+  }
+  return 0.0f;
+}
+
 bool CUGR::hasTiming() const
 {
-  return sta_->getDbNetwork()->defaultLibertyLibrary() != nullptr;
+  return sta_->getDbNetwork()->defaultLibertyLibrary() != nullptr
+         && !sta_->cmdMode()->sdc()->clocks().empty();
 }
 
 void CUGR::reportDebugNetSlack(const GRNet* net,
@@ -1240,23 +1227,13 @@ void CUGR::reportDebugNetSlack(const GRNet* net,
   if (!hasTiming()) {
     detail = "slack unavailable (no timing)";
   } else {
-    // Skipped where CUGR does no timing of its own: refreshing would then be
-    // the only extraction of the run and would move post-route timing.
-    const bool refreshed = critical_nets_percentage_ != 0;
-    if (refreshed) {
-      // Every rerouted net, not just this one: its slack runs through them.
-      refreshParasiticsForDebug();
-    }
+    // Every rerouted net, not just this one: its slack runs through them.
+    refreshParasiticsForDebug();
     const float sta_slack = getNetSlack(net->getDbNet());
     // What CUGR's ordering and critical-net decisions read.
     const float cugr_slack = net->getSlack();
     if (sta_slack >= sta::INF) {
       detail = "no timing path";
-    } else if (!refreshed) {
-      detail = fmt::format(
-          "slack = {:.2f} ps (cugr tracks no slack at "
-          "-critical_nets_percentage 0)",
-          sta_slack * 1e12);
     } else if (cugr_slack >= kDemotedSlack) {
       detail = fmt::format(
           "slack = {:.2f} ps (cugr entered stage demoted as non-critical)",
@@ -1269,7 +1246,7 @@ void CUGR::reportDebugNetSlack(const GRNet* net,
           cugr_slack * 1e12,
           (sta_slack - cugr_slack) * 1e12);
     }
-    if (!refreshed || incremental_routing_) {
+    if (incremental_routing_) {
       detail += " (parasitics not refreshed)";
     }
   }
@@ -1752,18 +1729,8 @@ GRoute CUGR::getNetRoute(odb::dbNet* db_net)
   return route;
 }
 
-void CUGR::sortNetIndices(std::vector<int>& net_indices,
-                          const bool res_aware_order) const
+void CUGR::sortNetIndices(std::vector<int>& net_indices) const
 {
-  if (res_aware_order) {
-    // Multi-factor res-aware ordering (slack+resistance+fanout+length) so
-    // critical nets route first (FR's full tuple regressed asap7).
-    stableSortNets(
-        net_indices, gr_nets_, [&](const GRNet* lhs, const GRNet* rhs) {
-          return getResAwareScore(lhs) < getResAwareScore(rhs);
-        });
-    return;
-  }
   stableSortNets(net_indices, gr_nets_, [](const GRNet* lhs, const GRNet* rhs) {
     return std::make_tuple(lhs->getSlack(), lhs->getBoundingBox().hp())
            < std::make_tuple(rhs->getSlack(), rhs->getBoundingBox().hp());
@@ -1789,12 +1756,10 @@ void CUGR::sortRerouteIndices(std::vector<int>& net_indices) const
 
 void CUGR::sortForReroute(std::vector<int>& net_indices) const
 {
-  const bool res_aware_order
-      = resistance_aware_ && critical_nets_percentage_ != 0;
   // Incremental reroutes follow netlist edits rather than congestion and
   // skip demotion, so they keep the slack-then-size order.
-  if (res_aware_order || incremental_routing_) {
-    sortNetIndices(net_indices, res_aware_order);
+  if (incremental_routing_) {
+    sortNetIndices(net_indices);
   } else {
     sortRerouteIndices(net_indices);
   }
@@ -2350,6 +2315,7 @@ void CUGR::updateNet(odb::dbNet* db_net)
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
     const bool was_soft_ndr = gr_net->isSoftNdr();
+    const float criticality = gr_net->getCriticality();
     if (gr_net->getRoutingTree()) {
       grid_graph_->removeTreeUsage(*gr_net);
     }
@@ -2357,6 +2323,10 @@ void CUGR::updateNet(odb::dbNet* db_net)
     const int idx = gr_net->getIndex();
     const CUGRNet& base_net = design_->getAllNets()[idx];
     gr_nets_[idx] = std::make_unique<GRNet>(base_net, grid_graph_.get());
+    // The peak criticality carries over: incremental routing has no
+    // critical-net re-route, so a net whose fast route lifted its slack
+    // would otherwise go back to a slow one. Pin caps follow the new pins.
+    gr_nets_[idx]->setCriticality(criticality);
     // Reapply the NDR cost/width dropped by the fresh GRNet so the reroute
     // honors the net's rule (matches CUGR::init).
     gr_nets_[idx]->setNdrCosts(computeNdrCosts(db_net));
@@ -2376,6 +2346,10 @@ void CUGR::updateNet(odb::dbNet* db_net)
     }
     gr_nets_.push_back(
         std::make_unique<GRNet>(design_->getAllNets()[idx], grid_graph_.get()));
+    // A new net has no peak criticality of its own, and repair has usually
+    // lifted its slack; it takes the criticality of the net it was split
+    // from.
+    gr_nets_.back()->setCriticality(upstreamCriticality(db_net));
     gr_nets_.back()->setNdrCosts(computeNdrCosts(db_net));
     gr_nets_.back()->setNdrWidths(computeNdrWidths(db_net));
     net_indices_.push_back(idx);
@@ -2511,6 +2485,7 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
     was_soft_ndr = gr_net->isSoftNdr();
+    const float criticality = gr_net->getCriticality();
     if (gr_net->getRoutingTree()) {
       grid_graph_->removeTreeUsage(*gr_net);
     }
@@ -2519,6 +2494,8 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
     gr_nets_[idx] = std::make_unique<GRNet>(design_->getAllNets()[idx],
                                             grid_graph_.get());
     new_net = gr_nets_[idx].get();
+    // Keeps the peak criticality, like updateNet.
+    new_net->setCriticality(criticality);
   } else {
     const int idx = design_->updateNet(db_net);
     if (idx < 0) {
@@ -2528,6 +2505,8 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
         std::make_unique<GRNet>(design_->getAllNets()[idx], grid_graph_.get()));
     net_indices_.push_back(idx);
     new_net = gr_nets_.back().get();
+    // Like updateNet's new-net branch.
+    new_net->setCriticality(upstreamCriticality(db_net));
   }
   // Restore the NDR cost/width so the restored tree commits the same demand
   // the net's rule requires (a fresh GRNet defaults to the 1.0 factor); covers
@@ -2549,6 +2528,10 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   const std::vector<std::vector<GRPoint>>& pin_aps
       = new_net->getPinAccessPoints();
   for (int pin_index = 0; pin_index < new_net->getNumPins(); pin_index++) {
+    // A port on a same-net pin's metal takes that pin's access point below.
+    if (new_net->getCoveringPins().contains(pin_index)) {
+      continue;
+    }
     bool covered = false;
     for (const GRPoint& candidate : pin_aps[pin_index]) {
       if (occupied.contains(grid_graph_->hashCell(candidate))) {
@@ -2565,6 +2548,7 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
       return false;
     }
   }
+  new_net->shareCoveringPinAccessPoints();
 
   new_net->setRoutingTree(std::move(tree));
   // The flag records provenance, not geometry: adopted routes come from

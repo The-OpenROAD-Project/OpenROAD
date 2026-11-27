@@ -108,99 +108,106 @@ void _dbMetalWidthViaMap::collectMemInfo(MemInfo& info)
 
 void dbMetalWidthViaMap::setViaCutClass(bool via_cut_class)
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  _dbMetalWidthViaMap* obj = reinterpret_cast<_dbMetalWidthViaMap*>(this);
 
   obj->via_cut_class_ = via_cut_class;
 }
 
 bool dbMetalWidthViaMap::isViaCutClass() const
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  const _dbMetalWidthViaMap* obj
+      = reinterpret_cast<const _dbMetalWidthViaMap*>(this);
   return obj->via_cut_class_;
 }
 
 void dbMetalWidthViaMap::setCutLayer(dbTechLayer* cut_layer)
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  _dbMetalWidthViaMap* obj = reinterpret_cast<_dbMetalWidthViaMap*>(this);
 
   obj->cut_layer_ = cut_layer->getImpl()->getOID();
 }
 
 void dbMetalWidthViaMap::setBelowLayerWidthLow(int below_layer_width_low)
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  _dbMetalWidthViaMap* obj = reinterpret_cast<_dbMetalWidthViaMap*>(this);
 
   obj->below_layer_width_low_ = below_layer_width_low;
 }
 
 int dbMetalWidthViaMap::getBelowLayerWidthLow() const
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  const _dbMetalWidthViaMap* obj
+      = reinterpret_cast<const _dbMetalWidthViaMap*>(this);
   return obj->below_layer_width_low_;
 }
 
 void dbMetalWidthViaMap::setBelowLayerWidthHigh(int below_layer_width_high)
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  _dbMetalWidthViaMap* obj = reinterpret_cast<_dbMetalWidthViaMap*>(this);
 
   obj->below_layer_width_high_ = below_layer_width_high;
 }
 
 int dbMetalWidthViaMap::getBelowLayerWidthHigh() const
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  const _dbMetalWidthViaMap* obj
+      = reinterpret_cast<const _dbMetalWidthViaMap*>(this);
   return obj->below_layer_width_high_;
 }
 
 void dbMetalWidthViaMap::setAboveLayerWidthLow(int above_layer_width_low)
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  _dbMetalWidthViaMap* obj = reinterpret_cast<_dbMetalWidthViaMap*>(this);
 
   obj->above_layer_width_low_ = above_layer_width_low;
 }
 
 int dbMetalWidthViaMap::getAboveLayerWidthLow() const
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  const _dbMetalWidthViaMap* obj
+      = reinterpret_cast<const _dbMetalWidthViaMap*>(this);
   return obj->above_layer_width_low_;
 }
 
 void dbMetalWidthViaMap::setAboveLayerWidthHigh(int above_layer_width_high)
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  _dbMetalWidthViaMap* obj = reinterpret_cast<_dbMetalWidthViaMap*>(this);
 
   obj->above_layer_width_high_ = above_layer_width_high;
 }
 
 int dbMetalWidthViaMap::getAboveLayerWidthHigh() const
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  const _dbMetalWidthViaMap* obj
+      = reinterpret_cast<const _dbMetalWidthViaMap*>(this);
   return obj->above_layer_width_high_;
 }
 
 void dbMetalWidthViaMap::setViaName(const std::string& via_name)
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  _dbMetalWidthViaMap* obj = reinterpret_cast<_dbMetalWidthViaMap*>(this);
 
   obj->via_name_ = via_name;
 }
 
 const std::string& dbMetalWidthViaMap::getViaName() const
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  const _dbMetalWidthViaMap* obj
+      = reinterpret_cast<const _dbMetalWidthViaMap*>(this);
   return obj->via_name_;
 }
 
 void dbMetalWidthViaMap::setPgVia(bool pg_via)
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  _dbMetalWidthViaMap* obj = reinterpret_cast<_dbMetalWidthViaMap*>(this);
 
   obj->pg_via_ = pg_via;
 }
 
 bool dbMetalWidthViaMap::isPgVia() const
 {
-  _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  const _dbMetalWidthViaMap* obj
+      = reinterpret_cast<const _dbMetalWidthViaMap*>(this);
   return obj->pg_via_;
 }
 

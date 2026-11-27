@@ -118,12 +118,31 @@ class AntennaChecker::Impl
   LayerCheck checkRatioViolations(odb::dbTechLayer* layer,
                                   NodeInfo& node_info,
                                   float ratio_margin);
+  // Checks every gate's ratios on each layer with an antenna rule into
+  // net_check, and returns the layers each violating gate fails on.
+  GateToViolationLayers checkPins(odb::dbNet* db_net,
+                                  float ratio_margin,
+                                  GateToLayerToNodeInfo& gate_info,
+                                  NetCheck& net_check);
   int checkGates(odb::dbNet* db_net,
                  odb::dbMTerm* diode_mterm,
                  float ratio_margin,
                  GateToLayerToNodeInfo& gate_info,
                  Violations& antenna_violations,
                  NetCheck& net_check);
+  // Returns whether info violates the PAR or (on routing layers) PSR rule of
+  // layer.
+  bool violatesPartialRatio(odb::dbTechLayer* layer,
+                            NodeInfo& info,
+                            float ratio_margin);
+  // Adds diodes of diode_diff_area to a node that violates a partial ratio
+  // until it no longer does, and returns how many it took (at most one past
+  // kMaxDiodeCountPerGate).  Updates info as diodes are added.
+  int countDiodes(odb::dbNet* db_net,
+                  odb::dbTechLayer* layer,
+                  NodeInfo& info,
+                  double diode_diff_area,
+                  float ratio_margin);
   void calculateViaPar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   void calculateWirePar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   // Each check compares a node's ratio with the layer rule.  checkPAR and

@@ -208,7 +208,7 @@ void _dbPowerSwitch::collectMemInfo(MemInfo& info)
 _dbPowerSwitch::~_dbPowerSwitch()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
 }
 
@@ -220,25 +220,26 @@ _dbPowerSwitch::~_dbPowerSwitch()
 
 const char* dbPowerSwitch::getName() const
 {
-  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  const _dbPowerSwitch* obj = reinterpret_cast<const _dbPowerSwitch*>(this);
   return obj->name_;
 }
 
 void dbPowerSwitch::setPowerDomain(dbPowerDomain* power_domain)
 {
-  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  _dbPowerSwitch* obj = reinterpret_cast<_dbPowerSwitch*>(this);
 
   obj->power_domain_ = power_domain->getImpl()->getOID();
 }
 
 dbPowerDomain* dbPowerSwitch::getPowerDomain() const
 {
-  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  const _dbPowerSwitch* obj = reinterpret_cast<const _dbPowerSwitch*>(this);
   if (obj->power_domain_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbPowerDomain*) par->powerdomain_tbl_->getPtr(obj->power_domain_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbPowerDomain*>(
+      par->powerdomain_tbl_->getPtr(obj->power_domain_));
 }
 
 // User Code Begin dbPowerSwitchPublicMethods

@@ -13,9 +13,11 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -26,6 +28,7 @@
 #include "boost/random/normal_distribution.hpp"
 #include "boost/random/uniform_int_distribution.hpp"
 #include "densityGradientBackend.h"
+#include "erff.h"
 #include "fft.h"
 #include "gpl/Replace.h"
 #include "hpwlBackend.h"
@@ -1219,6 +1222,7 @@ NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options,
       timingDrivenMode(options.timingDrivenMode),
       timingDrivenRepairTiming(options.timingDrivenRepairTiming),
       timingDrivenRepairTnsEndPercent(options.timingDrivenRepairTnsEndPercent),
+      powerDrivenClockLeafOverflows(options.powerDrivenClockLeafOverflows),
       routability_driven_mode(options.routabilityDrivenMode),
       disableRevertIfDiverge(options.disableRevertIfDiverge)
 {
@@ -1541,6 +1545,94 @@ void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
       }
     }
   }
+
+  // For power-driven virtual clock leaf nets
+  updateVirtualClockLeafNetForceWA(wlCoeffX, wlCoeffY);
+}
+
+void NesterovBaseCommon::setVirtualClockLeafNets(
+    std::vector<VirtualClockLeafNet> nets)
+{
+  virtual_clock_leaf_nets_ = std::move(nets);
+  virtual_clock_leaf_net_grads_.assign(gCellStor_.size(), FloatPoint());
+}
+
+void NesterovBaseCommon::clearVirtualClockLeafNets()
+{
+  virtual_clock_leaf_nets_.clear();
+  virtual_clock_leaf_net_grads_.clear();
+}
+
+static void waAxisGradients(const std::vector<float>& pos,
+                            const float coef,
+                            const float bar,
+                            std::vector<float>& min_exp,
+                            std::vector<float>& max_exp,
+                            std::vector<float>& grads)
+{
+  const auto [lo, hi] = std::ranges::minmax_element(pos);
+  const float min_pos = *lo;
+  const float max_pos = *hi;
+  const size_t n = pos.size();
+  min_exp.assign(n, 0);
+  max_exp.assign(n, 0);
+  float min_sum = 0, pos_min_sum = 0, max_sum = 0, pos_max_sum = 0;
+  for (size_t i = 0; i < n; i++) {
+    const float exp_min = (min_pos - pos[i]) * coef;
+    const float exp_max = (pos[i] - max_pos) * coef;
+    if (exp_min > bar) {
+      min_exp[i] = fastExp(exp_min);
+      min_sum += min_exp[i];
+      pos_min_sum += pos[i] * min_exp[i];
+    }
+    if (exp_max > bar) {
+      max_exp[i] = fastExp(exp_max);
+      max_sum += max_exp[i];
+      pos_max_sum += pos[i] * max_exp[i];
+    }
+  }
+  grads.resize(n);
+  for (size_t i = 0; i < n; i++) {
+    float grad_min = 0, grad_max = 0;
+    if (min_exp[i] > 0) {
+      grad_min = (min_sum * (min_exp[i] * (1.0 - coef * pos[i]))
+                  + coef * min_exp[i] * pos_min_sum)
+                 / (min_sum * min_sum);
+    }
+    if (max_exp[i] > 0) {
+      grad_max = (max_sum * (max_exp[i] * (1.0 + coef * pos[i]))
+                  - coef * max_exp[i] * pos_max_sum)
+                 / (max_sum * max_sum);
+    }
+    grads[i] = grad_min - grad_max;
+  }
+}
+
+void NesterovBaseCommon::updateVirtualClockLeafNetForceWA(float wlCoeffX,
+                                                          float wlCoeffY)
+{
+  if (virtual_clock_leaf_nets_.empty()) {
+    return;
+  }
+  std::ranges::fill(virtual_clock_leaf_net_grads_, FloatPoint());
+  const float bar = NesterovBaseVars::minWireLengthForceBar;
+  std::vector<float> xs, ys, grad_x, grad_y, min_exp, max_exp;
+  for (const VirtualClockLeafNet& net : virtual_clock_leaf_nets_) {
+    xs.clear();
+    ys.clear();
+    for (const GPin* gPin : net.pins) {
+      xs.push_back(gPin->cx());
+      ys.push_back(gPin->cy());
+    }
+    waAxisGradients(xs, wlCoeffX, bar, min_exp, max_exp, grad_x);
+    waAxisGradients(ys, wlCoeffY, bar, min_exp, max_exp, grad_y);
+    for (size_t i = 0; i < net.pins.size(); i++) {
+      FloatPoint& grad = virtual_clock_leaf_net_grads_[getGCellIndex(
+          net.pins[i]->getGCell())];
+      grad.x += net.weight * grad_x[i];
+      grad.y += net.weight * grad_y[i];
+    }
+  }
 }
 
 GCell& NesterovBaseCommon::getGCell(size_t index)
@@ -1584,6 +1676,13 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientWA(const GCell* gCell,
 
     gradientPair.x += tmpPair.x;
     gradientPair.y += tmpPair.y;
+  }
+
+  if (!virtual_clock_leaf_net_grads_.empty() && gCell->isInstance()) {
+    const FloatPoint& grad
+        = virtual_clock_leaf_net_grads_[getGCellIndex(gCell)];
+    gradientPair.x += grad.x;
+    gradientPair.y += grad.y;
   }
 
   if (gCell->isInstance()) {
@@ -1690,11 +1789,8 @@ void NesterovBaseCommon::updateDbGCells()
       for (Instance* inst : gCell->insts()) {
         odb::dbInst* db_inst = inst->dbInst();
         db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-
-        // pad awareness on X coordinates
-        db_inst->setLocation(gCell->dCx() - inst->dx() / 2
-                                 + pbc_->siteSizeX() * pbc_->getPadLeft(),
-                             gCell->dCy() - inst->dy() / 2);
+        const odb::Point loc = inst->dbLocationAt(gCell->dCx(), gCell->dCy());
+        db_inst->setLocation(loc.x(), loc.y());
       }
     }
   }
@@ -3138,6 +3234,86 @@ void NesterovBase::updateDensityFieldBin()
     sumPhi_ += electroPhi
                * static_cast<float>(bin.getNonPlaceArea() + bin.instPlacedArea()
                                     + bin.getFillerArea());
+  }
+}
+
+void NesterovBase::spreadStackedGCells()
+{
+  // Cells get identical forces only when they share a location, a density
+  // size, and the same nets at the same pin offsets. A net with a single pin
+  // (an IO net under skip_io, for one) exerts no force, so it is ignored.
+  using PinKey = std::tuple<const GNet*, int, int>;
+  using StackKey = std::tuple<int, int, int, int, std::vector<PinKey>>;
+  std::map<StackKey, std::vector<GCell*>> stacks;
+  for (auto& handle : nb_gcells_) {
+    GCell* gCell = handle;
+    if (gCell->isInstance() && !gCell->isLocked()) {
+      updateDensityCoordiLayoutInside(gCell);
+      std::vector<PinKey> pins;
+      pins.reserve(gCell->gPins().size());
+      for (const GPin* gPin : gCell->gPins()) {
+        const GNet* gNet = gPin->getGNet();
+        if (gNet->getGPins().size() > 1) {
+          pins.emplace_back(gNet, gPin->offsetCx(), gPin->offsetCy());
+        }
+      }
+      std::ranges::sort(pins);
+      stacks[{gCell->dCx(),
+              gCell->dCy(),
+              gCell->dDx(),
+              gCell->dDy(),
+              std::move(pins)}]
+          .push_back(gCell);
+    }
+  }
+
+  int spread_count = 0;
+  for (const auto& [key, cells] : stacks) {
+    if (cells.size() < 2) {
+      continue;
+    }
+    const int center_x = std::get<0>(key);
+    const int center_y = std::get<1>(key);
+    spread_count += cells.size();
+
+    // A near-square grid of slots, one cell pitch apart, centered on the
+    // stack and shifted to fit the region; the pitch shrinks if the grid is
+    // wider or taller than the region.
+    const int count = cells.size();
+    const int cols = std::ceil(std::sqrt(count));
+    const int rows = (count + cols - 1) / cols;
+    const int region_dx = bg_.ux() - bg_.lx();
+    const int region_dy = bg_.uy() - bg_.ly();
+    const int pitch_x
+        = std::max(1, std::min(cells.front()->dDx(), region_dx / cols));
+    const int pitch_y
+        = std::max(1, std::min(cells.front()->dDy(), region_dy / rows));
+    const int grid_dx = cols * pitch_x;
+    const int grid_dy = rows * pitch_y;
+    // A region narrower than one DBU per slot cannot hold the grid; it then
+    // starts at the region's lower edge.
+    const int grid_lx = std::clamp(center_x - grid_dx / 2,
+                                   bg_.lx(),
+                                   std::max(bg_.lx(), bg_.ux() - grid_dx));
+    const int grid_ly = std::clamp(center_y - grid_dy / 2,
+                                   bg_.ly(),
+                                   std::max(bg_.ly(), bg_.uy() - grid_dy));
+
+    for (int i = 0; i < count; ++i) {
+      GCell* gCell = cells[i];
+      gCell->setDensityCenterLocation(
+          grid_lx + (i % cols) * pitch_x + pitch_x / 2,
+          grid_ly + (i / cols) * pitch_y + pitch_y / 2);
+      updateDensityCoordiLayoutInside(gCell);
+    }
+  }
+
+  if (spread_count > 0) {
+    log_->info(GPL,
+               132,
+               "Spread {} movable instances that started at the same location "
+               "as another.",
+               spread_count);
   }
 }
 
@@ -5358,9 +5534,13 @@ static float calculateBiVariateNormalCDF(biNormalParameters i)
   const float y1 = (i.meanY - i.ly) / (std::sqrt(2) * i.sigmaY);
   const float y2 = (i.meanY - i.uy) / (std::sqrt(2) * i.sigmaY);
 
-  return 0.25
-         * (std::erf(x1) * std::erf(y1) + std::erf(x2) * std::erf(y2)
-            - std::erf(x1) * std::erf(y2) - std::erf(x2) * std::erf(y1));
+  // cr_erff rather than std::erf: libm's last bit varies with the host's
+  // glibc version, which would make placement depend on the host.
+  const float ex1 = cr_erff(x1);
+  const float ex2 = cr_erff(x2);
+  const float ey1 = cr_erff(y1);
+  const float ey2 = cr_erff(y2);
+  return 0.25 * (ex1 * ey1 + ex2 * ey2 - ex1 * ey2 - ex2 * ey1);
 }
 //
 // https://codingforspeed.com/using-faster-exponential-approximation/

@@ -250,281 +250,323 @@ void _dbTechLayerCutEnclosureRule::collectMemInfo(MemInfo& info)
 void dbTechLayerCutEnclosureRule::setCutClass(
     dbTechLayerCutClassRule* cut_class)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->cut_class_ = cut_class->getImpl()->getOID();
 }
 
 dbTechLayerCutClassRule* dbTechLayerCutEnclosureRule::getCutClass() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   if (obj->cut_class_ == 0) {
     return nullptr;
   }
-  _dbTechLayer* par = (_dbTechLayer*) obj->getOwner();
-  return (dbTechLayerCutClassRule*) par->cut_class_rules_tbl_->getPtr(
-      obj->cut_class_);
+  _dbTechLayer* par = static_cast<_dbTechLayer*>(obj->getOwner());
+  return reinterpret_cast<dbTechLayerCutClassRule*>(
+      par->cut_class_rules_tbl_->getPtr(obj->cut_class_));
 }
 
 void dbTechLayerCutEnclosureRule::setEolWidth(int eol_width)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->eol_width_ = eol_width;
 }
 
 int dbTechLayerCutEnclosureRule::getEolWidth() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->eol_width_;
 }
 
 void dbTechLayerCutEnclosureRule::setEolMinLength(int eol_min_length)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->eol_min_length_ = eol_min_length;
 }
 
 int dbTechLayerCutEnclosureRule::getEolMinLength() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->eol_min_length_;
 }
 
 void dbTechLayerCutEnclosureRule::setFirstOverhang(int first_overhang)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->first_overhang_ = first_overhang;
 }
 
 int dbTechLayerCutEnclosureRule::getFirstOverhang() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->first_overhang_;
 }
 
 void dbTechLayerCutEnclosureRule::setSecondOverhang(int second_overhang)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->second_overhang_ = second_overhang;
 }
 
 int dbTechLayerCutEnclosureRule::getSecondOverhang() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->second_overhang_;
 }
 
 void dbTechLayerCutEnclosureRule::setSpacing(int spacing)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->spacing_ = spacing;
 }
 
 int dbTechLayerCutEnclosureRule::getSpacing() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->spacing_;
 }
 
 void dbTechLayerCutEnclosureRule::setExtension(int extension)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->extension_ = extension;
 }
 
 int dbTechLayerCutEnclosureRule::getExtension() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->extension_;
 }
 
 void dbTechLayerCutEnclosureRule::setForwardExtension(int forward_extension)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->forward_extension_ = forward_extension;
 }
 
 int dbTechLayerCutEnclosureRule::getForwardExtension() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->forward_extension_;
 }
 
 void dbTechLayerCutEnclosureRule::setBackwardExtension(int backward_extension)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->backward_extension_ = backward_extension;
 }
 
 int dbTechLayerCutEnclosureRule::getBackwardExtension() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->backward_extension_;
 }
 
 void dbTechLayerCutEnclosureRule::setMinWidth(int min_width)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->min_width_ = min_width;
 }
 
 int dbTechLayerCutEnclosureRule::getMinWidth() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->min_width_;
 }
 
 void dbTechLayerCutEnclosureRule::setCutWithin(int cut_within)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->cut_within_ = cut_within;
 }
 
 int dbTechLayerCutEnclosureRule::getCutWithin() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->cut_within_;
 }
 
 void dbTechLayerCutEnclosureRule::setMinLength(int min_length)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->min_length_ = min_length;
 }
 
 int dbTechLayerCutEnclosureRule::getMinLength() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->min_length_;
 }
 
 void dbTechLayerCutEnclosureRule::setParLength(int par_length)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->par_length_ = par_length;
 }
 
 int dbTechLayerCutEnclosureRule::getParLength() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->par_length_;
 }
 
 void dbTechLayerCutEnclosureRule::setSecondParLength(int second_par_length)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->second_par_length_ = second_par_length;
 }
 
 int dbTechLayerCutEnclosureRule::getSecondParLength() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->second_par_length_;
 }
 
 void dbTechLayerCutEnclosureRule::setParWithin(int par_within)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->par_within_ = par_within;
 }
 
 int dbTechLayerCutEnclosureRule::getParWithin() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->par_within_;
 }
 
 void dbTechLayerCutEnclosureRule::setSecondParWithin(int second_par_within)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->second_par_within_ = second_par_within;
 }
 
 int dbTechLayerCutEnclosureRule::getSecondParWithin() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->second_par_within_;
 }
 
 void dbTechLayerCutEnclosureRule::setBelowEnclosure(int below_enclosure)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->below_enclosure_ = below_enclosure;
 }
 
 int dbTechLayerCutEnclosureRule::getBelowEnclosure() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->below_enclosure_;
 }
 
 void dbTechLayerCutEnclosureRule::setNumCorners(uint32_t num_corners)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->num_corners_ = num_corners;
 }
 
 uint32_t dbTechLayerCutEnclosureRule::getNumCorners() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
   return obj->num_corners_;
 }
 
 void dbTechLayerCutEnclosureRule::setCutClassValid(bool cut_class_valid)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.cut_class_valid = cut_class_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isCutClassValid() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.cut_class_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setAbove(bool above)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.above = above;
 }
 
 bool dbTechLayerCutEnclosureRule::isAbove() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.above;
 }
 
 void dbTechLayerCutEnclosureRule::setBelow(bool below)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.below = below;
 }
 
 bool dbTechLayerCutEnclosureRule::isBelow() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.below;
 }
@@ -532,224 +574,256 @@ bool dbTechLayerCutEnclosureRule::isBelow() const
 void dbTechLayerCutEnclosureRule::setEolMinLengthValid(
     bool eol_min_length_valid)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.eol_min_length_valid = eol_min_length_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isEolMinLengthValid() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.eol_min_length_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setEolOnly(bool eol_only)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.eol_only = eol_only;
 }
 
 bool dbTechLayerCutEnclosureRule::isEolOnly() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.eol_only;
 }
 
 void dbTechLayerCutEnclosureRule::setShortEdgeOnEol(bool short_edge_on_eol)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.short_edge_on_eol = short_edge_on_eol;
 }
 
 bool dbTechLayerCutEnclosureRule::isShortEdgeOnEol() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.short_edge_on_eol;
 }
 
 void dbTechLayerCutEnclosureRule::setSideSpacingValid(bool side_spacing_valid)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.side_spacing_valid = side_spacing_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isSideSpacingValid() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.side_spacing_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setEndSpacingValid(bool end_spacing_valid)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.end_spacing_valid = end_spacing_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isEndSpacingValid() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.end_spacing_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setOffCenterLine(bool off_center_line)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.off_center_line = off_center_line;
 }
 
 bool dbTechLayerCutEnclosureRule::isOffCenterLine() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.off_center_line;
 }
 
 void dbTechLayerCutEnclosureRule::setWidthValid(bool width_valid)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.width_valid = width_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isWidthValid() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.width_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setIncludeAbutted(bool include_abutted)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.include_abutted = include_abutted;
 }
 
 bool dbTechLayerCutEnclosureRule::isIncludeAbutted() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.include_abutted;
 }
 
 void dbTechLayerCutEnclosureRule::setExceptExtraCut(bool except_extra_cut)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.except_extra_cut = except_extra_cut;
 }
 
 bool dbTechLayerCutEnclosureRule::isExceptExtraCut() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.except_extra_cut;
 }
 
 void dbTechLayerCutEnclosureRule::setPrl(bool prl)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.prl = prl;
 }
 
 bool dbTechLayerCutEnclosureRule::isPrl() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.prl;
 }
 
 void dbTechLayerCutEnclosureRule::setNoSharedEdge(bool no_shared_edge)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.no_shared_edge = no_shared_edge;
 }
 
 bool dbTechLayerCutEnclosureRule::isNoSharedEdge() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.no_shared_edge;
 }
 
 void dbTechLayerCutEnclosureRule::setLengthValid(bool length_valid)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.length_valid = length_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isLengthValid() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.length_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setExtraCutValid(bool extra_cut_valid)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.extra_cut_valid = extra_cut_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isExtraCutValid() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.extra_cut_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setExtraOnly(bool extra_only)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.extra_only = extra_only;
 }
 
 bool dbTechLayerCutEnclosureRule::isExtraOnly() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.extra_only;
 }
 
 void dbTechLayerCutEnclosureRule::setRedundantCutValid(bool redundant_cut_valid)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.redundant_cut_valid = redundant_cut_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isRedundantCutValid() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.redundant_cut_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setParallelValid(bool parallel_valid)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.parallel_valid = parallel_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isParallelValid() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.parallel_valid;
 }
@@ -757,14 +831,16 @@ bool dbTechLayerCutEnclosureRule::isParallelValid() const
 void dbTechLayerCutEnclosureRule::setSecondParallelValid(
     bool second_parallel_valid)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.second_parallel_valid = second_parallel_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isSecondParallelValid() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.second_parallel_valid;
 }
@@ -772,14 +848,16 @@ bool dbTechLayerCutEnclosureRule::isSecondParallelValid() const
 void dbTechLayerCutEnclosureRule::setSecondParWithinValid(
     bool second_par_within_valid)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.second_par_within_valid = second_par_within_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isSecondParWithinValid() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.second_par_within_valid;
 }
@@ -787,14 +865,16 @@ bool dbTechLayerCutEnclosureRule::isSecondParWithinValid() const
 void dbTechLayerCutEnclosureRule::setBelowEnclosureValid(
     bool below_enclosure_valid)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.below_enclosure_valid = below_enclosure_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isBelowEnclosureValid() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.below_enclosure_valid;
 }
@@ -802,14 +882,16 @@ bool dbTechLayerCutEnclosureRule::isBelowEnclosureValid() const
 void dbTechLayerCutEnclosureRule::setConcaveCornersValid(
     bool concave_corners_valid)
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<_dbTechLayerCutEnclosureRule*>(this);
 
   obj->flags_.concave_corners_valid = concave_corners_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isConcaveCornersValid() const
 {
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
+  const _dbTechLayerCutEnclosureRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureRule*>(this);
 
   return obj->flags_.concave_corners_valid;
 }
@@ -817,14 +899,17 @@ bool dbTechLayerCutEnclosureRule::isConcaveCornersValid() const
 dbTechLayerCutEnclosureRule* dbTechLayerCutEnclosureRule::create(
     dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerCutEnclosureRule*) _parent->cut_enc_rules_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerCutEnclosureRule*>(
+      _parent->cut_enc_rules_tbl_->create());
 }
 void dbTechLayerCutEnclosureRule::destroy(dbTechLayerCutEnclosureRule* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
-  _parent->cut_enc_rules_tbl_->destroy((_dbTechLayerCutEnclosureRule*) obj);
+  _parent->cut_enc_rules_tbl_->destroy(
+      reinterpret_cast<_dbTechLayerCutEnclosureRule*>(obj));
 }
 // User Code Begin dbTechLayerCutEnclosureRulePublicMethods
 void dbTechLayerCutEnclosureRule::setType(ENC_TYPE type)

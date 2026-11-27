@@ -1223,7 +1223,9 @@ void lefout::writeLayer(std::ostream& out, dbTechLayer* layer)
   }
 
   std::vector<dbTechMinEncRule*> enc_rules;
-  if (layer->getMinEnclosureRules(enc_rules)) {
+  // Implant MINENCLOSEDAREA is emitted via LEF58_MINENCLOSEDAREA.
+  if (layer->getType() == dbTechLayerType::ROUTING
+      && layer->getMinEnclosureRules(enc_rules)) {
     for (auto* rule : enc_rules) {
       writeMinEncRuleLef(out, rule);
     }

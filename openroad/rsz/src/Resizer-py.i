@@ -47,6 +47,10 @@ using namespace rsz;
 
 %ignore rsz::Resizer::lib_data_;
 
+// These return rsz types this module does not wrap.
+%ignore rsz::Resizer::placementDensity;
+%ignore rsz::Resizer::placementDensityGrid;
+
 // removeBuffers(InstanceSeq) requires sta::InstanceSeq which has no Python
 // typemap; %extend below exposes the "remove all" case via an empty sequence.
 %ignore rsz::Resizer::removeBuffers;
@@ -98,8 +102,7 @@ using namespace rsz;
                    int profile_mode = 0,
                    const char* profile_dir = "")
   {
-    auto move_seq = rsz::Resizer::parseMoveSequence(
-        std::string(sequence ? sequence : ""));
+    auto move_seq = $self->parseMoveSequence(sequence ? sequence : "");
     return $self->repairSetup(setup_margin, repair_tns_end_percent,
                               max_passes, max_iterations, max_repairs_per_pass,
                               match_cell_footprint, verbose, move_seq,

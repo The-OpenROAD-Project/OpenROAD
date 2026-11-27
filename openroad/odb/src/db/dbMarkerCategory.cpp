@@ -75,11 +75,14 @@ _dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db)
   name_ = nullptr;
   max_markers_ = 10000;
   marker_tbl_ = new dbTable<_dbMarker>(
-      db, this, (GetObjTbl_t) &_dbMarkerCategory::getObjectTable, dbMarkerObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbMarkerCategory::getObjectTable),
+      dbMarkerObj);
   categories_tbl_ = new dbTable<_dbMarkerCategory>(
       db,
       this,
-      (GetObjTbl_t) &_dbMarkerCategory::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbMarkerCategory::getObjectTable),
       dbMarkerCategoryObj);
   categories_hash_.setTable(categories_tbl_);
 }
@@ -137,7 +140,7 @@ void _dbMarkerCategory::collectMemInfo(MemInfo& info)
 _dbMarkerCategory::~_dbMarkerCategory()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
   delete marker_tbl_;
   delete categories_tbl_;
@@ -300,59 +303,65 @@ void _dbMarkerCategory::writeTR(std::ofstream& report) const
 
 const char* dbMarkerCategory::getName() const
 {
-  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+  const _dbMarkerCategory* obj
+      = reinterpret_cast<const _dbMarkerCategory*>(this);
   return obj->name_;
 }
 
 void dbMarkerCategory::setDescription(const std::string& description)
 {
-  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+  _dbMarkerCategory* obj = reinterpret_cast<_dbMarkerCategory*>(this);
 
   obj->description_ = description;
 }
 
 const std::string& dbMarkerCategory::getDescription() const
 {
-  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+  const _dbMarkerCategory* obj
+      = reinterpret_cast<const _dbMarkerCategory*>(this);
   return obj->description_;
 }
 
 void dbMarkerCategory::setSource(const std::string& source)
 {
-  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+  _dbMarkerCategory* obj = reinterpret_cast<_dbMarkerCategory*>(this);
 
   obj->source_ = source;
 }
 
 void dbMarkerCategory::setMaxMarkers(int max_markers)
 {
-  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+  _dbMarkerCategory* obj = reinterpret_cast<_dbMarkerCategory*>(this);
 
   obj->max_markers_ = max_markers;
 }
 
 int dbMarkerCategory::getMaxMarkers() const
 {
-  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+  const _dbMarkerCategory* obj
+      = reinterpret_cast<const _dbMarkerCategory*>(this);
   return obj->max_markers_;
 }
 
 dbSet<dbMarker> dbMarkerCategory::getMarkers() const
 {
-  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+  _dbMarkerCategory* obj = reinterpret_cast<_dbMarkerCategory*>(
+      const_cast<dbMarkerCategory*>(this));
   return dbSet<dbMarker>(obj, obj->marker_tbl_);
 }
 
 dbSet<dbMarkerCategory> dbMarkerCategory::getMarkerCategories() const
 {
-  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+  _dbMarkerCategory* obj = reinterpret_cast<_dbMarkerCategory*>(
+      const_cast<dbMarkerCategory*>(this));
   return dbSet<dbMarkerCategory>(obj, obj->categories_tbl_);
 }
 
 dbMarkerCategory* dbMarkerCategory::findMarkerCategory(const char* name) const
 {
-  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
-  return (dbMarkerCategory*) obj->categories_hash_.find(name);
+  _dbMarkerCategory* obj = reinterpret_cast<_dbMarkerCategory*>(
+      const_cast<dbMarkerCategory*>(this));
+  return reinterpret_cast<dbMarkerCategory*>(obj->categories_hash_.find(name));
 }
 
 // User Code Begin dbMarkerCategoryPublicMethods

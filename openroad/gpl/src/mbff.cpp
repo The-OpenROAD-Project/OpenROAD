@@ -45,6 +45,7 @@
 #include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
@@ -438,8 +439,9 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
     }
 
     // Classify each original iterm and record its tray-port mapping
-    // *before* disconnecting, then disconnect/reconnect and store the
-    // original pin name as a property on the tray instance.
+    // *before* disconnecting, then reconnect, move the constraints,
+    // disconnect and store the original pin name as a property on the
+    // tray instance.
     const std::string orig_inst_name(insts_[flops[i].idx]->getName());
     for (dbITerm* iterm : insts_[flops[i].idx]->getITerms()) {
       // Classify while the iterm is still connected.
@@ -457,8 +459,6 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         reconnectIterm(tray_iterm, net, mod_net);
       };
       if (net || mod_net) {
-        iterm->disconnect();
-
         if (is_d) {
           reconnect(tray_inst[tray_idx]->findITerm(d_pin->name().c_str()));
         }
@@ -513,8 +513,10 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         }
       }
       if (tray_iterm) {
-        // Keep the activity annotation of the flop pin on the tray pin.
+        // Keep the activity annotation and SDC constraints of the flop
+        // pin on the tray pin.
         sta_->copyUserActivity(iterm, tray_iterm);
+        sta_->moveConstraints(iterm, tray_iterm);
 
         const std::string val = orig_inst_name + "/" + orig_port_name;
         odb::dbStringProperty* prop
@@ -538,8 +540,22 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
           }
         }
       }
+
+      // Disconnect the flop pin after the move, so the disables on its wire
+      // edges move to the tray pin on the same net.
+      if (net || mod_net) {
+        iterm->disconnect();
+      }
     }
   }
+
+  std::vector<dbInst*> clustered_flops;
+  for (int i = 0; i < num_flops; i++) {
+    if (new_mapping[i].first != std::numeric_limits<int>::max()) {
+      clustered_flops.push_back(insts_[flops[i].idx]);
+    }
+  }
+  WarnDroppedConstraints(clustered_flops);
 
   // all FFs in flops have the same block clock
   std::vector<bool> isConnected(tray_inst.size());
@@ -555,6 +571,72 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         isConnected[new_mapping[i].first] = true;
       }
       dbInst::destroy(insts_[flops[i].idx]);
+    }
+  }
+}
+
+void MBFF::WarnDroppedConstraints(const std::vector<dbInst*>& flops)
+{
+  if (flops.empty()) {
+    return;
+  }
+  // Each mode has its own SDC plus one per analysis corner.
+  std::vector<const sta::Sdc*> sdcs;
+  for (const sta::Mode* mode : sta_->modes()) {
+    sdcs.push_back(mode->sdc());
+    for (const auto& [corner, corner_sdc] : mode->cornerSdcs()) {
+      sdcs.push_back(corner_sdc);
+    }
+  }
+  // Sdc::isConstrained only sees the first point of an exception, so
+  // collect the pins and instances named anywhere in an exception.
+  std::set<const sta::Pin*> exception_pins;
+  std::set<const sta::Instance*> exception_insts;
+  for (const sta::Sdc* sdc : sdcs) {
+    for (const sta::ExceptionPath* exception : sdc->exceptions()) {
+      sta::ExceptionPtIterator pt_iter(exception);
+      while (pt_iter.hasNext()) {
+        sta::ExceptionPt* pt = pt_iter.next();
+        if (pt->pins()) {
+          exception_pins.insert(pt->pins()->begin(), pt->pins()->end());
+        }
+        if (pt->instances()) {
+          exception_insts.insert(pt->instances()->begin(),
+                                 pt->instances()->end());
+        }
+      }
+    }
+  }
+  const auto is_constrained = [&](const auto* obj, const auto& exception_objs) {
+    if (exception_objs.contains(obj)) {
+      return true;
+    }
+    return std::ranges::any_of(
+        sdcs, [obj](const sta::Sdc* sdc) { return sdc->isConstrained(obj); });
+  };
+
+  for (dbInst* flop : flops) {
+    std::string dropped;
+    const auto add = [&dropped](const std::string& name) {
+      dropped += dropped.empty() ? name : ", " + name;
+    };
+    if (is_constrained(network_->dbToSta(flop), exception_insts)) {
+      add("instance");
+    }
+    for (dbITerm* iterm : flop->getITerms()) {
+      if (iterm->getSigType().isSupply()) {
+        continue;
+      }
+      if (is_constrained(network_->dbToSta(iterm), exception_pins)) {
+        add(iterm->getMTerm()->getName());
+      }
+    }
+    if (!dropped.empty()) {
+      log_->warn(GPL,
+                 336,
+                 "SDC constraints on {} of flop {} are dropped by clustering.",
+                 dropped,
+                 flop->getName());
     }
   }
 }
@@ -844,8 +926,9 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
       slots_used += mapped[index][tray_idx];
     }
 
-    // check that tray_used <= slots_used
-    cp_model.AddLessOrEqual(tray_used[i], slots_used);
+    // Require an active tray to use all of its slots.
+    const int num_slots = trays[i].slots.size();
+    cp_model.AddEquality(slots_used, num_slots * tray_used[i]);
   }
 
   // calculate the cost of each tray

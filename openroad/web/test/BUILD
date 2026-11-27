@@ -15,6 +15,7 @@ npm_link_all_packages(name = "node_modules")
 TESTS = [
     "display_option_keys",
     "save_image_cluster_view",
+    "save_images_web",
 ]
 
 filegroup(
@@ -76,11 +77,13 @@ py_test(
 test_suite(
     name = "cpp_tests",
     tests = [
+        ":browser_launcher_test",
         ":gif_test",
         ":heat_map_test",
         ":interconnect3d_test",
         ":request_handler_test",
         ":save_display_controls_test",
+        ":script_view_test",
         ":session_lifetime_test",
         ":tile_generator_test",
         ":web_assets_test",
@@ -574,6 +577,22 @@ cc_test(
 )
 
 cc_test(
+    name = "script_view_test",
+    srcs = ["cpp/TestScriptView.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//openroad/odb/src/db",
+        "//openroad/tst:nangate45_fixture",
+        "//openroad/web",
+        "//openroad/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "snap_test",
     srcs = ["cpp/TestSnap.cpp"],
     data = [
@@ -612,6 +631,26 @@ cc_test(
 )
 
 cc_test(
+    name = "timing_report_test",
+    srcs = ["cpp/TestTimingReport.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:db_fixture",
+        "//openroad/tst:nangate45_fixture",
+        "//openroad/web",
+        "//openroad/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "charts_test",
     srcs = ["cpp/TestCharts.cpp"],
     data = [
@@ -640,6 +679,16 @@ cc_test(
         "//openroad/web:color",
         "//openroad/web:core",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "browser_launcher_test",
+    srcs = ["cpp/TestBrowserLauncher.cpp"],
+    deps = [
+        "//openroad/web:browser_launcher",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
