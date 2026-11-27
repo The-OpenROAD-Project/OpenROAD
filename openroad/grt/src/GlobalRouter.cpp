@@ -65,6 +65,7 @@
 #include "utl/Logger.h"
 #include "utl/ServiceRegistry.h"
 #include "utl/algorithms.h"
+#include "utl/scope.h"
 #include "utl/timer.h"
 
 namespace grt {
@@ -156,6 +157,7 @@ void GlobalRouter::clear()
     delete net;
   }
   db_net_map_.clear();
+  dirty_nets_.clear();
   routing_tracks_.clear();
   routing_layers_.clear();
   grid_->clear();
@@ -494,19 +496,39 @@ bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
   return false;
 }
 
-void GlobalRouter::startIncremental()
+void GlobalRouter::prepareIncrementalRouting(bool require_existing_routes,
+                                             bool reinit_detailed_routes,
+                                             bool quiet)
 {
   ensureEngineSelected();
   discardCongestionOnlyState();
-  is_incremental_ = true;
   // A design read from odb has its global routing only as guides; load them
-  // so the update starts from the existing routing, not an empty grid.
-  if (designIsPlaced()) {
+  // before attaching callbacks so pre-ECO routes and pin positions are known.
+  if (routes_.empty() && designIsPlaced()) {
     loadGuidesFromDB();
   }
-  if (!initialized_ || haveDetailedRoutes()) {
+  const bool needs_init
+      = !initialized_ || (reinit_detailed_routes && haveDetailedRoutes());
+  if (!needs_init) {
+    return;
+  }
+  if (require_existing_routes && routes_.empty() && !haveDetailedRoutes()) {
+    return;
+  }
+  if (quiet) {
+    utl::SetAndRestore verbose_guard(verbose_, false);
+    initEngineWithExistingRouting();
+  } else {
     initEngineWithExistingRouting();
   }
+}
+
+void GlobalRouter::startIncremental()
+{
+  is_incremental_ = true;
+  prepareIncrementalRouting(/*require_existing_routes=*/false,
+                            /*reinit_detailed_routes=*/true,
+                            /*quiet=*/false);
   grouter_cbk_ = new GRouteDbCbk(this);
   grouter_cbk_->addOwner(block_);
 }
@@ -5959,7 +5981,8 @@ void GlobalRouter::updateNetPins(Net* net)
 
 Net* GlobalRouter::getNet(odb::dbNet* db_net)
 {
-  return db_net_map_[db_net];
+  const auto it = db_net_map_.find(db_net);
+  return it != db_net_map_.end() ? it->second : nullptr;
 }
 
 int GlobalRouter::getTileSize() const
@@ -7535,23 +7558,12 @@ bool operator==(const RoutePt& p1, const RoutePt& p2)
 IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
     : groute_(groute), db_cbk_(groute)
 {
-  groute_->ensureEngineSelected();
-  groute_->discardCongestionOnlyState();
-  if (!groute_->initialized_) {
-    if (groute_->routes_.empty() && groute_->designIsPlaced()) {
-      groute_->loadGuidesFromDB();
-    }
-    if (!groute_->routes_.empty() || groute_->haveDetailedRoutes()) {
-      struct VerboseGuard
-      {
-        bool& flag;
-        bool saved;
-        ~VerboseGuard() { flag = saved; }
-      } guard{.flag = groute_->verbose_, .saved = groute_->verbose_};
-      groute_->verbose_ = false;
-      groute_->initEngineWithExistingRouting();
-    }
-  }
+  // Initialize eagerly before attaching db_cbk_ so pre-ECO routes and pin
+  // positions are snapshotted before any ODB mutation fires a callback
+  // (runs at most once per process since initialized_ stays true).
+  groute_->prepareIncrementalRouting(/*require_existing_routes=*/true,
+                                     /*reinit_detailed_routes=*/false,
+                                     /*quiet=*/true);
   if (groute_->initialized_) {
     db_cbk_.addOwner(block);
   }
@@ -7674,11 +7686,10 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr(bool save_guides)
   std::vector<odb::dbNet*> restored_nets;
   for (odb::dbNet* db_net : dirty_nets_) {
     // Rebuild the pin set from the netlist; positions are synced below.
-    const auto net_it = db_net_map_.find(db_net);
-    if (net_it == db_net_map_.end() || net_it->second == nullptr) {
+    Net* net = getNet(db_net);
+    if (net == nullptr) {
       continue;
     }
-    Net* net = net_it->second;
     updateNetPins(net);
     // Stale detailed wires (post-detailed-route repair) must go: the
     // reroute and its guides supersede them, and the antenna checker

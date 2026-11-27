@@ -450,6 +450,9 @@ class GlobalRouter
   void initRoutingGrid(int min_routing_layer, int max_routing_layer);
   std::vector<Net*> initCUGR(int min_routing_layer, int max_routing_layer);
   void initEngineWithExistingRouting();
+  void prepareIncrementalRouting(bool require_existing_routes,
+                                 bool reinit_detailed_routes,
+                                 bool quiet);
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
   bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);
