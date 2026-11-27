@@ -1787,19 +1787,9 @@ void NesterovBaseCommon::refreshWireLengthPreconditioners()
 #pragma omp parallel for num_threads(num_threads_)
   for (size_t i = 0; i < num_cells; ++i) {
     GCell& gCell = gCellStor_[i];
-    if (gCell.isFiller()) {
-      gCell.setWireLengthPreconditioner(0.0f);
-      continue;
-    }
     float precond = 0.0f;
     for (const GPin* gPin : gCell.gPins()) {
-      float weight = 1.0f;
-      if (const GNet* gNet = gPin->getGNet()) {
-        const float net_weight = gNet->getTotalWeight();
-        weight = (std::isfinite(net_weight) && net_weight >= 0.0f) ? net_weight
-                                                                   : 0.0f;
-      }
-      precond += weight;
+      precond += gPin->getGNet()->getTotalWeight();
     }
     gCell.setWireLengthPreconditioner(precond);
   }
@@ -3510,15 +3500,6 @@ void NesterovBase::commitCoordsToDeviceState(SlpSlot source)
   nbc_->getDeviceState()->markCoordsFresh();
 #else
   (void) source;
-#endif
-}
-
-void NesterovBase::refreshDeviceWireLengthPreconditioners()
-{
-#ifdef ENABLE_GPU
-  if (nb_device_ctx_) {
-    nb_device_ctx_->refreshWireLengthPreconditioners(nb_gcells_);
-  }
 #endif
 }
 

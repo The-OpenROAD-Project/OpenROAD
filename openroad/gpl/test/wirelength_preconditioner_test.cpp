@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include <cmath>
-#include <limits>
 #include <memory>
 #include <string>
 
@@ -218,37 +216,6 @@ TEST_F(WirelengthPreconditionerTest, RefreshAfterWeightUpdates)
       nbc_->getWireLengthPreconditioner(nbc_->dbToNb(u1_)).x, 6.5f, kTolerance);
   EXPECT_NEAR(
       nbc_->getWireLengthPreconditioner(nbc_->dbToNb(u2_)).x, 5.5f, kTolerance);
-}
-
-TEST_F(WirelengthPreconditionerTest, GuardsInvalidWeightsAndNullNet)
-{
-  GNet* gn0 = nbc_->dbToNb(n0_);
-  GNet* gn1 = nbc_->dbToNb(n1_);
-  GNet* gn2 = nbc_->dbToNb(n2_);
-
-  gn0->setTimingWeight(-2.0f);
-  gn1->setTimingWeight(std::numeric_limits<float>::quiet_NaN());
-  gn2->setTimingWeight(std::numeric_limits<float>::infinity());
-  nbc_->refreshWireLengthPreconditioners();
-
-  for (odb::dbInst* inst : {u0_, u1_, u2_}) {
-    const FloatPoint p = nbc_->getWireLengthPreconditioner(nbc_->dbToNb(inst));
-    EXPECT_TRUE(std::isfinite(p.x));
-    EXPECT_EQ(p.x, 0.0f);
-    EXPECT_EQ(p.y, 0.0f);
-  }
-
-  // Restore gn2 to a valid weight and detach one pin of u0 from its GNet.
-  gn2->setTimingWeight(4.0f);
-  GPin* u0_p0 = nbc_->dbToNb(u0_->findITerm("p0"));
-  ASSERT_NE(u0_p0, nullptr);
-  u0_p0->setGNet(nullptr);
-  nbc_->refreshWireLengthPreconditioners();
-
-  // u0: null-net pin (1.0) + n2 (4.0) = 5.0
-  const FloatPoint p0 = nbc_->getWireLengthPreconditioner(nbc_->dbToNb(u0_));
-  EXPECT_NEAR(p0.x, 5.0f, kTolerance);
-  EXPECT_NEAR(p0.y, 5.0f, kTolerance);
 }
 
 }  // namespace

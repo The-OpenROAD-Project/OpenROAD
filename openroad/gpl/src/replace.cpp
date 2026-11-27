@@ -427,9 +427,6 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
         nbc_, sta_, cts_, options.powerDrivenNetWeight, log_);
     pwb_->setPowerNetWeights();
     nbc_->refreshDeviceNetWeights();
-    for (const auto& nb : nbVec_) {
-      nb->refreshDeviceWireLengthPreconditioners();
-    }
   }
 
   if (!np_) {

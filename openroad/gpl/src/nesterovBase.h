@@ -1227,7 +1227,6 @@ class NesterovBase
 
   // for preconditioner
   FloatPoint getDensityPreconditioner(const GCell* gCell) const;
-  void refreshDeviceWireLengthPreconditioners();
 
   FloatPoint getDensityGradient(const GCell* gCell) const;
 

@@ -510,9 +510,6 @@ void NesterovPlace::runTimingDriven(int iter,
     // iterations only reweighted nets.
     if (virtual_td_iter) {
       nbc_->refreshDeviceNetWeights();
-      for (const auto& nb : nbVec_) {
-        nb->refreshDeviceWireLengthPreconditioners();
-      }
     } else {
       nbc_->rebuildDeviceState();
     }

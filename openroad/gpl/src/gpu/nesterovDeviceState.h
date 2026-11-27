@@ -46,7 +46,7 @@ struct KokkosNesterovState
   Kokkos::View<float*> d_next_sum_grads_x;
   Kokkos::View<float*> d_next_sum_grads_y;
 
-  // ---- Per-cell preconditioner / attributes ----
+  // ---- Per-cell static (set once at init) ----
   Kokkos::View<float*> d_wl_precond;  // for WL preconditioner (sum w_e)
   Kokkos::View<float*> d_area;        // for density preconditioner
   Kokkos::View<int*> d_locked;        // 1 if locked, 0 otherwise
