@@ -214,6 +214,7 @@ cc_library(
         "src/font_atlas.h",
         "src/font_data.cpp",
         "src/font_data.h",
+        "src/fsv_handler.cpp",
         "src/glyph_cache.cpp",
         "src/group_report.cpp",
         "src/group_report.h",
@@ -246,6 +247,7 @@ cc_library(
         # these should be put (together with their *.cpp files) into separate
         # libraries, with visibility for the //openroad/web/test path (see :color).
         "src/display_control_tree.h",
+        "src/fsv_handler.h",
         "src/glyph_cache.h",
         "src/renderer_controls.h",
         "src/script_view.h",
@@ -276,6 +278,10 @@ cc_library(
         "//:cli_completer",
         "//openroad/dbSta",
         "//openroad/dbSta:dbNetwork",
+        "//openroad/fsv",
+        "//openroad/fsv:field_solver",
+        "//openroad/fsv:geometry",
+        "//openroad/fsv:stack",
         "//openroad/odb/src/db",
         "//openroad/sta:opensta_lib",
         "//openroad/utl",

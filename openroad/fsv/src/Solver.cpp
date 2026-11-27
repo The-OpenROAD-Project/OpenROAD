@@ -51,6 +51,8 @@ struct Tally
 {
   std::vector<double> sum;
   std::vector<double> sum2;
+  std::vector<double> bin_sum;
+  std::vector<double> bin_sum2;
   double sum_all = 0;
   double sum2_all = 0;
   // |weight| of walks that reached outside the window and ended on a net.
@@ -62,8 +64,11 @@ struct Tally
   // and threads sharing a malloc arena could otherwise share a line.
   static constexpr int kPad = 64 / sizeof(double);
 
-  explicit Tally(const int columns)
-      : sum(columns + kPad, 0.0), sum2(columns + kPad, 0.0)
+  explicit Tally(const int columns, const int bins = 0)
+      : sum(columns + kPad, 0.0),
+        sum2(columns + kPad, 0.0),
+        bin_sum(bins, 0.0),
+        bin_sum2(bins, 0.0)
   {
   }
 
@@ -72,6 +77,10 @@ struct Tally
     for (size_t i = 0; i < sum.size(); i++) {
       sum[i] += other.sum[i];
       sum2[i] += other.sum2[i];
+    }
+    for (size_t i = 0; i < bin_sum.size(); i++) {
+      bin_sum[i] += other.bin_sum[i];
+      bin_sum2[i] += other.bin_sum2[i];
     }
     sum_all += other.sum_all;
     sum2_all += other.sum2_all;
@@ -135,6 +144,15 @@ struct Space
     world[(normal + 2) % 3] = table[1];
     return world;
   }
+
+  static int rectSurfaceBins(const Geometry&, int) { return 0; }
+  static int groundSurfaceBins(const SolveOptions&) { return 0; }
+  static int surfaceBin(const Geometry&, int, const Vec3&, int) { return -1; }
+  static int targetStartBin(const Geometry&, int, const Vec3&, int, bool, int)
+  {
+    return -1;
+  }
+  static int groundBin(const Vec3&, int, double, double, int) { return -1; }
 };
 
 // The frame of a cross section: squares in the x-z plane. The square tables
@@ -164,6 +182,109 @@ struct Plane
   static Vec2 toWorld(const Vec2& table, const int normal)
   {
     return normal == 1 ? table : Vec2{table[1], table[0]};
+  }
+
+  static int rectSurfaceBins(const Geometry2D& g, const int bins_per_face)
+  {
+    return bins_per_face > 0
+               ? static_cast<int>(g.rects().size()) * 4 * bins_per_face
+               : 0;
+  }
+
+  static int groundSurfaceBins(const SolveOptions& opts)
+  {
+    return (opts.ground_charge_bins > 0
+            && opts.ground_charge_x_hi > opts.ground_charge_x_lo)
+               ? opts.ground_charge_bins
+               : 0;
+  }
+
+  static int groundBin(const Vec2& p,
+                       const int ground_bins,
+                       const double x_lo,
+                       const double x_hi,
+                       const int bin_offset)
+  {
+    if (ground_bins <= 0 || p[0] < x_lo || p[0] > x_hi) {
+      return -1;
+    }
+    const double t = (p[0] - x_lo) / (x_hi - x_lo);
+    const int bin
+        = std::clamp(static_cast<int>(t * ground_bins), 0, ground_bins - 1);
+    return bin_offset + bin;
+  }
+
+  // Maps a capture point p near rects[shape_idx] to its face (0=bottom, 1=top,
+  // 2=left, 3=right) and bin index along that face.
+  static int surfaceBin(const Geometry2D& g,
+                        const int shape_idx,
+                        const Vec2& p,
+                        const int bins_per_face)
+  {
+    if (bins_per_face <= 0) {
+      return -1;
+    }
+    const Rect& r = g.rects()[shape_idx];
+    const double d_bottom = std::abs(p[1] - r.lo[1]);
+    const double d_top = std::abs(p[1] - r.hi[1]);
+    const double d_left = std::abs(p[0] - r.lo[0]);
+    const double d_right = std::abs(p[0] - r.hi[0]);
+    int face = 0;
+    double best = d_bottom;
+    if (d_top < best) {
+      best = d_top;
+      face = 1;
+    }
+    if (d_left < best) {
+      best = d_left;
+      face = 2;
+    }
+    if (d_right < best) {
+      face = 3;
+    }
+    const double t = (face < 2) ? (p[0] - r.lo[0]) / (r.hi[0] - r.lo[0])
+                                : (p[1] - r.lo[1]) / (r.hi[1] - r.lo[1]);
+    const int bin
+        = std::clamp(static_cast<int>(t * bins_per_face), 0, bins_per_face - 1);
+    return (shape_idx * 4 + face) * bins_per_face + bin;
+  }
+
+  // Maps a Gaussian-surface start point p on face (axis, high) to the nearest
+  // master rectangle's matching face bin (0=bottom, 1=top, 2=left, 3=right).
+  // Overhangs past the rectangle corners naturally clamp into the corner bins.
+  static int targetStartBin(const Geometry2D& g,
+                            const int master,
+                            const Vec2& p,
+                            const int axis,
+                            const bool high,
+                            const int bins_per_face)
+  {
+    if (bins_per_face <= 0) {
+      return -1;
+    }
+    const auto& rects = g.rects();
+    int best_rect = -1;
+    double best_dist = std::numeric_limits<double>::infinity();
+    for (int i = 0; i < static_cast<int>(rects.size()); i++) {
+      if (g.rectNet(i) != master) {
+        continue;
+      }
+      const double d = linfDistance(p, rects[i]);
+      if (d < best_dist) {
+        best_dist = d;
+        best_rect = i;
+      }
+    }
+    if (best_rect < 0) {
+      return -1;
+    }
+    const Rect& r = rects[best_rect];
+    const int face = (axis == 1) ? (high ? 1 : 0) : (high ? 3 : 2);
+    const int t_axis = 1 - axis;
+    const double t = (p[t_axis] - r.lo[t_axis]) / (r.hi[t_axis] - r.lo[t_axis]);
+    const int bin
+        = std::clamp(static_cast<int>(t * bins_per_face), 0, bins_per_face - 1);
+    return (best_rect * 4 + face) * bins_per_face + bin;
   }
 };
 
@@ -273,7 +394,13 @@ class Walker
          LayeredTableCache<Layered, D>& tables,
          const double capture,
          const int64_t hop_guard,
-         const uint64_t key)
+         const uint64_t key,
+         const int master = -1,
+         const int bins_per_face = 0,
+         const int ground_bins = 0,
+         const double ground_x_lo = 0.0,
+         const double ground_x_hi = 0.0,
+         const int ground_bin_offset = 0)
       : geometry_(geometry),
         window_(Frame::window(geometry)),
         index_(index),
@@ -283,23 +410,38 @@ class Walker
         tables_(tables),
         capture_(capture),
         hop_guard_(hop_guard),
-        key_(key)
+        key_(key),
+        master_(master),
+        bins_per_face_(bins_per_face),
+        ground_bins_(ground_bins),
+        ground_x_lo_(ground_x_lo),
+        ground_x_hi_(ground_x_hi),
+        ground_bin_offset_(ground_bin_offset)
   {
   }
 
   // One walk: returns the column it ends in (the last is the ground
   // plane, which grounded nets join) or kHopGuardHit. `left` tells whether
-  // a cube could have reached outside the geometry's window.
+  // a cube could have reached outside the geometry's window. `surface_bin`
+  // receives the landing bin on a non-master conductor or the ground plane;
+  // `target_bin` receives the Gaussian-surface start bin for escaping walks
+  // (ending on a non-master conductor or ground), which avoids bounce-back
+  // variance on the target wire.
   int walk(const int64_t walk_id,
            double& weight,
            int64_t& hops,
-           bool& left) const
+           bool& left,
+           int& surface_bin,
+           int& target_bin) const
   {
     Philox rng(key_, static_cast<uint64_t>(walk_id));
     Face face{};
     Point p;
     left = false;
+    surface_bin = -1;
+    target_bin = -1;
     const double charge_scale = kEps0 * startPoint(rng, p, face);
+    const Point p_start = p;
     const double first_size = index_.nearest(p).dist;
     left = reaches(p, first_size);
     weight = charge_scale * firstHop(p, first_size, face, rng);
@@ -310,10 +452,28 @@ class Walker
       left = left || reaches(p, n.dist);
       if (n.dist <= capture_) {
         if (n.box == SpatialIndex<D>::kGround) {
+          surface_bin = Frame::groundBin(
+              p, ground_bins_, ground_x_lo_, ground_x_hi_, ground_bin_offset_);
+          target_bin = Frame::targetStartBin(geometry_,
+                                             master_,
+                                             p_start,
+                                             face.axis,
+                                             face.high,
+                                             bins_per_face_);
           return geometry_.netCount();
         }
         const int net = Frame::shapeNet(geometry_, n.box);
-        return geometry_.grounded(net) ? geometry_.netCount() : net;
+        const int col = geometry_.grounded(net) ? geometry_.netCount() : net;
+        if (col != master_) {
+          surface_bin = Frame::surfaceBin(geometry_, n.box, p, bins_per_face_);
+          target_bin = Frame::targetStartBin(geometry_,
+                                             master_,
+                                             p_start,
+                                             face.axis,
+                                             face.high,
+                                             bins_per_face_);
+        }
+        return col;
       }
       const Cube<Layered> cube = transition(p, n.dist, rng);
       const Point offset
@@ -454,6 +614,12 @@ class Walker
   const double capture_;
   const int64_t hop_guard_;
   const uint64_t key_;
+  const int master_;
+  const int bins_per_face_;
+  const int ground_bins_;
+  const double ground_x_lo_;
+  const double ground_x_hi_;
+  const int ground_bin_offset_;
 };
 
 // Runs batches [first, first + count) of `batch_size` walks on the pool,
@@ -466,17 +632,21 @@ void runRound(WorkerPool& pool,
               const int64_t first,
               const int count,
               const int columns,
+              const int num_bins,
               std::vector<Tally>& tallies)
 {
   // Accumulates locally so threads do not share cache lines while walking.
   auto runBatch = [&](const int64_t batch, Tally& result) {
-    Tally tally(columns);
+    Tally tally(columns, num_bins);
     const int64_t first_walk = batch * batch_size;
     for (int64_t w = first_walk; w < first_walk + batch_size; w++) {
       double weight = 0;
       int64_t hops = 0;
       bool left = false;
-      const int column = walker.walk(w, weight, hops, left);
+      int surface_bin = -1;
+      int target_bin = -1;
+      const int column
+          = walker.walk(w, weight, hops, left, surface_bin, target_bin);
       tally.hops += hops;
       if (column == kHopGuardHit) {
         tally.guard_hits++;
@@ -490,6 +660,14 @@ void runRound(WorkerPool& pool,
       }
       tally.sum[column] += weight;
       tally.sum2[column] += weight * weight;
+      if (surface_bin >= 0) {
+        tally.bin_sum[surface_bin] += weight;
+        tally.bin_sum2[surface_bin] += weight * weight;
+      }
+      if (target_bin >= 0) {
+        tally.bin_sum[target_bin] -= weight;
+        tally.bin_sum2[target_bin] += weight * weight;
+      }
       tally.sum_all += weight;
       tally.sum2_all += weight * weight;
     }
@@ -546,6 +724,13 @@ void checkSolveArguments(const GeometryType& geometry,
           || !std::isfinite(*options.tol_coupling))) {
     throw std::invalid_argument("fsv: tol_coupling must be positive");
   }
+  if (options.surface_charge_bins < 0) {
+    throw std::invalid_argument(
+        "fsv: surface_charge_bins must be non-negative");
+  }
+  if (options.ground_charge_bins < 0) {
+    throw std::invalid_argument("fsv: ground_charge_bins must be non-negative");
+  }
 }
 
 // The row's means and standard errors from the summed tallies.
@@ -560,6 +745,80 @@ void estimateRow(const Tally& total, const int nets, CapRow& row)
   std::tie(row.ground, row.ground_sigma) = estimate(total, nets, n);
   row.hops = total.hops;
   row.window_leakage = total.left_sum / n;
+}
+
+void estimateSurfaceCharges(const Tally&,
+                            const Geometry&,
+                            const SolveOptions&,
+                            CapRow&)
+{
+}
+
+// Surface charge density per face bin of each Scene2D rectangle and (when
+// enabled) along the ground plane z = 0, using the same control variate as
+// estimate(): summing bin_density * bin_len across a net's rectangles
+// reproduces row.cap[net].
+void estimateSurfaceCharges(const Tally& total,
+                            const Geometry2D& geometry,
+                            const SolveOptions& opts,
+                            CapRow& row)
+{
+  const int bins_per_face = opts.surface_charge_bins;
+  const int ground_bins = Plane::groundSurfaceBins(opts);
+  if (total.bin_sum.empty()) {
+    row.rect_charges.clear();
+    row.ground_charge.clear();
+    return;
+  }
+  const double n = static_cast<double>(row.walks);
+  const auto& rects = geometry.rects();
+  if (bins_per_face > 0) {
+    row.rect_charges.resize(rects.size());
+    for (size_t r = 0; r < rects.size(); r++) {
+      const bool is_master
+          = geometry.rectNet(static_cast<int>(r)) == row.master;
+      const double w = rects[r].hi[0] - rects[r].lo[0];
+      const double h = rects[r].hi[1] - rects[r].lo[1];
+      const double face_len[4] = {w, w, h, h};
+      auto& rc = row.rect_charges[r];
+      std::vector<double>* faces[4]
+          = {&rc.bottom, &rc.top, &rc.left, &rc.right};
+      for (int f = 0; f < 4; f++) {
+        const double bin_len = face_len[f] / bins_per_face;
+        faces[f]->resize(bins_per_face);
+        const int base = (static_cast<int>(r) * 4 + f) * bins_per_face;
+        for (int b = 0; b < bins_per_face; b++) {
+          const int idx = base + b;
+          const double beta
+              = total.sum2_all > 0 ? total.bin_sum2[idx] / total.sum2_all : 0.0;
+          // Master bins accumulate (-w) over escaping walks, so the matching
+          // zero-mean control variate is (-sum_all), giving +beta * sum_all.
+          const double q = (total.bin_sum[idx]
+                            + (is_master ? beta : -beta) * total.sum_all)
+                           / n;
+          (*faces[f])[b] = q / bin_len;
+        }
+      }
+    }
+  } else {
+    row.rect_charges.clear();
+  }
+
+  if (ground_bins > 0) {
+    const int offset = Plane::rectSurfaceBins(geometry, bins_per_face);
+    const double bin_len
+        = (opts.ground_charge_x_hi - opts.ground_charge_x_lo) / ground_bins;
+    row.ground_charge.resize(ground_bins);
+    for (int b = 0; b < ground_bins; b++) {
+      const int idx = offset + b;
+      const double beta
+          = total.sum2_all > 0 ? total.bin_sum2[idx] / total.sum2_all : 0.0;
+      const double q = (total.bin_sum[idx] - beta * total.sum_all) / n;
+      row.ground_charge[b] = q / bin_len;
+    }
+  } else {
+    row.ground_charge.clear();
+  }
 }
 
 // The largest ratio of a standard error to its target: the total's to
@@ -605,7 +864,8 @@ CapRow runRounds(WorkerPool& pool,
                  const SolverOptions& options,
                  const SolveOptions& solve_options,
                  const GeometryType& geometry,
-                 const int master)
+                 const int master,
+                 const int num_bins)
 {
   // The worker pool runs one round of batches at a time. Each batch has its
   // own tally and the tallies are reduced in batch order, so the sums do not
@@ -617,8 +877,8 @@ CapRow runRounds(WorkerPool& pool,
   const int columns = nets + 1;  // last column is the ground plane
   CapRow row;
   row.master = master;
-  Tally total(columns);
-  std::vector<Tally> tallies(options.round_batches, Tally(columns));
+  Tally total(columns, num_bins);
+  std::vector<Tally> tallies(options.round_batches, Tally(columns, num_bins));
   int64_t round_first = 0;
   int round_size = std::min(options.first_round_batches, options.round_batches);
   const int64_t max_batches
@@ -627,13 +887,16 @@ CapRow runRounds(WorkerPool& pool,
     // The last round is trimmed so the walk count stops at max_walks.
     round_size = static_cast<int>(
         std::min<int64_t>(round_size, max_batches - round_first));
-    std::fill(tallies.begin(), tallies.begin() + round_size, Tally(columns));
+    std::fill(tallies.begin(),
+              tallies.begin() + round_size,
+              Tally(columns, num_bins));
     runRound(pool,
              walker,
              options.batch_size,
              round_first,
              round_size,
              columns,
+             num_bins,
              tallies);
     for (int b = 0; b < round_size; b++) {
       total.add(tallies[b]);
@@ -675,6 +938,7 @@ CapRow runRounds(WorkerPool& pool,
                                                 options.round_batches)),
                    static_cast<double>(options.round_batches)));
   }
+  estimateSurfaceCharges(total, geometry, solve_options, row);
   return row;
 }
 
@@ -710,7 +974,8 @@ double trialCost(WorkerPool& pool,
   const int nets = geometry.netCount();
   const int columns = nets + 1;
   std::vector<Tally> tallies(kTrialBatches, Tally(columns));
-  runRound(pool, walker, kTrialBatchSize, 0, kTrialBatches, columns, tallies);
+  runRound(
+      pool, walker, kTrialBatchSize, 0, kTrialBatches, columns, 0, tallies);
   Tally total(columns);
   for (const Tally& tally : tallies) {
     total.add(tally);
@@ -790,7 +1055,13 @@ CapRow solveScene(const SceneType& scene,
   const uint64_t key
       = options.seed
         ^ (0x9E3779B97F4A7C15ull * (static_cast<uint64_t>(master) + 1));
-  auto walker = [&](const GaussianSurface<D>& gauss, const uint64_t k) {
+  auto walker = [&](const GaussianSurface<D>& gauss,
+                    const uint64_t k,
+                    const int bins_per_face,
+                    const int ground_bins = 0,
+                    const double ground_x_lo = 0.0,
+                    const double ground_x_hi = 0.0,
+                    const int ground_bin_offset = 0) {
     return Walker<Frame>(geometry,
                          scene.index(),
                          scene.dielectric(),
@@ -799,7 +1070,13 @@ CapRow solveScene(const SceneType& scene,
                          tables,
                          solve_options.capture_rel * scene.minDimension(),
                          solve_options.hop_guard,
-                         k);
+                         k,
+                         master,
+                         bins_per_face,
+                         ground_bins,
+                         ground_x_lo,
+                         ground_x_hi,
+                         ground_bin_offset);
   };
   // Inside the shells the first cubes meet fewer interfaces but are
   // smaller, which wins on some structures and loses on others; one trial
@@ -817,16 +1094,31 @@ CapRow solveScene(const SceneType& scene,
   if (inside && inside->inside_shells) {
     const uint64_t trial_key = key ^ 0xD1B54A32D192ED03ull;
     const double clear_cost = trialCost(
-        pool, walker(clear, trial_key), solve_options, geometry, master);
+        pool, walker(clear, trial_key, 0), solve_options, geometry, master);
     const double inside_cost = trialCost(
-        pool, walker(*inside, ~trial_key), solve_options, geometry, master);
+        pool, walker(*inside, ~trial_key, 0), solve_options, geometry, master);
     trial_walks = kTrialWalks;
     if (inside_cost < kInsideAdvantage * clear_cost) {
       gauss = &*inside;
     }
   }
-  CapRow row = runRounds(
-      pool, walker(*gauss, key), options, solve_options, geometry, master);
+  const int rect_bins
+      = Frame::rectSurfaceBins(geometry, solve_options.surface_charge_bins);
+  const int ground_bins = Frame::groundSurfaceBins(solve_options);
+  const int num_bins = rect_bins + ground_bins;
+  CapRow row = runRounds(pool,
+                         walker(*gauss,
+                                key,
+                                solve_options.surface_charge_bins,
+                                ground_bins,
+                                solve_options.ground_charge_x_lo,
+                                solve_options.ground_charge_x_hi,
+                                rect_bins),
+                         options,
+                         solve_options,
+                         geometry,
+                         master,
+                         num_bins);
   row.inside_surface = gauss != &clear;
   row.trial_walks = trial_walks;
   return row;

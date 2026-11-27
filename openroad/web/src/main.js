@@ -46,6 +46,7 @@ import { getCookie, setCookie, applyGLTheme, persistTheme } from './theme.js';
 import { serializeDisplayState, applyDisplayStateEntries } from './display-state.js';
 import { updateDocumentTitle } from './title.js';
 import { ThreeDViewerWidget } from './3d-viewer-widget.js';
+import { FieldSolver2DWidget } from './field-solver-widget.js';
 import { ContextMenu } from './context-menu.js';
 import { showFindDialog, showGotoDialog } from './search-nav.js';
 import { captureLayout } from './capture.js';
@@ -1109,6 +1110,10 @@ function create3DViewerWidget(container) {
     app.threeDViewerWidget = new ThreeDViewerWidget(container, app);
 }
 
+function createFieldSolver2DWidget(container) {
+    app.fieldSolver2DWidget = new FieldSolver2DWidget(container, app);
+}
+
 function createStubPanel(container, title, description) {
     const el = document.createElement('div');
     el.className = 'stub-panel';
@@ -1156,6 +1161,11 @@ const defaultLayoutConfig = {
                                 type: 'component',
                                 componentType: '3DViewer',
                                 title: '3D Viewer',
+                            },
+                            {
+                                type: 'component',
+                                componentType: 'FieldSolver2D',
+                                title: 'Field Solver',
                             },
                         ],
                     },
@@ -1232,6 +1242,7 @@ app.goldenLayout.registerComponentFactoryFunction('ClockWidget', createClockWidg
 app.goldenLayout.registerComponentFactoryFunction('ChartsWidget', createChartsWidget);
 app.goldenLayout.registerComponentFactoryFunction('SchematicWidget', createSchematicWidget);
 app.goldenLayout.registerComponentFactoryFunction('3DViewer', create3DViewerWidget);
+app.goldenLayout.registerComponentFactoryFunction('FieldSolver2D', createFieldSolver2DWidget);
 app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget);
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 

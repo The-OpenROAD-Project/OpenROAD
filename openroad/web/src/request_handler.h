@@ -362,6 +362,10 @@ struct WebSocketRequest
     kPolyDecomp,
     kRendererControls,
     kSetRendererControl,
+    kFsvSolve2D,
+    kFsvGetItf,
+    kFsvLoadItf,
+    kFsvClearItf,
     kUnknown
   };
 

@@ -204,6 +204,7 @@ cc_binary(
 )
 
 TESTS = [
+    "field_solver_backside",
     "field_solver_cross_section",
     "field_solver_errors",
     "field_solver_gcd",

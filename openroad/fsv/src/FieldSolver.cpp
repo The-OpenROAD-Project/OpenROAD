@@ -7,6 +7,7 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <exception>
 #include <functional>
 #include <map>
@@ -42,7 +43,76 @@ std::string_view coreMessage(const std::exception& e)
   return text;
 }
 
+// Heights closer than this (µm) are treated as equal.
+constexpr double kHeightTolerance = 1e-9;
+
+// The top of the highest conductor of the stack that `tech` marks as a
+// backside layer; 0 when it marks none.
+double backsideTop(const Stack& stack, odb::dbTech* tech)
+{
+  double top = 0;
+  for (const Stack::Conductor& c : stack.conductors()) {
+    const odb::dbTechLayer* layer = tech->findLayer(c.name.c_str());
+    if (layer != nullptr && layer->isBackside()) {
+      top = std::max(top, c.top);
+    }
+  }
+  return top;
+}
+
 }  // namespace
+
+Stack frontsideStack(const Stack& stack, odb::dbTech* tech)
+{
+  if (tech == nullptr) {
+    return stack;
+  }
+  const double ground = backsideTop(stack, tech);
+  if (ground <= 0) {
+    return stack;
+  }
+
+  Stack front;
+  front.setTechnology(stack.technology());
+  front.setBackgroundEps(stack.backgroundEps());
+  front.setGlobalTemperature(stack.globalTemperature());
+  front.setHalfNodeScaleFactor(stack.halfNodeScaleFactor());
+  front.setReferenceDirection(stack.referenceDirection());
+
+  // The dielectrics tile the stack from the ground plane up, so the first
+  // one kept is the one the new ground plane cuts.
+  for (Stack::Dielectric d : stack.dielectrics()) {
+    if (d.top <= ground + kHeightTolerance) {
+      continue;
+    }
+    d.bottom = front.dielectrics().empty() ? 0 : d.bottom - ground;
+    d.top -= ground;
+    front.addDielectric(d);
+  }
+  for (Stack::Conductor c : stack.conductors()) {
+    const odb::dbTechLayer* layer = tech->findLayer(c.name.c_str());
+    if ((layer != nullptr && layer->isBackside())
+        || c.bottom < ground - kHeightTolerance) {
+      continue;
+    }
+    c.bottom = std::max(c.bottom - ground, 0.0);
+    c.top -= ground;
+    front.addConductor(c);
+  }
+  // A via handle is an index into its own stack, so the ends are looked up
+  // by name in the new one.
+  for (Stack::Via via : stack.vias()) {
+    if (!via.lower.valid()) {
+      continue;
+    }
+    via.upper = front.layer(stack.name(via.upper));
+    via.lower = front.layer(stack.name(via.lower));
+    if (via.upper.valid() && via.lower.valid()) {
+      front.addVia(via);
+    }
+  }
+  return front;
+}
 
 FieldSolver::FieldSolver(odb::dbDatabase* db, utl::Logger* logger)
     : db_(db), logger_(logger)
@@ -55,8 +125,15 @@ void FieldSolver::readItf(const std::string& path)
 {
   Stack stack;
   std::vector<ItfWarning> warnings;
+  size_t backside_conductors = 0;
+  size_t backside_vias = 0;
   try {
     stack = readItfFile(path, &warnings);
+    const size_t conductors = stack.conductors().size();
+    const size_t vias = stack.vias().size();
+    stack = frontsideStack(stack, db_->getTech());
+    backside_conductors = conductors - stack.conductors().size();
+    backside_vias = vias - stack.vias().size();
   } catch (const std::exception& e) {
     logger_->error(utl::FSV, 1, "{}", coreMessage(e));
   }
@@ -94,9 +171,20 @@ void FieldSolver::readItf(const std::string& path)
                 stack.conductors().size(),
                 conformals.size(),
                 stack.vias().size());
+  if (backside_conductors > 0) {
+    logger_->info(utl::FSV,
+                  35,
+                  "Removed the backside of the stack ({} conductors, {} "
+                  "vias); the ground plane is the top of its highest "
+                  "conductor.",
+                  backside_conductors,
+                  backside_vias);
+  }
   resetScenes();
   stack_ = std::move(stack);
+  itf_path_ = path;
   has_stack_ = true;
+  ++stack_version_;
 }
 
 void FieldSolver::setPermittivity(const double eps)
@@ -106,7 +194,9 @@ void FieldSolver::setPermittivity(const double eps)
   }
   resetScenes();
   stack_ = Stack();
+  itf_path_.clear();
   has_stack_ = false;
+  ++stack_version_;
   eps_ = eps;
 }
 

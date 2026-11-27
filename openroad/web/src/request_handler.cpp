@@ -7182,8 +7182,19 @@ WebSocketResponse handleListDir(const WebSocketRequest& req)
 
   try {
     const std::string dir_str = std::string(req.json.at("path").as_string());
-    fs::path dir_path
-        = dir_str.empty() ? fs::current_path() : fs::path(dir_str);
+    fs::path dir_path;
+    if (dir_str.empty()) {
+      // Under `bazel run`, cwd is the binary's runfiles directory while
+      // BUILD_WORKING_DIRECTORY holds the user's actual working directory.
+      if (const char* bwd = std::getenv("BUILD_WORKING_DIRECTORY");
+          bwd != nullptr && *bwd != '\0' && fs::is_directory(bwd)) {
+        dir_path = fs::path(bwd);
+      } else {
+        dir_path = fs::current_path();
+      }
+    } else {
+      dir_path = fs::path(dir_str);
+    }
     dir_path = fs::canonical(dir_path);
 
     struct Entry

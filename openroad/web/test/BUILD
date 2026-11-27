@@ -78,6 +78,7 @@ test_suite(
     name = "cpp_tests",
     tests = [
         ":browser_launcher_test",
+        ":field_solver_handler_test",
         ":gif_test",
         ":heat_map_test",
         ":interconnect3d_test",
@@ -398,6 +399,13 @@ js_test(
     no_copy_to_bin = JS_FILES,
 )
 
+js_test(
+    name = "field_solver_widget_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-field-solver-widget.js",
+    no_copy_to_bin = JS_FILES,
+)
+
 cc_test(
     name = "clock_tree_report_test",
     srcs = ["cpp/TestClockTreeReport.cpp"],
@@ -486,6 +494,24 @@ cc_test(
         "//openroad/tst:nangate45_fixture",
         "//openroad/utl",
         "//openroad/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "field_solver_handler_test",
+    srcs = ["cpp/TestFieldSolverHandler.cpp"],
+    data = [
+        "//openroad/fsv/test:GT2.itf",
+        "//openroad/fsv/test:sky130.itf",
+    ],
+    deps = [
+        "//openroad/fsv:field_solver",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "//openroad/web",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

@@ -46,6 +46,7 @@
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
 #include "color.h"
+#include "fsv_handler.h"
 #include "group_report.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
@@ -425,6 +426,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   TileHandler tile_handler_;
   DRCHandler drc_handler_;
   EditHandler edit_handler_;
+  FieldSolverHandler fsv_handler_;
 
   // Registration-based request dispatcher (replaces parse/dispatch switches)
   RequestDispatcher dispatcher_;
@@ -461,7 +463,8 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
                    std::shared_ptr<ClockTreeReport> clock_report,
                    utl::Logger* logger,
                    WebViewerHook* viewer_hook,
-                   int max_in_flight);
+                   int max_in_flight,
+                   fsv::FieldSolver* field_solver = nullptr);
   ~WebSocketSession();
 
   void run(http::request<http::string_body>&& req);
@@ -721,7 +724,8 @@ WebSocketSession::WebSocketSession(
     std::shared_ptr<ClockTreeReport> clock_report,
     utl::Logger* logger,
     WebViewerHook* viewer_hook,
-    int max_in_flight)
+    int max_in_flight,
+    fsv::FieldSolver* field_solver)
     : websocket_(std::move(socket)),
       logger_(logger),
       select_handler_(generator, tcl_eval),
@@ -731,6 +735,9 @@ WebSocketSession::WebSocketSession(
       tile_handler_(generator),
       drc_handler_(generator),
       edit_handler_(generator, tcl_eval),
+      fsv_handler_(field_solver,
+                   generator ? generator->getDb() : nullptr,
+                   tcl_eval),
       strand_(net::make_strand(websocket_.get_executor())),
       generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
@@ -777,6 +784,7 @@ WebSocketSession::WebSocketSession(
   tile_handler_.registerRequests(dispatcher_);
   drc_handler_.registerRequests(dispatcher_);
   edit_handler_.registerRequests(dispatcher_);
+  fsv_handler_.registerRequests(dispatcher_);
 
   // Free function handler
   dispatcher_.add("list_dir",
@@ -1491,6 +1499,7 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
   WebViewerHook* viewer_hook_ = nullptr;
   int max_in_flight_ = 16;
   std::shared_ptr<SessionAuth> auth_;
+  fsv::FieldSolver* field_solver_ = nullptr;
 
  public:
   DetectSession(Tcp::socket&& socket,
@@ -1501,7 +1510,8 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
                 utl::Logger* logger,
                 WebViewerHook* viewer_hook,
                 int max_in_flight,
-                std::shared_ptr<SessionAuth> auth);
+                std::shared_ptr<SessionAuth> auth,
+                fsv::FieldSolver* field_solver = nullptr);
 
   void run();
 
@@ -1519,7 +1529,8 @@ DetectSession::DetectSession(Tcp::socket&& socket,
                              utl::Logger* logger,
                              WebViewerHook* viewer_hook,
                              int max_in_flight,
-                             std::shared_ptr<SessionAuth> auth)
+                             std::shared_ptr<SessionAuth> auth,
+                             fsv::FieldSolver* field_solver)
     : stream_(std::move(socket)),
       generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
@@ -1528,7 +1539,8 @@ DetectSession::DetectSession(Tcp::socket&& socket,
       logger_(logger),
       viewer_hook_(viewer_hook),
       max_in_flight_(max_in_flight),
-      auth_(std::move(auth))
+      auth_(std::move(auth)),
+      field_solver_(field_solver)
 {
 }
 
@@ -1630,7 +1642,8 @@ void DetectSession::on_read(beast::error_code ec)
                                              clock_report_,
                                              logger_,
                                              viewer_hook_,
-                                             max_in_flight_);
+                                             max_in_flight_,
+                                             field_solver_);
     websocket_session->run(std::move(req_));
   } else {
     // Regular HTTP - hand off to session with already-read request
@@ -1656,6 +1669,7 @@ class Listener : public std::enable_shared_from_this<Listener>
   WebViewerHook* viewer_hook_ = nullptr;
   int max_in_flight_ = 16;
   std::shared_ptr<SessionAuth> auth_;
+  fsv::FieldSolver* field_solver_ = nullptr;
 
  public:
   Listener(net::io_context& ioc,
@@ -1667,7 +1681,8 @@ class Listener : public std::enable_shared_from_this<Listener>
            utl::Logger* logger,
            WebViewerHook* viewer_hook,
            int max_in_flight,
-           std::shared_ptr<SessionAuth> auth);
+           std::shared_ptr<SessionAuth> auth,
+           fsv::FieldSolver* field_solver = nullptr);
 
   void run() { do_accept(); }
 
@@ -1697,7 +1712,8 @@ Listener::Listener(net::io_context& ioc,
                    utl::Logger* logger,
                    WebViewerHook* viewer_hook,
                    int max_in_flight,
-                   std::shared_ptr<SessionAuth> auth)
+                   std::shared_ptr<SessionAuth> auth,
+                   fsv::FieldSolver* field_solver)
     : ioc_(ioc),
       acceptor_(ioc),
       generator_(std::move(generator)),
@@ -1707,7 +1723,8 @@ Listener::Listener(net::io_context& ioc,
       logger_(logger),
       viewer_hook_(viewer_hook),
       max_in_flight_(max_in_flight),
-      auth_(std::move(auth))
+      auth_(std::move(auth)),
+      field_solver_(field_solver)
 {
   beast::error_code ec;
 
@@ -1767,7 +1784,8 @@ void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
                                     logger_,
                                     viewer_hook_,
                                     max_in_flight_,
-                                    auth_)
+                                    auth_,
+                                    field_solver_)
         ->run();
   }
   do_accept();
@@ -1780,11 +1798,13 @@ void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
 WebServer::WebServer(odb::dbDatabase* db,
                      sta::dbSta* sta,
                      utl::Logger* logger,
-                     Tcl_Interp* interp)
+                     Tcl_Interp* interp,
+                     fsv::FieldSolver* field_solver)
     : db_(db),
       sta_(sta),
       logger_(logger),
       interp_(interp),
+      field_solver_(field_solver),
       num_threads_(1),
       tcl_eval_(std::make_shared<TclEvaluator>(interp, logger)),
       script_view_(std::make_unique<ScriptView>(db, logger))
@@ -2902,7 +2922,8 @@ ListenerHandle createAndRunListener(
     utl::Logger* logger,
     WebViewerHook* viewer_hook,
     int max_in_flight,
-    std::shared_ptr<SessionAuth> auth)
+    std::shared_ptr<SessionAuth> auth,
+    fsv::FieldSolver* field_solver)
 {
   if (!auth) {
     throw std::invalid_argument("createAndRunListener needs a SessionAuth");
@@ -2916,7 +2937,8 @@ ListenerHandle createAndRunListener(
                                              logger,
                                              viewer_hook,
                                              max_in_flight,
-                                             std::move(auth));
+                                             std::move(auth),
+                                             field_solver);
   listener->run();
   return {.shutdown = [listener]() { listener->close(); },
           .port = listener->port()};

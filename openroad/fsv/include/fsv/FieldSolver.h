@@ -4,6 +4,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -18,7 +19,8 @@
 
 namespace odb {
 class dbDatabase;
-}
+class dbTech;
+}  // namespace odb
 
 namespace utl {
 class Logger;
@@ -58,10 +60,18 @@ class FieldSolver
   ~FieldSolver();
 
   // Replaces the dielectric with the stack of an ITF file: its planar
-  // layers and conformal dielectrics.
+  // layers and conformal dielectrics. Only the frontside of the stack is
+  // kept (see frontsideStack) when the tech is loaded.
   void readItf(const std::string& path);
   // Replaces the dielectric with a uniform relative permittivity.
   void setPermittivity(double eps);
+
+  bool hasStack() const { return has_stack_; }
+  const Stack& stack() const { return stack_; }
+  const std::string& itfPath() const { return itf_path_; }
+  // Monotonically incremented whenever readItf() or setPermittivity() changes
+  // the dielectric, so callers caching a copy can detect Tcl-side updates.
+  uint64_t stackVersion() const { return stack_version_; }
 
   // Adds a box in µm to a net, creating the net on first use.
   void addBox(std::string_view net, const Box& box);
@@ -122,7 +132,9 @@ class FieldSolver
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   Stack stack_;
+  std::string itf_path_;
   bool has_stack_ = false;
+  uint64_t stack_version_ = 0;
   double eps_ = 1.0;
   // One of these holds the shapes, as cross_section_ says; the other is
   // empty.
@@ -138,5 +150,13 @@ class FieldSolver
   std::unique_ptr<Solver> solver_;
   SolverOptions solver_options_;
 };
+
+// The frontside of a stack. When `tech` marks conductors of the stack as
+// backside layers (LEF58_BACKSIDE), the ground plane moves up to the top of
+// the highest one, and everything below it is removed: the backside
+// conductors, any other conductor that starts below that height, and the
+// vias that touch a removed conductor or the old ground plane. Returns the
+// stack unchanged when `tech` is null or marks none of its conductors.
+Stack frontsideStack(const Stack& stack, odb::dbTech* tech);
 
 }  // namespace fsv
