@@ -2,24 +2,24 @@ module top (clk1,
     clk2,
     enable,
     reset,
+    scan_enable_0,
+    scan_in_0,
+    scan_in_1,
     inputs_32,
     inputs_64,
     outputs_32,
-    outputs_64,
-    scan_enable_0,
-    scan_in_0,
-    scan_in_1);
+    outputs_64);
  input clk1;
  input clk2;
  input enable;
  input reset;
+ input scan_enable_0;
+ input scan_in_0;
+ input scan_in_1;
  input [31:0] inputs_32;
  input [63:0] inputs_64;
  output [31:0] outputs_32;
  output [63:0] outputs_64;
- input scan_enable_0;
- input scan_in_0;
- input scan_in_1;
 
  wire \bank1/_000_ ;
  wire \bank1/_001_ ;

@@ -3144,6 +3144,27 @@ Port* dbNetwork::makeTopPort(dbBTerm* bterm)
   return port;
 }
 
+Port* dbNetwork::makeTopPortBeforeBusPorts(dbBTerm* bterm)
+{
+#ifdef STA_OPENROAD_FORK
+  // groupBusPorts in makeTopCell orders the top ports as scalar ports then
+  // bus ports. A bterm created after linking must take the same place,
+  // ahead of the bus ports, so write_verilog and write_timing_model order
+  // the ports identically in the building session and after read_db.
+  auto* cell = reinterpret_cast<ConcreteCell*>(top_cell_);
+  Port* port = reinterpret_cast<Port*>(
+      cell->makePortBeforeBusPorts(bterm->getConstName()));
+  const PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+  setDirection(port, dir);
+  registerConcretePort(port);
+  return port;
+#else
+  // Stock OpenSTA has no makePortBeforeBusPorts; the port is appended after
+  // the bus ports, so the order differs from read_db until the next re-link.
+  return makeTopPort(bterm);
+#endif
+}
+
 void dbNetwork::setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type)
 {
   Port* port = findPort(top_cell_, bterm->getConstName());

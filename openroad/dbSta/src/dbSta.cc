@@ -1526,7 +1526,7 @@ void dbStaCbk::inDbBTermCreate(odb::dbBTerm* bterm)
   if (decline3DicBoundaryEdit(bterm, "creation")) {
     return;
   }
-  sta_->getDbNetwork()->makeTopPort(bterm);
+  sta_->getDbNetwork()->makeTopPortBeforeBusPorts(bterm);
   Pin* pin = network_->dbToSta(bterm);
   sta_->makePortPinAfter(pin);
 }
