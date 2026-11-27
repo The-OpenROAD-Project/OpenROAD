@@ -46,6 +46,8 @@ static std::pair<int, int> getMinMaxIdx(int ll,
                                         int minIdx,
                                         int maxIdx);
 
+static std::vector<Rect> getRectilinearOverlapRects(odb::dbInst* db_inst);
+
 static bool isCoreAreaOverlap(Die& die, Instance& inst);
 
 static int64_t getOverlapWithCoreArea(Die& die, Instance& inst);
@@ -1179,8 +1181,13 @@ void PlacerBase::init(bool check_density)
         continue;
       }
       fixedInsts_.push_back(inst);
-      nonPlaceInsts_.push_back(inst);
-      nonPlaceInstsArea_ += overlap_area;
+      // A rectilinear fixed instance is represented by the dummy instances
+      // initInstsForUnusableSites() makes from its OVERLAP rects; its bbox
+      // would also cover the notches.
+      if (getRectilinearOverlapRects(db_inst).empty()) {
+        nonPlaceInsts_.push_back(inst);
+        nonPlaceInstsArea_ += overlap_area;
+      }
     } else {
       // Movable instances
       if (!isInGroup(db_inst)) {
@@ -1417,6 +1424,33 @@ void PlacerBase::initInstsForUnusableSites()
       }
     }
 
+    const std::vector<Rect> overlap_rects = getRectilinearOverlapRects(db_inst);
+    if (!overlap_rects.empty()) {
+      const Rect halo = inst->isMacro() && db_inst->getHalo() != nullptr
+                            ? db_inst->getTransformedHalo()
+                            : Rect(0, 0, 0, 0);
+      for (const Rect& rect : overlap_rects) {
+        std::pair<int, int> pairX = getMinMaxIdx(rect.xMin() - halo.xMin(),
+                                                 rect.xMax() + halo.xMax(),
+                                                 region_bbox_.xMin(),
+                                                 siteSizeX_,
+                                                 0,
+                                                 siteCountX);
+        std::pair<int, int> pairY = getMinMaxIdx(rect.yMin() - halo.yMin(),
+                                                 rect.yMax() + halo.yMax(),
+                                                 region_bbox_.yMin(),
+                                                 siteSizeY_,
+                                                 0,
+                                                 siteCountY);
+        for (int i = pairX.first; i < pairX.second; i++) {
+          for (int j = pairY.first; j < pairY.second; j++) {
+            siteGrid[(j * siteCountX) + i] = Blocked;
+          }
+        }
+      }
+      continue;
+    }
+
     if (inst->isMacro() && inst->dbInst()->getHalo() != nullptr) {
       Rect halo = inst->dbInst()->getTransformedHalo();
       Rect box = inst->dbInst()->getBBox()->getBox();
@@ -1621,6 +1655,29 @@ static std::pair<int, int> getMinMaxIdx(int ll,
                      ? (uu - coreLL) / siteSize
                      : (uu - coreLL) / siteSize + 1;
   return std::make_pair(std::max(minIdx, lowerIdx), std::min(maxIdx, upperIdx));
+}
+
+// The OVERLAP obstruction rects of a fixed instance whose outline is not its
+// bbox, in design coordinates. Empty when the instance has no OVERLAP
+// obstruction or one of them covers the whole bbox.
+static std::vector<Rect> getRectilinearOverlapRects(odb::dbInst* db_inst)
+{
+  std::vector<Rect> rects;
+  const Rect bbox = db_inst->getBBox()->getBox();
+  const odb::dbTransform xfm = db_inst->getTransform();
+  for (odb::dbBox* obs : db_inst->getMaster()->getObstructions()) {
+    odb::dbTechLayer* layer = obs->getTechLayer();
+    if (layer == nullptr || layer->getType() != odb::dbTechLayerType::OVERLAP) {
+      continue;
+    }
+    Rect rect = obs->getBox();
+    xfm.apply(rect);
+    if (rect.contains(bbox)) {
+      return {};
+    }
+    rects.push_back(rect);
+  }
+  return rects;
 }
 
 static bool isCoreAreaOverlap(Die& die, Instance& inst)

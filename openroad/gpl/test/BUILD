@@ -39,6 +39,7 @@ TESTS = [
     "simple03-rd",
     "simple04-rd",
     "region01",
+    "rectilinear_macro",
 ]
 
 PASSFAIL_TESTS = [
