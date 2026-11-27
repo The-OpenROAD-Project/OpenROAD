@@ -478,9 +478,9 @@ void FastRouteCore::newrouteZ(const int netID, const int threshold)
             cost_tb_test_[0] -= tmp2;
           }
         }
-        // cost for H-segs
-        for (int i = ymin; i < ymax; i++) {
-          for (int j = x1; j < x2; j++) {
+        // cost for H-segs (walk (x, y) to read Graph2D::h_edges_ contiguously)
+        for (int j = x1; j < x2; j++) {
+          for (int i = ymin; i < ymax; i++) {
             const auto usageH = getEstUsageRedH(net, j, i);
             cost_h_[i - ymin] += std::max(0.0, usageH - h_capacity_lb_);
           }
@@ -917,8 +917,8 @@ void FastRouteCore::routeMonotonic(const int netID,
   }
 
   // d2[j][i]: cumulative V-edge cost along column i from ymin to j
-  for (int j = ymin; j < ymax; j++) {
-    for (int i = xmin; i <= xmax; i++) {
+  for (int i = xmin; i <= xmax; i++) {
+    for (int j = ymin; j < ymax; j++) {
       const size_t idx = std::min(
           static_cast<size_t>(getUsageNDRAware(
               net, i, j, EdgeDirection::Vertical, graph2d_.getUsageRedV(i, j))),

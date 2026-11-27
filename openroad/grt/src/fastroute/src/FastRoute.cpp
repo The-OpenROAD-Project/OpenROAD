@@ -5,7 +5,9 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <limits>
@@ -553,23 +555,57 @@ void FastRouteCore::init3DEdges()
   v_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
-  for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_; j++) {
-      // 3D edge initialization
-      for (int k = 0; k < num_layers_; k++) {
-        h_edges_3D_[k][i][j].cap = 0;
-        h_edges_3D_[k][i][j].usage = 0;
-        h_edges_3D_[k][i][j].red = 0;
+  const size_t per_layer = static_cast<size_t>(y_grid_) * x_grid_;
+  if (per_layer == 0) {
+    return;
+  }
+  const int threads = std::max(1, num_threads_);
+#pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
+  for (int k = 0; k < num_layers_; k++) {
+    std::fill_n(&h_edges_3D_[k][0][0], per_layer, Edge3D{});
+    std::fill_n(&v_edges_3D_[k][0][0], per_layer, Edge3D{});
+  }
+}
+
+void FastRouteCore::initLayerCapacities(const int layer,
+                                        const bool horizontal,
+                                        const std::vector<int>& line_caps)
+{
+  const int k = layer - 1;
+  const int threads = std::max(1, num_threads_);
+  if (horizontal) {
+    if (x_grid_ <= 1 || y_grid_ <= 0) {
+      return;
+    }
+#pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
+    for (int x = 0; x < x_grid_ - 1; x++) {
+      for (int y = 0; y < y_grid_; y++) {
+        graph2d_.addCapH(x, y, line_caps[y]);
       }
     }
-  }
-  for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_; j++) {
-      // 3D edge initialization
-      for (int k = 0; k < num_layers_; k++) {
-        v_edges_3D_[k][i][j].cap = 0;
-        v_edges_3D_[k][i][j].usage = 0;
-        v_edges_3D_[k][i][j].red = 0;
+#pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
+    for (int y = 0; y < y_grid_; y++) {
+      const uint16_t cap = static_cast<uint16_t>(line_caps[y]);
+      Edge3D* row = &h_edges_3D_[k][y][0];
+      for (int x = 0; x < x_grid_ - 1; x++) {
+        row[x].cap = cap;
+      }
+    }
+  } else {
+    if (y_grid_ <= 1 || x_grid_ <= 0) {
+      return;
+    }
+#pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
+    for (int x = 0; x < x_grid_; x++) {
+      for (int y = 0; y < y_grid_ - 1; y++) {
+        graph2d_.addCapV(x, y, line_caps[x]);
+      }
+    }
+#pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
+    for (int y = 0; y < y_grid_ - 1; y++) {
+      Edge3D* row = &v_edges_3D_[k][y][0];
+      for (int x = 0; x < x_grid_; x++) {
+        row[x].cap = static_cast<uint16_t>(line_caps[x]);
       }
     }
   }
@@ -711,6 +747,11 @@ void FastRouteCore::initEdgesCapacityPerLayer()
   }
 }
 
+void FastRouteCore::clearEdgesCapacityPerLayer()
+{
+  graph2d_.clearCap3D();
+}
+
 void FastRouteCore::setNumAdjustments(int nAdjustments)
 {
   num_adjust_ = nAdjustments;
@@ -812,21 +853,34 @@ void FastRouteCore::addAdjustment(int x1,
 
 void FastRouteCore::saveResourcesBeforeAdjustments()
 {
-  // Save real horizontal resources
+  const int threads = std::max(1, num_threads_);
+#pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
   for (int x = 0; x < x_grid_ - 1; x++) {
     for (int y = 0; y < y_grid_; y++) {
       graph2d_.saveResources(x, y, true);
-      for (int l = 0; l < num_layers_; l++) {
-        h_edges_3D_[l][y][x].real_cap = h_edges_3D_[l][y][x].cap;
-      }
     }
   }
-  // Save real vertical resources
+#pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
   for (int x = 0; x < x_grid_; x++) {
     for (int y = 0; y < y_grid_ - 1; y++) {
       graph2d_.saveResources(x, y, false);
-      for (int l = 0; l < num_layers_; l++) {
-        v_edges_3D_[l][y][x].real_cap = v_edges_3D_[l][y][x].cap;
+    }
+  }
+  if (x_grid_ <= 0 || y_grid_ <= 0) {
+    return;
+  }
+#pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
+  for (int l = 0; l < num_layers_; l++) {
+    for (int y = 0; y < y_grid_; y++) {
+      Edge3D* h_row = &h_edges_3D_[l][y][0];
+      for (int x = 0; x < x_grid_ - 1; x++) {
+        h_row[x].real_cap = h_row[x].cap;
+      }
+    }
+    for (int y = 0; y < y_grid_ - 1; y++) {
+      Edge3D* v_row = &v_edges_3D_[l][y][0];
+      for (int x = 0; x < x_grid_; x++) {
+        v_row[x].real_cap = v_row[x].cap;
       }
     }
   }
@@ -1240,12 +1294,13 @@ std::vector<int> FastRouteCore::getMazeRouteNetOrder(const bool ordering,
   return net_ids_;
 }
 
-double FastRouteCore::getUsageNDRAware(FrNet* net,
-                                       const int x,
-                                       const int y,
-                                       const EdgeDirection direction,
-                                       const double usage) const
+double FastRouteCore::getUsageForNDRNet(FrNet* net,
+                                        const int x,
+                                        const int y,
+                                        const EdgeDirection direction,
+                                        const double usage) const
 {
+  assert(net->getEdgeCost() != 1);
   const int deficit = graph2d_.getNDRDeficitIfRouted(net, x, y, direction);
   if (deficit == 0) {
     return usage;
