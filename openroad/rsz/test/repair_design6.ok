@@ -18,19 +18,19 @@ max capacitance
 
 Pin                                     Limit      Cap    Slack
 ---------------------------------------------------------------
-place86/Y                              92.160  154.508  -62.348 (VIOLATED)
+place86/Y                              92.160  154.737  -62.577 (VIOLATED)
 
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       419
-    final |   +119.6% |       6 |     220 |           139 |         0
+    final |   +121.3% |       6 |     224 |           139 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 139 slew violations.
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0036] Found 59 capacitance violations.
 [INFO RSZ-0039] Resized 6 instances.
 [INFO RSZ-0044] Rerouted 102 nets.
-[INFO RSZ-0038] Inserted 220 buffers in 139 nets.
+[INFO RSZ-0038] Inserted 224 buffers in 139 nets.
 max slew
 
 Pin                                     Limit     Slew    Slack

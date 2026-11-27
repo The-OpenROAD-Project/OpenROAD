@@ -5,10 +5,10 @@
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
-[INFO ANT-0002] Found 8 net violations.
-[INFO ANT-0001] Found 8 pin violations.
-[INFO GRT-0012] Found 8 antenna violations.
-[INFO GRT-0302] Inserted 7 jumpers for 7 nets.
+[INFO ANT-0002] Found 10 net violations.
+[INFO ANT-0001] Found 10 pin violations.
+[INFO GRT-0012] Found 10 antenna violations.
+[INFO GRT-0302] Inserted 9 jumpers for 9 nets.
 [INFO GRT-0012] Found 1 antenna violations.
 [INFO ANT-0002] Found 1 net violations.
 [INFO ANT-0001] Found 1 pin violations.

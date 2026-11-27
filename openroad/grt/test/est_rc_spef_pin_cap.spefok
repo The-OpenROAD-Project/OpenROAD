@@ -19,26 +19,23 @@ in1 I
 in2 I
 out O
 
-*D_NET clk 0.774288
+*D_NET clk 0.773312
 *CONN
 *P clk I
 *I clkbuf_0_clk:A I *D BUF_X4
 *CAP
-1 clk:1 0.132942
-2 clk:2 0.132942
-3 clk:3 0.074465
-4 clk:4 0.074465
-5 clk:5 0.179737
-6 clk:6 0.179737
+1 clk:1 0.284495
+2 clk:2 0.284495
+3 clk:3 0.102161
+4 clk:4 0.102161
 *RES
-1 clk:1 clk:2 0.0178571
+1 clk:1 clk:2 0.0382143
 2 clk:2 clk:3 0.005
-3 clk:3 clk:4 0.0101786
+3 clk:3 clk:4 0.0139643
 4 clk:4 clk:5 0.005
-5 clk:5 clk:6 0.0241429
-6 clk:6 clk:7 0.005
-7 clkbuf_0_clk:A clk:6 0.005
-8 clk clk:1 1e-06
+5 clk:5 clk:6 0.005
+6 clkbuf_0_clk:A clk:5 0.005
+7 clk clk:1 1e-06
 *END
 
 *D_NET in1 0.72626

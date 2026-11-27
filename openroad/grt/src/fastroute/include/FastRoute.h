@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <limits>
@@ -78,18 +79,39 @@ struct parent3D
   int16_t x, y;  // grid coordinates are int16_t, as in TreeNode
 };
 
+struct PathState3D
+{
+  uint16_t wire_len;
+  uint16_t via_cnt;
+};
+
 class MinHeap3D
 {
  public:
+  struct Key
+  {
+    uint64_t primary = 0;
+    uint32_t tie = 0;
+  };
+
   void resize(size_t max_nodes)
   {
-    entries_.reserve(max_nodes);
+    entries_.clear();
+    if (entries_.capacity() > max_nodes) {
+      entries_.shrink_to_fit();
+    }
     pos_.assign(max_nodes, -1);
   }
 
-  // Clears active heap entries; pos_ entries are left as-is because pos_[idx]
-  // is only valid for nodes currently in the heap.
-  void clear() { entries_.clear(); }
+  // Clears active heap entries and resets their pos_ slots to -1 so
+  // decreaseKey() safely treats cleared indices as absent.
+  void clear()
+  {
+    for (const Entry& entry : entries_) {
+      pos_[entry.idx] = -1;
+    }
+    entries_.clear();
+  }
 
   bool empty() const { return entries_.empty(); }
 
@@ -100,39 +122,78 @@ class MinHeap3D
   void pushSeed(int idx)
   {
     pos_[idx] = entries_.size();
-    entries_.push_back({0, idx});
+    entries_.push_back({0, 0, idx});
   }
 
-  void insert(int idx, int dist)
+  void insert(int idx, Key key)
   {
     const int i = entries_.size();
-    entries_.push_back({dist, idx});
+    entries_.push_back({key.primary, key.tie, idx});
     siftUp(i);
   }
 
-  void decreaseKey(int idx, int dist)
+  void insert(int idx, uint64_t primary, uint32_t tie = 0)
+  {
+    insert(idx, Key{primary, tie});
+  }
+
+  void decreaseKey(int idx, Key key)
   {
     const int i = pos_[idx];
-    entries_[i].dist = dist;
+    if (i < 0) {
+      insert(idx, key);
+      return;
+    }
+    entries_[i].primary = key.primary;
+    entries_[i].tie = key.tie;
     siftUp(i);
   }
 
-  // Copies the last entry into root, sifts down over the full size (the
-  // trailing duplicate is ignored by strict '<' comparison), then drops the
-  // duplicate.
+  void decreaseKey(int idx, uint64_t primary, uint32_t tie = 0)
+  {
+    decreaseKey(idx, Key{primary, tie});
+  }
+
   void removeMin()
   {
+    const int popped = entries_[0].idx;
+    pos_[popped] = -1;
     entries_[0] = entries_.back();
-    siftDown();
     entries_.pop_back();
+    if (!entries_.empty()) {
+      siftDown(0);
+    }
+  }
+
+  template <typename KeyFn>
+  void rekeyAndHeapify(KeyFn&& key_fn)
+  {
+    const int n = static_cast<int>(entries_.size());
+    for (int i = 0; i < n; ++i) {
+      const int idx = entries_[i].idx;
+      const Key key = key_fn(idx);
+      entries_[i].primary = key.primary;
+      entries_[i].tie = key.tie;
+      pos_[idx] = i;
+    }
+    for (int i = n / 2 - 1; i >= 0; --i) {
+      siftDown(i);
+    }
   }
 
  private:
   struct Entry
   {
-    int dist;
+    uint64_t primary;
+    uint32_t tie;
     int idx;
   };
+  static_assert(sizeof(Entry) == 16);
+
+  static bool less(const Entry& a, const Entry& b)
+  {
+    return a.primary != b.primary ? a.primary < b.primary : a.tie < b.tie;
+  }
 
   static int parentIndex(int i) { return (i - 1) / 2; }
   static int leftIndex(int i) { return 2 * i + 1; }
@@ -141,7 +202,7 @@ class MinHeap3D
   void siftUp(int i)
   {
     const Entry tmp = entries_[i];
-    while (i > 0 && entries_[parentIndex(i)].dist > tmp.dist) {
+    while (i > 0 && less(tmp, entries_[parentIndex(i)])) {
       const int parent = parentIndex(i);
       entries_[i] = entries_[parent];
       pos_[entries_[i].idx] = i;
@@ -151,11 +212,10 @@ class MinHeap3D
     pos_[tmp.idx] = i;
   }
 
-  void siftDown()
+  void siftDown(int i)
   {
     bool stop = false;
     const int heap_size = entries_.size();
-    int i = 0;
 
     const Entry tmp = entries_[i];
     do {
@@ -163,14 +223,14 @@ class MinHeap3D
       const int r = rightIndex(i);
 
       int smallest;
-      if (l < heap_size && entries_[l].dist < tmp.dist) {
+      if (l < heap_size && less(entries_[l], tmp)) {
         smallest = l;
-        if (r < heap_size && entries_[r].dist < entries_[l].dist) {
+        if (r < heap_size && less(entries_[r], entries_[l])) {
           smallest = r;
         }
       } else {
         smallest = i;
-        if (r < heap_size && entries_[r].dist < tmp.dist) {
+        if (r < heap_size && less(entries_[r], tmp)) {
           smallest = r;
         }
       }
@@ -188,6 +248,124 @@ class MinHeap3D
 
   std::vector<Entry> entries_;
   std::vector<int> pos_;
+};
+
+// Admissible and consistent 3D A* lower-bound heuristic for maze routing.
+// For non-resistance-aware nets, combines minimum via cost to the destination
+// layer interval with minimum per-direction wire cost. For resistance-aware
+// nets, evaluates the minimum over non-dominated layer spans [lo, hi], trading
+// via climb/drop cost against lower upper-layer wire resistance.
+class Maze3DHeuristic
+{
+ public:
+  static constexpr int kBigInt = 1'000'000'000;
+
+  static int distToBox(int v, int lo, int hi)
+  {
+    if (v < lo) {
+      return lo - v;
+    }
+    if (v > hi) {
+      return v - hi;
+    }
+    return 0;
+  }
+
+  void prepareNet(int num_layers,
+                  int min_layer,
+                  int max_layer,
+                  bool resistance_aware,
+                  const std::vector<odb::dbTechLayerDir>& layer_directions,
+                  const std::vector<float>& wire_step_cost,
+                  const std::vector<float>& down_via_cost,
+                  const std::vector<float>& up_via_cost);
+
+  void prepareDestination(int dest_l1, int dest_l2);
+
+  int eval(int layer, int dx, int dy) const
+  {
+    if (dx == 0 && dy == 0) {
+      return via_h_[layer];
+    }
+    if (!resistance_aware_) {
+      if ((dx > 0 && net_min_h_cost_ >= kBigInt)
+          || (dy > 0 && net_min_v_cost_ >= kBigInt)) {
+        return kBigInt;
+      }
+      const int64_t h = static_cast<int64_t>(via_h_[layer])
+                        + static_cast<int64_t>(dx) * net_min_h_cost_
+                        + static_cast<int64_t>(dy) * net_min_v_cost_;
+      return static_cast<int>(std::min<int64_t>(kBigInt, h));
+    }
+    const int begin = pareto_offset_[layer];
+    const int end = pareto_offset_[layer + 1];
+    int64_t best = kBigInt;
+    for (int k = begin; k < end; ++k) {
+      const auto& t = pareto_terms_[k];
+      if ((dx > 0 && t.ch >= kBigInt) || (dy > 0 && t.cv >= kBigInt)) {
+        continue;
+      }
+      const int64_t c = static_cast<int64_t>(t.via)
+                        + static_cast<int64_t>(dx) * t.ch
+                        + static_cast<int64_t>(dy) * t.cv;
+      if (c < best) {
+        best = c;
+      }
+    }
+    return static_cast<int>(best);
+  }
+
+  // Returns true if the monotone layer span between layer and [dest_l1,
+  // dest_l2] contains a legal routing layer for every non-zero remaining axis
+  // (dx/dy).
+  bool spanHasNeededDirs(const int layer, const int dx, const int dy) const
+  {
+    const int lo = std::min(layer, cached_dest_l1_);
+    const int hi = std::max(layer, cached_dest_l2_);
+    if (lo < 0 || hi < lo || hi >= 64) {
+      return true;
+    }
+    const uint64_t hi_mask
+        = (hi == 63) ? ~uint64_t{0}
+                     : ((uint64_t{1} << static_cast<unsigned>(hi + 1)) - 1);
+    const uint64_t lo_mask = (uint64_t{1} << static_cast<unsigned>(lo)) - 1;
+    const uint64_t span_mask = hi_mask & ~lo_mask;
+    if (dx > 0 && (horiz_mask_ & span_mask) == 0) {
+      return false;
+    }
+    if (dy > 0 && (vert_mask_ & span_mask) == 0) {
+      return false;
+    }
+    return true;
+  }
+
+ private:
+  struct ParetoTerm
+  {
+    int via;
+    int ch;
+    int cv;
+  };
+
+  int num_layers_ = 0;
+  int min_layer_ = 0;
+  int max_layer_ = 0;
+  bool resistance_aware_ = false;
+  int net_min_h_cost_ = kBigInt;
+  int net_min_v_cost_ = kBigInt;
+  int cached_dest_l1_ = -1;
+  int cached_dest_l2_ = -1;
+  uint64_t horiz_mask_ = 0;
+  uint64_t vert_mask_ = 0;
+  std::vector<uint8_t> is_horiz_;
+  std::vector<int> wire_cost_i_;
+  std::vector<int64_t> up_pref_;
+  std::vector<int64_t> dn_pref_;
+  std::vector<int> min_h_span_;
+  std::vector<int> min_v_span_;
+  std::vector<int> via_h_;
+  std::vector<int> pareto_offset_;
+  std::vector<ParetoTerm> pareto_terms_;
 };
 
 struct CostParams
@@ -1069,7 +1247,11 @@ class FastRouteCore
   MinHeap3D src_heap_3D_;
   std::vector<int> dest_heap_3D_;
   multi_array<int, 3> d1_3D_;
-  multi_array<int, 3> path_len_3D_;
+  bool d1_3D_clean_ = false;
+  std::vector<int> touched_3D_;
+  Maze3DHeuristic heuristic_3D_;
+  multi_array<PathState3D, 3> path_state_3D_;
+  size_t last_maze3d_pops_ = 0;
   // Reusable BFS scratch for addNeighborPoints (3D). Mirrors the maze2D
   // visited_2D_/queue_2D_ reuse pattern: allocate once, reset the used region
   // each call instead of reallocating per call.
