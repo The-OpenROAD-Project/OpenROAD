@@ -11,7 +11,7 @@ yamlfix==1.19.1
 
 # The clang-format GitHub workflows run //:fmt_cc_test and //:tidy_cc, so
 # this pin also sets the version that CI uses.
-clang-format==23.1.2
+clang-format==23.1.5
 
 # Template engine for the ODB code generator.
 jinja2==3.1.6
