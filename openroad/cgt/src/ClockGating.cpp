@@ -427,6 +427,10 @@ std::optional<int> AcceptedGates::findSubset(
     const std::vector<sta::Net*>& conds,
     const bool clk_enable) const
 {
+  // conds is in search order, not sorted, so test membership with a set.
+  const std::unordered_set<sta::Net*> cond_set(conds.begin(), conds.end());
+  const auto in_conds
+      = [&cond_set](sta::Net* net) { return cond_set.contains(net); };
   for (sta::Net* net : conds) {
     auto it = net_to_gates_.find(net);
     if (it == net_to_gates_.end()) {
@@ -435,7 +439,7 @@ std::optional<int> AcceptedGates::findSubset(
     for (const int idx : it->second) {
       const Gate& gate = gates_[idx];
       if (gate.clk_enable == clk_enable
-          && std::ranges::includes(conds, gate.conds)) {
+          && std::ranges::all_of(gate.conds, in_conds)) {
         return idx;
       }
     }
