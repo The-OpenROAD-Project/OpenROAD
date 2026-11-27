@@ -34,6 +34,10 @@ namespace est {
 class EstimateParasitics;
 }
 
+namespace odb {
+class dbNet;
+}
+
 namespace rsz {
 
 class Resizer;
@@ -240,6 +244,29 @@ class Rebuffer : public sta::dbStaState
     // at most half the net's max_fanout limit (never below 2).
     int max_flat_fo_;
   };
+  // Remove from `cells` (sparing `current_cell`) every cell that raises the
+  // setup input capacitance on a failing input net of `drvr_inst`, on a
+  // transition whose pin load has already grown past kCapGrowthLimit from
+  // resizes since the last timing refresh.
+  void dropCapGrowthCells(sta::Instance* drvr_inst,
+                          const sta::LibertyCell* current_cell,
+                          sta::LibertyCellSeq& cells);
+  // Pin load (farads) of a net per transition, indexed by RiseFall::index():
+  // the input pins plus set_load, without wire parasitics.
+  using PinLoad = std::array<float, sta::RiseFall::index_count>;
+  // Per transition, indexed by RiseFall::index(): whether a net's pin load
+  // has grown past kCapGrowthLimit.
+  using PinLoadGrown = std::array<bool, sta::RiseFall::index_count>;
+  // Key: flat net of an input pin of one instance.
+  // Value: the net's pin load.
+  using NetPinLoads = absl::flat_hash_map<const odb::dbNet*, PinLoad>;
+  // Pin load of each input net of `drvr_inst`.  It leaves out wire
+  // parasitics, which replaceCell() deletes until the net is re-estimated.
+  NetPinLoads inputNetPinLoads(sta::Instance* drvr_inst) const;
+  // Add the change from `before` to `after` of each input net's pin load
+  // around one resize to that net's cap growth since the last timing
+  // refresh.
+  void recordCapGrowth(const NetPinLoads& before, const NetPinLoads& after);
   // Buffer the net from scratch, timing and area recovery alike, as though
   // the driver were `cell`.  Returns the timing and area-recovered trees;
   // both null when `cell` cannot be planned for.
@@ -704,6 +731,14 @@ class Rebuffer : public sta::dbStaState
   // Fraction of the worst slack within which a failing net counts as
   // critical in fullyRebuffer().
   static constexpr float kCriticalSlackBand = 0.1;
+  // Growth of a net's pin load from driver resizes since the last timing
+  // refresh in fullyRebuffer(), as a fraction of its pin load before them,
+  // beyond which a failing net takes no more input capacitance from resizes.
+  // Of 10%, 20%, 40% and no limit, 20% gave the best mean final Fmax on two
+  // large designs (median of five GPL seeds; +1.7% over master before the
+  // driver sizing work, vs +0.7%, +1.2% and +1.3%); the spread between seeds
+  // is larger than these gaps.
+  static constexpr float kCapGrowthLimit = 0.2f;
   // Required delay improvement (as a fraction of driver gate delay per unit
   // relative driver area increase) for geometric driver upsizing on
   // non-critical failing nets: a cell of twice the area must gain a quarter
@@ -733,6 +768,22 @@ class Rebuffer : public sta::dbStaState
   double size_ra_runtime_ = 0;
   double size_eval_runtime_ = 0;
   double size_plan_runtime_ = 0;
+  // Pin load of a net before the driver resizes since the last timing
+  // refresh changed it, and the change they made.
+  struct CapGrowth
+  {
+    // Pin load before the first such resize.
+    PinLoad orig_cap{};
+    // Signed pin load change since, summed over resizes and tied pins; a
+    // downsize gives load back.
+    PinLoad added_cap{};
+  };
+  // Key: flat net of a resized driver's input.
+  // Value: its cap growth.
+  using NetCapGrowth = absl::flat_hash_map<const odb::dbNet*, CapGrowth>;
+  // Cap growth from driver resizes since the last timing refresh, for the
+  // kCapGrowthLimit guard; a refresh times those resizes and clears it.
+  NetCapGrowth net_cap_growth_;
 
   friend class rsz::BufferCandidate;
   friend class RebufferTestPeer;

@@ -1,0 +1,57 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+g0 NAND2_X1, g1 NAND2_X1, g2 NAND2_X1
+in slack -0.0279
+a0 -0.1555 a1 -0.1535 a2 -0.1555 
+worst slack max -0.1555
+tns max -0.4645
+Net in
+ Pin capacitance: 3.0000
+ Wire capacitance: 2.0545
+ Total capacitance: 5.0545
+ Number of drivers: 1
+ Number of loads: 3
+ Number of pins: 4
+
+Driver pins
+ in input port (0, 0)
+
+Load pins
+ g0/A1 input (NAND2_X1) 1.0000 (20, 1)
+ g1/A2 input (NAND2_X1) 1.0000 (20, 4)
+ g2/A1 input (NAND2_X1) 1.0000 (20, 7)
+
+[INFO RSZ-0173] Rebuffering will size drivers together with buffer trees
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |         6
+        1 |     +0.0% |       0 |        0 |         5
+        2 |     +0.0% |       0 |        0 |         4
+        3 |     +0.0% |       0 |        0 |         3
+        4 |     +3.3% |       0 |        0 |         2
+        5 |     +6.7% |       0 |        0 |         1
+    final |     +6.7% |       0 |        0 |         0
+-------------------------------------------------------
+[INFO RSZ-2023] Resized 2 drivers while rebuffering.
+g0 NAND2_X1, g1 NAND2_X2, g2 NAND2_X2
+in slack -0.0262
+a0 -0.1555 a1 -0.1248 a2 -0.1260 
+worst slack max -0.1555
+tns max -0.4063
+Net in
+ Pin capacitance: 4.0000
+ Wire capacitance: 2.0321
+ Total capacitance: 6.0321
+ Number of drivers: 1
+ Number of loads: 3
+ Number of pins: 4
+
+Driver pins
+ in input port (0, 0)
+
+Load pins
+ g0/A1 input (NAND2_X1) 1.0000 (20, 1)
+ g1/A2 input (NAND2_X2) 2.0000-1.0000 (20, 4)
+ g2/A1 input (NAND2_X2) 1.0000-2.0000 (20, 7)
+
+[INFO RSZ-0175] Driver sizing during rebuffering has been disabled.

@@ -43,6 +43,7 @@
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/StaState.hh"
 #include "sta/TimingArc.hh"
@@ -112,6 +113,35 @@ const sta::LibertyPort* scenePort(const sta::LibertyPort* port,
 {
   const sta::LibertyPort* scene_port = port->scenePort(scene, min_max);
   return scene_port != nullptr ? scene_port : port;
+}
+
+// Setup (max) input capacitance of `port` for `rf` in `scene`.
+float sceneInputCap(const sta::LibertyPort* port,
+                    const sta::RiseFall* rf,
+                    const sta::Scene* scene)
+{
+  const sta::MinMax* max = sta::MinMax::max();
+  return scenePort(port, scene, max)->capacitance(rf, max);
+}
+
+// Timing vertices of every pin that drives `net`.  Network::drivers() lists
+// only the first driver of a net with several.
+std::vector<sta::Vertex*> netDriverVertices(sta::Network* network,
+                                            sta::Graph* graph,
+                                            const sta::Net* net)
+{
+  std::vector<sta::Vertex*> vertices;
+  std::unique_ptr<sta::NetConnectedPinIterator> pin_iter(
+      network->connectedPinIterator(net));
+  while (pin_iter->hasNext()) {
+    const sta::Pin* pin = pin_iter->next();
+    sta::Vertex* vertex
+        = network->isDriver(pin) ? graph->pinDrvrVertex(pin) : nullptr;
+    if (vertex != nullptr) {
+      vertices.push_back(vertex);
+    }
+  }
+  return vertices;
 }
 
 }  // namespace
@@ -699,6 +729,7 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
         = slack_target >= FixedDelay::ZERO ? baseline_tree : timing_tree;
     DriverChoices choices = driverChoices(current_cell, leakage_ref_tree);
     choices.hurdle_delay = hurdle_delay;
+    dropCapGrowthCells(drvr_inst, current_cell, choices.cells);
     // Evaluated lazily; the planned trees are appended to `trees` below,
     // before any tree leakage is read.
     TreeDriverEvaluation eval(trees);
@@ -743,14 +774,154 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     return baseline_tree;
   }
   if (chosen_cell != current_cell) {
+    // Input net pin loads before the resize, for the cap growth guard.
+    const NetPinLoads loads_before = inputNetPinLoads(drvr_inst);
     // The chosen tree was timed with the new cell; keep the baseline tree
     // if replaceCell finds no master for it.
     if (!resizer_->replaceCell(drvr_inst, chosen_cell)) {
       return baseline_tree;
     }
     driver_resize_count_++;
+    recordCapGrowth(loads_before, inputNetPinLoads(drvr_inst));
   }
   return chosen;
+}
+
+void Rebuffer::dropCapGrowthCells(sta::Instance* drvr_inst,
+                                  const sta::LibertyCell* current_cell,
+                                  sta::LibertyCellSeq& cells)
+{
+  if (net_cap_growth_.empty()) {
+    return;
+  }
+  // Input ports on failing nets whose pin load grew past kCapGrowthLimit
+  // from resizes since the last timing refresh, with the transitions over
+  // the limit; candidates may not load those transitions more.
+  // The slack read is the stored one, without that growth, so a net that
+  // still passes on it is not held.
+  std::vector<std::pair<const sta::LibertyPort*, PinLoadGrown>> capped_ports;
+  std::unique_ptr<sta::InstancePinIterator> in_iter(
+      network_->pinIterator(drvr_inst));
+  while (in_iter->hasNext()) {
+    const sta::Pin* in_pin = in_iter->next();
+    if (!network_->direction(in_pin)->isInput()) {
+      continue;
+    }
+    const odb::dbNet* in_net = db_network_->flatNet(in_pin);
+    const NetCapGrowth::const_iterator growth = net_cap_growth_.find(in_net);
+    if (growth == net_cap_growth_.end()) {
+      continue;
+    }
+    // Each transition, which STA times on its own, against its own limit.
+    const CapGrowth& cap = growth->second;
+    PinLoadGrown grown{};
+    for (size_t rf = 0; rf < cap.orig_cap.size(); rf++) {
+      grown[rf] = cap.orig_cap[rf] > 0.0f
+                  && cap.added_cap[rf] > kCapGrowthLimit * cap.orig_cap[rf];
+    }
+    if (std::ranges::none_of(grown, [](const bool g) { return g; })) {
+      continue;
+    }
+    const sta::LibertyPort* port = network_->libertyPort(in_pin);
+    if (port == nullptr) {
+      continue;
+    }
+    // Only a failing net is held; one with slack, or unconstrained, may
+    // still absorb load.  A net with several drivers fails when any of them
+    // does.
+    const bool failing = std::ranges::any_of(
+        netDriverVertices(network_, graph_, network_->net(in_pin)),
+        [&](sta::Vertex* net_drvr) {
+          const sta::Path* path = sta_->vertexWorstSlackPath(net_drvr, max_);
+          return path != nullptr && path->slack(sta_) < 0.0f;
+        });
+    if (!failing) {
+      continue;
+    }
+    capped_ports.emplace_back(port, grown);
+  }
+  // Drop the candidate cells that raise the setup capacitance of a capped
+  // port on a transition over the limit.
+  std::erase_if(cells, [&](const sta::LibertyCell* cell) {
+    if (cell == current_cell) {
+      return false;
+    }
+    for (const auto& [port, grown] : capped_ports) {
+      const sta::LibertyPort* cand = cell->findLibertyPort(port->name());
+      if (cand == nullptr) {
+        continue;
+      }
+      for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+        if (grown[rf->index()]
+            && sceneInputCap(cand, rf, corner_)
+                   > sceneInputCap(port, rf, corner_)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  });
+}
+
+Rebuffer::NetPinLoads Rebuffer::inputNetPinLoads(sta::Instance* drvr_inst) const
+{
+  NetPinLoads loads;
+  std::unique_ptr<sta::InstancePinIterator> in_iter(
+      network_->pinIterator(drvr_inst));
+  while (in_iter->hasNext()) {
+    const sta::Pin* in_pin = in_iter->next();
+    if (!network_->direction(in_pin)->isInput()) {
+      continue;
+    }
+    const odb::dbNet* in_net = db_network_->flatNet(in_pin);
+    const sta::PinSet* drivers = network_->drivers(in_pin);
+    if (in_net == nullptr || drivers == nullptr || drivers->empty()) {
+      continue;
+    }
+    // Tied input pins share one net and one entry.
+    const auto [load, inserted] = loads.try_emplace(in_net);
+    if (!inserted) {  // second: false when the net already has an entry
+      continue;
+    }
+    // connectedCap() sums the pins and set_load of the active scene as they
+    // are now; GraphDelayCalc::netCaps() caches the load of a net with
+    // several drivers.
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      float pin_cap = 0.0f;
+      float wire_cap = 0.0f;
+      float fanout = 0.0f;
+      bool has_net_load = false;
+      corner_->sdc()->connectedCap(*drivers->begin(),
+                                   rf,
+                                   corner_,
+                                   max_,
+                                   pin_cap,
+                                   wire_cap,
+                                   fanout,
+                                   has_net_load);
+      load->second[rf->index()] = pin_cap + wire_cap;
+    }
+  }
+  return loads;
+}
+
+void Rebuffer::recordCapGrowth(const NetPinLoads& before,
+                               const NetPinLoads& after)
+{
+  for (const auto& [net, load_before] : before) {
+    const PinLoad& load_after = after.at(net);
+    if (load_after == load_before && !net_cap_growth_.contains(net)) {
+      continue;  // nothing changed on a net with no record
+    }
+    // The first resize on `net` since the last timing refresh sets its
+    // reference load.
+    CapGrowth& growth
+        = net_cap_growth_.try_emplace(net, CapGrowth{.orig_cap = load_before})
+              .first->second;
+    for (size_t rf = 0; rf < load_before.size(); rf++) {
+      growth.added_cap[rf] += load_after[rf] - load_before[rf];
+    }
+  }
 }
 
 std::pair<BnetPtr, BnetPtr> Rebuffer::planTreesForBestDriver(
@@ -3796,12 +3967,18 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   // not in each other's fanin or fanout, so netlist edits are propagated to
   // timing once per level rather than once per driver. The exception is an
   // instance resized earlier in the level: its other outputs are refreshed
-  // (through their loads) before they are rebuffered.
+  // (through their loads) before they are rebuffered. Siblings on one level
+  // that share an input net are sized on timing without each other's
+  // resizes, so a failing net whose pin load has grown past kCapGrowthLimit
+  // since the last timing refresh takes no more input capacitance
+  // (dropCapGrowthCells()), which stops them upsizing together without
+  // re-timing per driver.
   sta::Level timing_level = -1;
   // Loads of edited trees whose edits are not yet propagated. Their levels
   // are read when propagating, after the whole batch has been levelized.
   std::vector<const sta::Pin*> edited_loads;
   std::unordered_set<const sta::Instance*> resized_insts;
+  net_cap_growth_.clear();
 
   auto record_loads = [&](const BnetPtr& tree) {
     visitTree(
@@ -3837,6 +4014,9 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     search_->findArrivals(max_level);
     edited_loads.clear();
     resized_insts.clear();
+    // Stored timing now includes every resize so far, so the cap growth
+    // guard only spans the next batch of edits.
+    net_cap_growth_.clear();
   };
 
   auto refresh_timing = [&](sta::Vertex* drvr) {

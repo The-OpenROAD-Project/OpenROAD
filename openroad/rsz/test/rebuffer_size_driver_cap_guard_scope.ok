@@ -1,0 +1,23 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+g_a NAND2_X1 g_b NAND2_X1
+slack in -0.0029 g_a/A2 -0.0896 g_b/A2 -0.0849
+worst slack max -0.0896
+tns max -0.1745
+[INFO RSZ-0173] Rebuffering will size drivers together with buffer trees
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |         6
+        1 |     +0.0% |       0 |        0 |         5
+        2 |     +4.0% |       0 |        0 |         4
+        3 |     +4.0% |       0 |        0 |         3
+        4 |     +4.0% |       0 |        0 |         2
+        5 |     +8.0% |       0 |        0 |         1
+    final |     +8.0% |       0 |        0 |         0
+-------------------------------------------------------
+[INFO RSZ-2023] Resized 2 drivers while rebuffering.
+g_a NAND2_X2 g_b NAND2_X2
+slack in 0.0051 g_a/A2 -0.0608 g_b/A2 -0.0555
+worst slack max -0.0608
+tns max -0.1163
+[INFO RSZ-0175] Driver sizing during rebuffering has been disabled.
