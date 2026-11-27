@@ -4,15 +4,15 @@
 #include <string>
 
 #include "HelperCallBack.h"
-#include "LoadBalancer.h"
 #include "boost/asio.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/scope_exit.hpp"
 #include "boost/thread/thread.hpp"
-#include "dst/BroadcastJobDescription.h"
-#include "dst/Distributed.h"
-#include "dst/JobMessage.h"
 #include "gtest/gtest.h"
+#include "openroad/dst/BroadcastJobDescription.h"
+#include "openroad/dst/Distributed.h"
+#include "openroad/dst/JobMessage.h"
+#include "openroad/dst/LoadBalancer.h"
 #include "utl/Logger.h"
 
 namespace dst {

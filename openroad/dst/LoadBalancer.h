@@ -10,13 +10,13 @@
 #include <string>
 #include <vector>
 
-#include "BalancerConnection.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/synchronization/mutex.h"
 #include "boost/asio.hpp"
 #include "boost/asio/ip/address.hpp"
 #include "boost/asio/thread_pool.hpp"
 #include "boost/thread/thread.hpp"
+#include "openroad/dst/BalancerConnection.h"
 
 namespace utl {
 class Logger;

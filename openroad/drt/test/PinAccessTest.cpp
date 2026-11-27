@@ -8,11 +8,11 @@
 
 #include "AbstractGraphicsFactory.h"
 #include "drt/TritonRoute.h"
-#include "dst/Distributed.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "openroad/dst/Distributed.h"
 #include "tst/db_fixture.h"
 #include "utl/ServiceRegistry.h"
 

@@ -2,11 +2,11 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 %{
-#include "dst/Distributed.h"
+#include "openroad/dst/Distributed.h"
 #include "ord/OpenRoad.hh"
 %}
 
-%include "../../Exception.i"
+%include "../Exception.i"
 
 %inline %{
 

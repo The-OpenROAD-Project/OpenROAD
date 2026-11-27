@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2026, The OpenROAD Authors
 
-#include "dst/Distributed.h"
-#include "dst/JobCallBack.h"
-#include "dst/JobMessage.h"
+#include "openroad/dst/Distributed.h"
+#include "openroad/dst/JobCallBack.h"
+#include "openroad/dst/JobMessage.h"
 
 namespace dst {
 
