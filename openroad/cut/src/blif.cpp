@@ -87,13 +87,15 @@ std::optional<bool> constDriverValue(const sta::LibertyPort* port)
 // Removes comment lines.
 void preprocessString(std::string& s)
 {
-  int ind, old_ind = -1;
-
-  while ((ind = s.find('\n', old_ind + 1)) != std::string::npos) {
-    if (s[old_ind + 1] == '#') {
-      s.erase(old_ind + 1, ind - old_ind);
+  size_t line_start = 0;
+  while (line_start < s.size()) {
+    size_t line_end = s.find('\n', line_start);
+    line_end = (line_end == std::string::npos) ? s.size() : line_end + 1;
+    if (s[line_start] == '#') {
+      s.erase(line_start, line_end - line_start);
+    } else {
+      line_start = line_end;
     }
-    old_ind = ind;
   }
 }
 
@@ -512,8 +514,6 @@ void Blif::insertGate(const Gate& gate,
       net_name = connection.substr(equal_sign_pos + 1);
     }
 
-    odb::dbNet* net = findOrCreateNet(net_name, block);
-
     if (mterm_name.empty()) {
       logger_->info(CUT,
                     13,
@@ -524,7 +524,16 @@ void Blif::insertGate(const Gate& gate,
       continue;
     }
 
-    new_inst->findITerm(mterm_name.c_str())->connect(net);
+    odb::dbITerm* iterm = new_inst->findITerm(mterm_name.c_str());
+    if (iterm == nullptr) {
+      logger_->error(CUT,
+                     51,
+                     "Cell type {} has no pin {} for net {} in blif.",
+                     master_name,
+                     mterm_name,
+                     net_name);
+    }
+    iterm->connect(findOrCreateNet(net_name, block));
   }
 }
 
@@ -541,8 +550,7 @@ void Blif::insertTieCell(const Gate& gate,
     return;
   }
   const std::string& connection = gate.connections[0];
-  odb::dbNet* net
-      = findOrCreateNet(connection.substr(connection.find('=') + 1), block);
+  const std::string net_name = connection.substr(connection.find('=') + 1);
 
   // Add tie cells
   const bool is_const0 = master_name == "_const0_";
@@ -550,12 +558,23 @@ void Blif::insertTieCell(const Gate& gate,
   const std::string& const_port
       = is_const0 ? const0_cell_port_ : const1_cell_port_;
   odb::dbMaster* master = block->getDb()->findMaster(const_master.c_str());
-  if (master != nullptr) {
-    const std::string inst_name = uniqueInstName(const_master, block, inst_ids);
-    odb::dbInst* new_inst
-        = odb::dbInst::create(block, master, inst_name.c_str());
-    new_inst->findITerm(const_port.c_str())->connect(net);
+  if (master == nullptr) {
+    logger_->error(CUT,
+                   52,
+                   "No tie-{} cell found for constant net {}. Specify one with "
+                   "-tie{}_port.",
+                   is_const0 ? "low" : "high",
+                   net_name,
+                   is_const0 ? "lo" : "hi");
   }
+  const std::string inst_name = uniqueInstName(const_master, block, inst_ids);
+  odb::dbInst* new_inst = odb::dbInst::create(block, master, inst_name.c_str());
+  odb::dbITerm* iterm = new_inst->findITerm(const_port.c_str());
+  if (iterm == nullptr) {
+    logger_->error(
+        CUT, 53, "Tie cell {} has no pin {}.", const_master, const_port);
+  }
+  iterm->connect(findOrCreateNet(net_name, block));
 }
 
 std::string Blif::uniqueInstName(const std::string& master_name,

@@ -11,6 +11,7 @@ COMPULSORY_TESTS = [
     "aes_nangate45",
     "blif_reader",
     "blif_reader_const",
+    "blif_reader_no_tie",
     "blif_reader_sequential",
     "blif_writer",
     "blif_writer_consts",

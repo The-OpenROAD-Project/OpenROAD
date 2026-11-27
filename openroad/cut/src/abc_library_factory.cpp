@@ -243,11 +243,13 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcInputPins(
   return result;
 }
 
-abc::SC_Timings* AbcLibraryFactory::CreateAbcTiming(sta::LibertyCell* cell,
-                                                    sta::TimingArcSet* arc_set)
+void AbcLibraryFactory::AddAbcTiming(abc::SC_Pin* output_pin,
+                                     sta::LibertyCell* cell,
+                                     sta::TimingArcSet* arc_set)
 {
   sta::Units* units = cell->libertyLibrary()->units();
   abc::SC_Timings* timings = abc::Abc_SclTimingsAlloc();
+  abc::Vec_PtrPush(&output_pin->vRTimings, timings);
   timings->pName = strdup(arc_set->from()->name().c_str());
   abc::SC_Timing* time_table = abc::Abc_SclTimingAlloc();
   abc::Vec_PtrPush(&timings->vTimings, time_table);
@@ -292,8 +294,6 @@ abc::SC_Timings* AbcLibraryFactory::CreateAbcTiming(sta::LibertyCell* cell,
       &time_table->pRiseTrans, rise_gate_model->slewModel(), units);
   AbcPopulateAbcSurfaceFromSta(
       &time_table->pFallTrans, fall_gate_model->slewModel(), units);
-
-  return timings;
 }
 
 std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
@@ -375,7 +375,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
       }
       pins.insert(arc_pin_name);
 
-      abc::Vec_PtrPush(&output_pin->vRTimings, CreateAbcTiming(cell, arc_set));
+      AddAbcTiming(output_pin, cell, arc_set);
     }
 
     result.push_back(output_pin);
