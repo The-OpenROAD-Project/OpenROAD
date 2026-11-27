@@ -8,6 +8,9 @@
 /*   SDFF_PP0    TRAP: smallest of all, synchronous reset, not a base cell */
 /*   DFFE_PP     TRAP: enable flop, not a base cell; the register to unmap */
 /*   DFF_NP0     negedge base cell with an active-high reset: tied low */
+/*   DFF_PD0     TRAP: 3.0, but its reset reads the data pin too (R * D): */
+/*               holding it inactive by constants would tie D */
+/*   DFF_PC0     TRAP: 3.0, the same with the clock pin (R * CK) */
 /* No timing tables on purpose: decompose reads FUNCTIONS, not delays. */
 /* ========================================================================== */
 library (sequnmap_async_only) {
@@ -224,6 +227,58 @@ library (sequnmap_async_only) {
       clocked_on : "!CK";
       next_state : "D";
       clear : "R";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (R) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+    }
+  }
+
+  cell (DFF_PD0) {
+    area : 3.0;
+    ff (IQ, IQN) {
+      clocked_on : "CK";
+      next_state : "D";
+      clear : "(R * D)";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (R) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+    }
+  }
+
+  cell (DFF_PC0) {
+    area : 3.0;
+    ff (IQ, IQN) {
+      clocked_on : "CK";
+      next_state : "D";
+      clear : "(R * CK)";
     }
     pin (D) {
       direction : input;

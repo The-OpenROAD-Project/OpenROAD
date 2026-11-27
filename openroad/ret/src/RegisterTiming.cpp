@@ -54,7 +54,7 @@ float registerClockToQ(sta::dbSta* sta,
     }
     for (const sta::TimingArc* arc : set->arcs()) {
       const sta::GateTableModel* model
-          = dynamic_cast<const sta::GateTableModel*>(arc->model());
+          = arc->gateTableModel(sta->cmdScene(), sta::MinMax::max());
       if (model == nullptr) {
         continue;
       }
@@ -83,7 +83,8 @@ float registerSetupTime(sta::dbSta* sta,
     }
     for (const sta::TimingArc* arc : set->arcs()) {
       const sta::CheckTableModel* model
-          = dynamic_cast<const sta::CheckTableModel*>(arc->model());
+          = dynamic_cast<const sta::CheckTableModel*>(
+              arc->checkModel(sta->cmdScene(), sta::MinMax::max()));
       if (model == nullptr) {
         continue;
       }

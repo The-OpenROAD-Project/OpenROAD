@@ -17,6 +17,7 @@
 #include "odb/db.h"
 #include "ret/Retimer.h"
 #include "sta/Delay.hh"
+#include "sta/Scene.hh"
 #include "utl/Logger.h"
 
 namespace ret {
@@ -33,6 +34,20 @@ bool notWorse(const StaSlack& a, const StaSlack& start)
          && a.total >= start.total - kStaSlackEps
          && a.hold_worst >= start.hold_worst - kStaSlackEps
          && a.hold_total >= start.hold_total - kStaSlackEps;
+}
+
+std::vector<odb::dbITerm*> sharedNetDrivers(odb::dbBlock* block)
+{
+  std::vector<odb::dbITerm*> drivers;
+  for (odb::dbNet* net : block->getNets()) {
+    odb::dbITerm* driver = !net->getSigType().isSupply() && hasSecondDriver(net)
+                               ? net->getFirstOutput()
+                               : nullptr;
+    if (driver != nullptr) {
+      drivers.push_back(driver);
+    }
+  }
+  return drivers;
 }
 
 }  // namespace
@@ -104,6 +119,31 @@ StaCheck::StaCheck(sta::dbSta* sta,
 {
 }
 
+void StaCheck::warnOtherScene(const StaSlack& slack) const
+{
+  const sta::SceneSeq& scenes = sta_->scenes();
+  const sta::Scene* current = sta_->cmdScene();
+  const sta::Scene* failing = nullptr;
+  for (size_t i = 0; i < scenes.size(); ++i) {
+    const bool fails = slack.scenes[i].worst < -kStaSlackEps;
+    if (fails && scenes[i] == current) {
+      return;
+    }
+    if (fails && failing == nullptr) {
+      failing = scenes[i];
+    }
+  }
+  if (failing != nullptr) {
+    logger_->warn(utl::RET,
+                  50,
+                  "Scene {} fails timing, but the search reads the current "
+                  "scene, {}, which meets it; make the failing one current "
+                  "with set_scene.",
+                  failing->name(),
+                  current->name());
+  }
+}
+
 void StaCheck::reportStart(const StaSlack& slack, const int registers) const
 {
   logger_->report(
@@ -143,7 +183,9 @@ void StaCheck::reportRow(const std::string& round,
 void StaCheck::run(const RetimeOptions& options)
 {
   placer_->prepare();
-  const StaSlack before = staSlack(sta_, *guard_);
+  shared_drivers_ = sharedNetDrivers(block_);
+  const StaSlack before = slack();
+  warnOtherScene(before);
   const int registers_before = registerCount();
   int total = 0;
   int left = options.max_moves;  // <= 0: no cap
@@ -176,7 +218,7 @@ void StaCheck::run(const RetimeOptions& options)
   if (table) {
     logger_->report("{:->75}", "");
   }
-  const StaSlack after = staSlack(sta_, *guard_);
+  const StaSlack after = slack();
   logger_->info(utl::RET,
                 53,
                 "Retime: slides {}, rounds {}, WNS {}, TNS {}, registers {}, "
@@ -203,7 +245,7 @@ StaCheck::Trial StaCheck::runTrial(const std::vector<odb::dbInst*>& slides,
     trial.applied = applied > 0;
     if (trial.applied) {
       trial.placed = placer_->placeNewCells(new_cells_.inBlockOrder(), *guard_);
-      trial.slack = staSlack(sta_, *guard_);
+      trial.slack = slack();
     }
   } catch (...) {
     odb::dbDatabase::undoEco(block_);
@@ -230,6 +272,11 @@ void StaCheck::keepTrial(const Trial& trial, Round& round)
   round.placed = trial.placed;
 }
 
+StaSlack StaCheck::slack() const
+{
+  return staSlack(sta_, *guard_, shared_drivers_);
+}
+
 int StaCheck::registerCount() const
 {
   return new_cells_.registerCount() - discards_->registerCount();
@@ -246,7 +293,7 @@ std::vector<odb::dbInst*> StaCheck::prefix(
 StaCheck::Round StaCheck::runRound(const int limit, const StaSlack& start)
 {
   Round round;
-  round.slack = staSlack(sta_, *guard_);
+  round.slack = slack();
   const StaSlack before = round.slack;
   const std::vector<odb::dbInst*> slides = propose_(limit);
   // All the slides, then ever shorter prefixes until STA accepts one.

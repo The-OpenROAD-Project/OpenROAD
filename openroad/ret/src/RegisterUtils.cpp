@@ -197,10 +197,34 @@ std::vector<odb::dbInst*> inIdOrder(
   return ordered;
 }
 
+namespace {
+
+void connectSupplyLike(odb::dbInst* inst, odb::dbInst* like)
+{
+  for (odb::dbITerm* pin : like->getITerms()) {
+    odb::dbNet* net = pin->getNet();
+    if (!pin->getSigType().isSupply() || net == nullptr
+        || !net->getSigType().isSupply()) {
+      continue;
+    }
+    odb::dbITerm* same = inst->findITerm(pin->getMTerm()->getConstName());
+    if (same != nullptr && same->getSigType() == pin->getSigType()) {
+      same->connect(net);
+      // As global_connect leaves it.
+      if (pin->isSpecial()) {
+        same->setSpecial();
+      }
+    }
+  }
+}
+
+}  // namespace
+
 odb::dbInst* makeCell(sta::dbSta* sta,
                       sta::Instance* parent,
                       const char* base_name,
-                      odb::dbMaster* master)
+                      odb::dbMaster* master,
+                      odb::dbInst* like)
 {
   sta::dbNetwork* network = sta->getDbNetwork();
   const std::string name = network->block()->makeNewInstName(
@@ -210,6 +234,7 @@ odb::dbInst* makeCell(sta::dbSta* sta,
   odb::dbInst* inst = network->staToDb(
       network->makeInstance(libertyCell(sta, master), name, parent));
   inst->setSourceType(odb::dbSourceType::TIMING);
+  connectSupplyLike(inst, like);
   return inst;
 }
 
@@ -700,6 +725,13 @@ bool isGrouped(odb::dbInst* inst)
   return inst->getGroup() != nullptr || inst->getRegion() != nullptr;
 }
 
+bool drivesKeptNet(odb::dbITerm* pin)
+{
+  odb::dbNet* net = pin->getNet();
+  return pin->getIoType() == odb::dbIoType::OUTPUT && net != nullptr
+         && (net->isDoNotTouch() || net->getNonDefaultRule() != nullptr);
+}
+
 bool isHeld(odb::dbInst* inst)
 {
   if (inst->isDoNotTouch() || inst->isFixed() || isGrouped(inst)
@@ -708,7 +740,7 @@ bool isHeld(odb::dbInst* inst)
   }
   for (odb::dbITerm* pin : inst->getITerms()) {
     odb::dbNet* net = pin->getNet();
-    if (net != nullptr && net->isDoNotTouch()) {
+    if ((net != nullptr && net->isDoNotTouch()) || drivesKeptNet(pin)) {
       return true;
     }
   }
@@ -817,6 +849,73 @@ bool hasOpenInput(odb::dbInst* inst)
 
 }  // namespace
 
+bool hasTristateOutput(const sta::LibertyCell* cell)
+{
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const sta::LibertyPort* port = port_iter.next();
+    if (port->direction()->isAnyOutput() && port->tristateEnable() != nullptr) {
+      return true;
+    }
+  }
+  return false;
+}
+
+namespace {
+
+bool sameDirection(odb::dbMTerm* pin, const sta::LibertyPort* port)
+{
+  const sta::PortDirection* direction = port->direction();
+  switch (pin->getIoType().getValue()) {
+    case odb::dbIoType::INPUT:
+      return direction->isInput();
+    case odb::dbIoType::OUTPUT:
+      return direction->isOutput() || direction->isTristate();
+    case odb::dbIoType::INOUT:
+      return direction->isBidirect();
+    case odb::dbIoType::FEEDTHRU:
+      return false;
+  }
+  return false;
+}
+
+}  // namespace
+
+bool hasLibertyPins(const sta::LibertyCell* cell, odb::dbMaster* master)
+{
+  int pins = 0;
+  for (odb::dbMTerm* pin : master->getMTerms()) {
+    const sta::LibertyPort* port = cell->findLibertyPort(pin->getConstName());
+    const bool supply
+        = pin->getSigType().isSupply()
+          || (port != nullptr && port->direction()->isPowerGround());
+    if (supply) {
+      continue;
+    }
+    if (port == nullptr || !sameDirection(pin, port)) {
+      return false;
+    }
+    ++pins;
+  }
+  int ports = 0;
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const sta::PortDirection* direction = port_iter.next()->direction();
+    if (!direction->isPowerGround() && !direction->isInternal()) {
+      ++ports;
+    }
+  }
+  return pins == ports;
+}
+
+bool isReplaceable(const sta::LibertyCell* cell,
+                   const sta::Sequential* seq,
+                   odb::dbMaster* master)
+{
+  return clockMTerm(seq, master) != nullptr && !hasTristateOutput(cell)
+         && hasLibertyPins(cell, master);
+}
+
 bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst)
 {
   if (isScanCell(sta, inst) || hasOpenInput(inst)) {
@@ -824,7 +923,8 @@ bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst)
   }
   const sta::Sequential* seq = singleSequential(sta, inst);
   if (seq == nullptr || !seq->isRegister()
-      || clockMTerm(seq, inst->getMaster()) == nullptr) {
+      || !isReplaceable(
+          sta->getDbNetwork()->libertyCell(inst), seq, inst->getMaster())) {
     return true;
   }
   return hasLiveAsyncControl(sta, inst, seq);
@@ -857,8 +957,15 @@ bool inactiveAsyncControls(const sta::LibertyCell* cell,
   std::vector<const sta::LibertyPort*> controls;
   collectPorts(seq->clear(), controls);
   collectPorts(seq->preset(), controls);
+  std::vector<const sta::LibertyPort*> live;
+  collectPorts(seq->data(), live);
+  collectPorts(seq->clock(), live);
+  const bool ties_live_pin
+      = std::ranges::any_of(controls, [&](const sta::LibertyPort* port) {
+          return std::ranges::find(live, port) != live.end();
+        });
   if (controls.empty() || controls.size() > kMaxTruthTableInputs
-      || hasUnreadInput(cell, seq)) {
+      || ties_live_pin || hasUnreadInput(cell, seq)) {
     return false;
   }
 
@@ -1112,14 +1219,14 @@ bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b)
 bool isCombinationalGate(sta::dbSta* sta, odb::dbInst* inst)
 {
   const sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
-  if (cell == nullptr || cell->isSequential() || isSpecialCell(cell)) {
+  if (cell == nullptr || cell->isSequential() || isSpecialCell(cell)
+      || hasTristateOutput(cell)) {
     return false;
   }
   sta::LibertyCellPortIterator port_iter(cell);
   while (port_iter.hasNext()) {
     const sta::LibertyPort* port = port_iter.next();
-    if (port->direction()->isAnyOutput()
-        && (port->function() == nullptr || port->tristateEnable() != nullptr)) {
+    if (port->direction()->isAnyOutput() && port->function() == nullptr) {
       return false;
     }
   }

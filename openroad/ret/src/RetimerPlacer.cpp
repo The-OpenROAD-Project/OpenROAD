@@ -47,11 +47,26 @@ StaSlack sceneSlack(sta::dbSta* sta, const sta::Scene* scene)
   return slack;
 }
 
+// What dbInst::swapMaster asks of the two cells.
+bool samePinNames(odb::dbMaster* a, odb::dbMaster* b)
+{
+  return a->getMTermCount() == b->getMTermCount()
+         && std::ranges::all_of(a->getMTerms(), [b](odb::dbMTerm* pin) {
+              return b->findMTerm(pin->getConstName()) != nullptr;
+            });
+}
+
 }  // namespace
 
-StaSlack staSlack(sta::dbSta* sta, est::IncrementalParasiticsGuard& guard)
+StaSlack staSlack(sta::dbSta* sta,
+                  est::IncrementalParasiticsGuard& guard,
+                  const std::vector<odb::dbITerm*>& shared_drivers)
 {
   guard.update();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  for (odb::dbITerm* driver : shared_drivers) {
+    sta->delaysInvalidFrom(network->dbToSta(driver));
+  }
   StaSlack all;
   all.worst = sta::INF;
   for (const sta::Scene* scene : sta->scenes()) {
@@ -152,6 +167,7 @@ const std::vector<odb::dbMaster*>& RetimerPlacer::equivalentMasters(
     }
     odb::dbMaster* other_master = network->staToDb(other);
     if (other_master != nullptr && other_master->getSite() == master->getSite()
+        && samePinNames(master, other_master)
         && seen.insert(other_master).second) {
       by_area.emplace_back(other->area(), other_master);
     }

@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "odb/db.h"
@@ -83,13 +85,9 @@ class Retimer
   // Flat net to its module net in the group's module; empty when flat.
   using ModNets = std::unordered_map<odb::dbNet*, odb::dbModNet*>;
 
-  struct Origins
-  {
-    std::vector<odb::dbInst*> registers;
-    std::unordered_set<odb::dbInst*> seen;
-    std::unordered_set<int> visited;
-    void add(odb::dbInst* reg);
-  };
+  // The original registers behind the crossings traced so far, by gate and
+  // crossing.  A nullptr among them: an input of the gate has none to give.
+  using Origins = std::map<std::pair<int, int>, std::vector<odb::dbInst*>>;
 
   // The original registers that become one register behind a slid gate.
   // Not filled: an input of the gate has none to give.
@@ -111,6 +109,8 @@ class Retimer
   {
     std::vector<const RegisterClass*> classes;
     odb::dbNet* clock_net = nullptr;
+    // One of the registers the chain replaces; nullptr for an empty chain.
+    odb::dbInst* origin = nullptr;
   };
 
   odb::dbBlock* getBlock() const;
@@ -150,17 +150,20 @@ class Retimer
   // gate under retiming r; nullptr marks a position never filled.  An edge
   // that held registers only loses them from the sink end, so the j-th
   // register upstream of the sink is the j-th from the end of its chain.
-  static void originRegistersOnEdge(const RetimingGraph& graph,
-                                    const std::vector<int>& r,
-                                    int u,
-                                    int k,
-                                    int j,
-                                    Origins& out);
-  static void originRegisters(const RetimingGraph& graph,
-                              const std::vector<int>& r,
-                              int v,
-                              int j,
-                              Origins& out);
+  // known: what was traced before under r, added to.
+  static std::vector<odb::dbInst*> originRegistersOnEdge(
+      const RetimingGraph& graph,
+      const std::vector<int>& r,
+      int u,
+      int k,
+      int j,
+      Origins& known);
+  static const std::vector<odb::dbInst*>& originRegisters(
+      const RetimingGraph& graph,
+      const std::vector<int>& r,
+      int v,
+      int j,
+      Origins& known);
 
   int applyAfterUnmapping(const std::vector<int>& r,
                           int slides,
@@ -177,16 +180,16 @@ class Retimer
   static std::vector<odb::dbInst*> chainOrigins(const RetimingGraph& graph,
                                                 const std::vector<int>& r,
                                                 const Sink& sink,
-                                                int p);
+                                                int p,
+                                                Origins& known);
   // The registers a group is rebuilt from share one clock net: the graph
   // pins the gates that registers on different clock nets could reach.
   Chain planChain(const RetimingGraph& graph,
                   const std::vector<int>& r,
-                  const Group& group) const;
+                  const Group& group,
+                  Origins& known) const;
   void checkCrossings(const RetimingGraph& graph, const Plan& plan) const;
-  void rebuildGroup(const Group& group,
-                    const std::vector<const RegisterClass*>& classes,
-                    odb::dbNet* clock_net);
+  void rebuildGroup(const Group& group, const Chain& chain);
   void removeRegister(odb::dbInst* inst);
   // Looked up before the old registers go: they may hold the module's only
   // pin on one of the nets.
@@ -201,11 +204,9 @@ class Retimer
                        const ModNets& mod_nets);
   void tieBaseControls(odb::dbInst* ff, sta::Instance* parent);
   // The new registers are left unplaced; the STA check places them.
-  std::vector<odb::dbNet*> buildChain(
-      odb::dbNet* driver_net,
-      odb::dbNet* clock_net,
-      const std::vector<const RegisterClass*>& classes,
-      const ModNets& mod_nets);
+  std::vector<odb::dbNet*> buildChain(odb::dbNet* driver_net,
+                                      const Chain& chain,
+                                      const ModNets& mod_nets);
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;

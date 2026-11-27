@@ -7,6 +7,7 @@
 #include <functional>
 #include <limits>
 #include <optional>
+#include <set>
 #include <vector>
 
 #include "RetimingGraph.h"
@@ -17,6 +18,7 @@ class dbSta;
 class LibertyCell;
 class Pin;
 class RiseFall;
+class Scene;
 class Vertex;
 }  // namespace sta
 namespace utl {
@@ -83,6 +85,16 @@ class Retime
     auto operator<=>(const FailingGate&) const = default;
   };
 
+  // The gates with a negative slack, worst first.  Kept up to date for the
+  // gates a slide changes, not read again from every gate for each slide.
+  struct FailingGates
+  {
+    std::set<FailingGate> order;
+    std::vector<double> slacks;  // per gate; 0: not in the order
+    void init(int n);
+    void set(int gate, double slack);
+  };
+
   struct Scratch
   {
     std::vector<int> queue;
@@ -107,10 +119,9 @@ class Retime
   std::vector<std::vector<int>> slideNeeds() const;
   static std::vector<int> pathOf(int end,
                                  const std::vector<std::vector<int>>& needs);
-  // Worst first.
-  std::vector<FailingGate> failingGates() const;
+  // Brings failing_ and negative_ up to date for the gates last marked.
+  void updateFailing();
   SlideEffect slideEffect(int v);  // the slide is undone
-  double worstSlack() const;
   double negativeSlackAt(int t) const;
   double slackThrough(int v) const;
   // Infinite when no constrained path runs there.
@@ -196,9 +207,20 @@ class Retime
   // The pin of the source gate driving the edge's first net; null when the
   // net is not driven by that gate.
   odb::dbITerm* edgeSource(const FaninEdge& fe) const;
+  // The input pins on a net.
+  struct NetReaders
+  {
+    float caps = 0.0f;
+    int count = 0;
+  };
+  NetReaders netReaders(odb::dbNet* net) const;
   // The source gate's load once the gate behind the edge's registers reads
-  // its net directly.
-  float sourceLoadAfterSlide(const FaninEdge& fe, odb::dbITerm* source) const;
+  // its net directly.  last_load, readers: of the net the last register
+  // drives.
+  float sourceLoadAfterSlide(const FaninEdge& fe,
+                             float source_load,
+                             float last_load,
+                             const NetReaders& readers) const;
   float loadCap(odb::dbITerm* driver) const;
   // How much later gate u's output gets at `new_load`; `slew`: its output
   // slew then, negative without an arc.
@@ -236,9 +258,13 @@ class Retime
   // Per gate: its outgoing edges as (target, index into fanin_[target]).
   std::vector<std::vector<EdgeRef>> fanout_;
   Scratch scratch_;
+  FailingGates failing_;   // movable gates, by the slack through them
+  FailingGates negative_;  // gates, by the slack of their endpoint
 
   odb::dbMTerm* flop_d_mterm_ = nullptr;
   float flop_d_cap_ = 0.0f;
+  // The command scene: the model is read from it alone.
+  std::vector<sta::Scene*> scenes_;
   int dcalc_ap_ = 0;
   std::vector<int> slides_;
   std::vector<double> gains_;
@@ -264,5 +290,11 @@ class Retime
   std::vector<double> out_tails_;
   bool loops_ = false;  // a combinational loop: the tails are computed whole
 };
+
+// The slides in ranked order: the path whose slides not listed yet gain most
+// comes next, the earlier path on a tie.  paths: each a sorted list of
+// slides; gains: per slide.
+std::vector<int> rankPaths(const std::vector<std::vector<int>>& paths,
+                           const std::vector<double>& gains);
 
 }  // namespace ret

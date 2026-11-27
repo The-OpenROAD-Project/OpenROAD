@@ -14,6 +14,7 @@
 /*             never unmapped */
 /*   DFF_P_SL  an input the sequential does not read, area TRAP below DFF_P: a new cell */
 /*             of it would leave that input open */
+/*   DFF_P_TQ  a tri-state output: never the base, never unmapped */
 /*   DFFE_PP   state feedback */
 /*   DFF_PN0   async clear */
 /* No timing tables on purpose: decompose reads FUNCTIONS, not delays. */
@@ -277,6 +278,32 @@ library (sequnmap_basic) {
     pin (Q) {
       direction : output;
       function : "IQ";
+    }
+  }
+
+  cell (DFF_P_TQ) {
+    area : 2.0;
+    ff (IQ, IQN) {
+      clocked_on : "CK";
+      next_state : "D";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (OE) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      three_state : "!OE";
     }
   }
 

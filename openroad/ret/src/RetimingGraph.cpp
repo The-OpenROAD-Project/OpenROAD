@@ -19,6 +19,7 @@
 #include "sta/ExceptionPath.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "utl/Logger.h"
 
@@ -36,7 +37,7 @@ void RetimingGraph::findClockPeriod()
 {
   clock_period_ = 0.0f;
   int clocks = 0;
-  for (sta::Clock* clock : sta_->cmdMode()->sdc()->clocks()) {
+  for (sta::Clock* clock : sta_->cmdScene()->sdc()->clocks()) {
     if (clock->isVirtual()) {
       continue;
     }
@@ -677,11 +678,7 @@ void RetimingGraph::markDontTouch(odb::dbInst* inst, const int id)
 {
   bool dont_touch = inst->isDoNotTouch();
   for (odb::dbITerm* pin : inst->getITerms()) {
-    odb::dbNet* net = pin->getNet();
-    if (pin->getIoType() == odb::dbIoType::OUTPUT && net != nullptr
-        && net->isDoNotTouch()) {
-      dont_touch = true;
-    }
+    dont_touch = dont_touch || drivesKeptNet(pin);
   }
   if (dont_touch) {
     pinned_[id] = true;
@@ -699,6 +696,38 @@ void RetimingGraph::markDontTouch(odb::dbInst* inst, const int id)
     }
   }
 }
+
+namespace {
+
+// The clock nets of the registers that reach a gate through its inputs,
+// counted up to the second.
+struct ReachingClocks
+{
+  odb::dbNet* first = nullptr;
+  int count = 0;
+
+  // True when it grew.
+  bool add(odb::dbNet* clock)
+  {
+    if (count > 1 || (count == 1 && clock == first)) {
+      return false;
+    }
+    first = count == 0 ? clock : first;
+    ++count;
+    return true;
+  }
+  bool add(const ReachingClocks& other)
+  {
+    const bool grew = other.count > 0 && add(other.first);
+    if (other.count > 1 && count < 2) {
+      count = 2;
+      return true;
+    }
+    return grew;
+  }
+};
+
+}  // namespace
 
 void RetimingGraph::fenceDontTouch()
 {
@@ -720,7 +749,7 @@ void RetimingGraph::fenceDontTouch()
     }
   }
 
-  std::vector<std::unordered_set<odb::dbNet*>> fanin_clocks(nodes_.size());
+  std::vector<ReachingClocks> fanin_clocks(nodes_.size());
   for (int u = 0; u < n; ++u) {
     const int edge_count = static_cast<int>(adj_[u].size());
     for (int k = 0; k < edge_count; ++k) {
@@ -730,34 +759,31 @@ void RetimingGraph::fenceDontTouch()
       }
       const EdgePhys& phys = phys_[u][k];
       for (odb::dbInst* flop : phys.flops) {
-        fanin_clocks[target].insert(regClass(flop).clock);
+        fanin_clocks[target].add(regClass(flop).clock);
       }
       if (!phys.flops.empty() && fixed_nets.contains(chainNet(phys))) {
         pinned_[target] = true;
       }
     }
   }
-  bool grew = true;
-  while (grew) {
-    grew = false;
-    for (int u = 0; u < n; ++u) {
-      if (fanin_clocks[u].empty()) {
-        continue;
-      }
-      for (const Edge& e : adj_[u]) {
-        if (e.weight > 0) {
-          continue;
-        }
-        for (odb::dbNet* clock : fanin_clocks[u]) {
-          if (fanin_clocks[e.target].insert(clock).second) {
-            grew = true;
-          }
-        }
+  // A gate passes its clocks on each time they grow, twice at most.
+  std::vector<int> open;
+  for (int u = 0; u < n; ++u) {
+    if (fanin_clocks[u].count > 0) {
+      open.push_back(u);
+    }
+  }
+  while (!open.empty()) {
+    const int u = open.back();
+    open.pop_back();
+    for (const Edge& e : adj_[u]) {
+      if (e.weight == 0 && fanin_clocks[e.target].add(fanin_clocks[u])) {
+        open.push_back(e.target);
       }
     }
   }
   for (int v = 0; v < n; ++v) {
-    if (fanin_clocks[v].size() > 1) {
+    if (fanin_clocks[v].count > 1) {
       pinned_[v] = true;
     }
   }

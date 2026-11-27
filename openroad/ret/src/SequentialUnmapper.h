@@ -33,7 +33,8 @@ class Discards;
 // Rewrites synchronous registers as a plain D flip-flop plus logic
 // (inverters, 2-input ANDs and ORs, tie cells) computing the cell's liberty
 // `next_state`.  Registers with an asynchronous control that is not tied
-// inactive, latches, scan cells, and multi-bit cells are left untouched.
+// inactive, latches, scan cells, multi-bit cells, and cells that cannot be
+// replaced (isReplaceable) are left untouched.
 // Without a plain D flip-flop the base cell has asynchronous controls, tied
 // inactive on each new instance.  New cells go into the register's module.
 class SequentialUnmapper
@@ -120,7 +121,8 @@ class SequentialUnmapper
 
   // A tie cell follows only the liberty dont_use: flows ban tie cells with
   // set_dont_use to keep them out of sizing and still tie nets with them
-  // (ORFS on gt2n, repair_tie_fanout).
+  // (ORFS on gt2n, repair_tie_fanout).  A cell whose LEF pins are not its
+  // liberty pins (hasLibertyPins) is not usable either.
   bool usableCell(const sta::LibertyCell* cell, bool tie = false) const;
   // The cell as a base register: a D flip-flop of this clock edge with a
   // state output and no scan pin, whatever its asynchronous controls.  No
@@ -192,7 +194,8 @@ class SequentialUnmapper
   // Module net of each net the register reads; empty in a flat netlist.
   std::unordered_map<odb::dbNet*, odb::dbModNet*> mod_net_;
   sta::Instance* parent_ = nullptr;
-  Discards* discards_ = nullptr;  // of the run in progress
+  odb::dbInst* register_ = nullptr;  // the one being unmapped
+  Discards* discards_ = nullptr;     // of the run in progress
   const sta::LibertyPort* out_port_ = nullptr;
   const sta::LibertyPort* out_inv_port_ = nullptr;
   odb::dbNet* state_net_ = nullptr;

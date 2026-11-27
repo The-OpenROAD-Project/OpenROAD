@@ -54,7 +54,10 @@ cc_library(
     name = "ret_internal",
     testonly = True,
     hdrs = [
+        "src/RegisterUtils.h",
+        "src/Retime.h",
         "src/RetimerPlacer.h",
+        "src/RetimingGraph.h",
         "src/SequentialUnmapper.h",
         "src/StaCheck.h",
     ],

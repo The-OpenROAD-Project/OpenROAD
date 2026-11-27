@@ -377,4 +377,82 @@ MACRO DFF_NP0
   END Q
 END DFF_NP0
 
+MACRO DFF_PD0
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 1.4 BY 1.0 ;
+  SITE core ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.25 0.15 0.35 ;
+    END
+  END D
+  PIN R
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.45 0.15 0.55 ;
+    END
+  END R
+  PIN CK
+    DIRECTION INPUT ;
+    USE CLOCK ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.05 0.15 0.15 ;
+    END
+  END CK
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 1.25 0.45 1.35 0.55 ;
+    END
+  END Q
+END DFF_PD0
+
+MACRO DFF_PC0
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 1.4 BY 1.0 ;
+  SITE core ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.25 0.15 0.35 ;
+    END
+  END D
+  PIN R
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.45 0.15 0.55 ;
+    END
+  END R
+  PIN CK
+    DIRECTION INPUT ;
+    USE CLOCK ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.05 0.15 0.15 ;
+    END
+  END CK
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 1.25 0.45 1.35 0.55 ;
+    END
+  END Q
+END DFF_PC0
+
 END LIBRARY

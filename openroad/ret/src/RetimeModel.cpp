@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <optional>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -104,12 +105,21 @@ std::optional<float> arrivalThroughGate(sta::Graph* graph,
   return latest;
 }
 
+// In the library of the scene.
+float sceneCap(const sta::Scene* scene, const sta::LibertyPort* port)
+{
+  const sta::LibertyPort* scene_port
+      = port->scenePort(scene, sta::MinMax::max());
+  return (scene_port != nullptr ? scene_port : port)->capacitance();
+}
+
 }  // namespace
 
 void Retime::buildModel()
 {
   sta_->updateTiming(/*full=*/false);
-  dcalc_ap_ = sta_->cmdScene()->dcalcAnalysisPtIndex(sta::MinMax::max());
+  scenes_ = {sta_->cmdScene()};
+  dcalc_ap_ = scenes_.front()->dcalcAnalysisPtIndex(sta::MinMax::max());
 
   resolveFlopDCap();
   computeWireArcs();
@@ -131,7 +141,7 @@ void Retime::resolveFlopDCap()
     const sta::LibertyPort* d
         = liberty_cell->findLibertyPort(flop_d_mterm_->getConstName());
     if (d != nullptr) {
-      flop_d_cap_ = d->capacitance();
+      flop_d_cap_ = sceneCap(scenes_.front(), d);
     }
   }
   if (flop_d_cap_ <= 0.0f) {
@@ -201,8 +211,8 @@ float Retime::pinArrival(odb::dbITerm* db_pin) const
 
 float Retime::arrivalAt(sta::Vertex* vertex, const sta::RiseFall* rf) const
 {
-  return sta::delayAsFloat(sta_->arrival(
-      vertex, rf->asRiseFallBoth(), sta_->scenes(), sta::MinMax::max()));
+  return sta::delayAsFloat(
+      sta_->arrival(vertex, rf->asRiseFallBoth(), scenes_, sta::MinMax::max()));
 }
 
 float Retime::getGateArc(odb::dbITerm* input_pin) const
@@ -295,7 +305,8 @@ float Retime::characterizeArc(const int v,
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   const sta::MinMax* min_max = sta::MinMax::max();
-  const sta::Sdc* sdc = sta_->cmdScene()->sdc();
+  const sta::Scene* scene = scenes_.front();
+  const sta::Sdc* sdc = scene->sdc();
   odb::dbInst* gate = graph_->nodes()[v];
   const sta::Pin* pin = network->dbToSta(sink);
   const sta::LibertyCell* cell = network->libertyCell(gate);
@@ -320,8 +331,7 @@ float Retime::characterizeArc(const int v,
       continue;
     }
     for (const sta::TimingArc* arc : set->arcs()) {
-      const sta::GateTableModel* model
-          = dynamic_cast<const sta::GateTableModel*>(arc->model());
+      const sta::GateTableModel* model = arc->gateTableModel(scene, min_max);
       if (model == nullptr) {
         continue;
       }
@@ -343,7 +353,7 @@ float Retime::characterizeArc(const int v,
 float Retime::pinCap(odb::dbITerm* pin) const
 {
   const sta::LibertyPort* port = libertyPort(sta_, pin);
-  return port != nullptr ? port->capacitance() : 0.0f;
+  return port != nullptr ? sceneCap(scenes_.front(), port) : 0.0f;
 }
 
 void Retime::calibrateArcs(const int t)
@@ -423,6 +433,25 @@ std::optional<float> Retime::staArc(odb::dbITerm* input,
 
 void Retime::computeCrossExtra()
 {
+  // Read once per driver and per net, not per edge: one net can be on
+  // thousands of edges.
+  std::unordered_map<odb::dbITerm*, float> loads;
+  const auto load_of = [&](odb::dbITerm* driver) {
+    const auto [entry, is_new] = loads.try_emplace(driver);
+    if (is_new) {
+      entry->second = loadCap(driver);
+    }
+    return entry->second;
+  };
+  std::unordered_map<odb::dbNet*, NetReaders> readers;
+  const auto readers_of = [&](odb::dbNet* net) {
+    const auto [entry, is_new] = readers.try_emplace(net);
+    if (is_new) {
+      entry->second = netReaders(net);
+    }
+    return entry->second;
+  };
+
   const int n = graph_->size();
   for (int t = 0; t < n; ++t) {
     for (FaninEdge& fe : fanin_[t]) {
@@ -433,9 +462,13 @@ void Retime::computeCrossExtra()
       if (source == nullptr) {
         continue;
       }
+      odb::dbITerm* last = fe.phys->driver;
+      const float source_load = load_of(source);
+      const float new_load = sourceLoadAfterSlide(
+          fe, source_load, load_of(last), readers_of(last->getNet()));
       float slew = -1.0f;
-      const float source_extra = slowdownAtLoad(
-          fe.source, loadCap(source), sourceLoadAfterSlide(fe, source), slew);
+      const float source_extra
+          = slowdownAtLoad(fe.source, source_load, new_load, slew);
       const float gate_extra
           = slew >= 0.0f ? slowdownAtSlew(t, fe.sink, slew) : 0.0f;
       fe.cross_extra = source_extra + gate_extra;
@@ -456,22 +489,28 @@ odb::dbITerm* Retime::edgeSource(const FaninEdge& fe) const
   return source;
 }
 
-float Retime::sourceLoadAfterSlide(const FaninEdge& fe,
-                                   odb::dbITerm* source) const
+Retime::NetReaders Retime::netReaders(odb::dbNet* net) const
 {
-  float reader_caps = 0.0f;
-  int readers = 0;
-  for (odb::dbITerm* reader : fe.phys->driver->getNet()->getITerms()) {
+  NetReaders readers;
+  for (odb::dbITerm* reader : net->getITerms()) {
     if (reader->getIoType() == odb::dbIoType::INPUT) {
-      reader_caps += pinCap(reader);
-      ++readers;
+      readers.caps += pinCap(reader);
+      ++readers.count;
     }
   }
+  return readers;
+}
+
+float Retime::sourceLoadAfterSlide(const FaninEdge& fe,
+                                   const float source_load,
+                                   const float last_load,
+                                   const NetReaders& readers) const
+{
   // The gate takes its share of the wire the last register drove.
-  const float wire = std::max(loadCap(fe.phys->driver) - reader_caps, 0.0f);
+  const float wire = std::max(last_load - readers.caps, 0.0f);
   const float load
-      = loadCap(source) + pinCap(fe.sink) + wire / std::max(readers, 1);
-  if (readers > 1) {
+      = source_load + pinCap(fe.sink) + wire / std::max(readers.count, 1);
+  if (readers.count > 1) {
     return load;
   }
   // The gate was the only reader: the first register comes off the net.
@@ -731,8 +770,8 @@ double Retime::endShiftAt(const sta::Pin* pin, const double arrival) const
   if (vertex == nullptr || !sta_->search()->isEndpoint(vertex)) {
     return kNegInf;
   }
-  const float slack
-      = sta::delayAsFloat(sta_->slack(vertex, sta::MinMax::max()));
+  const float slack = sta::delayAsFloat(sta_->slack(
+      vertex, sta::RiseFallBoth::riseFall(), scenes_, sta::MinMax::max()));
   return slack < sta::INF / 2 ? requiredTime() - slack - arrival : kNegInf;
 }
 

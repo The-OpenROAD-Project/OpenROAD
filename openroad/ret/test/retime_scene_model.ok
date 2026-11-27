@@ -1,0 +1,21 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+command scene fast
+fast: worst slack 0.3062
+slow: worst slack -0.3470
+[WARNING RET-0050] Scene slow fails timing, but the search reads the current scene, fast, which meets it; make the failing one current with set_scene.
+[INFO RET-0014] Retiming graph: 18 gates, 17 edges, 2 registers, 2 pinned gates, 0 fenced registers.
+[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.3470, TNS -0.3470, registers 2, placed 0, resized 0.
+fast: worst slack 0.3062
+slow: worst slack -0.3470
+command scene slow
+fast: worst slack 0.3062
+slow: worst slack -0.3470
+[INFO RET-0014] Retiming graph: 18 gates, 17 edges, 2 registers, 2 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.3470 |       -0.3470 |         2
+     1 |       14 |      1 |   14 |      0.0147 |        0.0000 |         2
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 14, rounds 1, WNS 0.0147, TNS 0.0000, registers 2, placed 0, resized 0.
+fast: worst slack 0.3785
+slow: worst slack 0.0147

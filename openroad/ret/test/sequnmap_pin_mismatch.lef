@@ -1,0 +1,156 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+# Macros-only LEF, layered on the tech that sequnmap_basic.lef creates.
+# Load with loadLibaryLef(tech, ...) AFTER the basic pair; LAYER met1 and
+# SITE core come from that tech.
+
+MACRO INV_DIR
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.4 BY 1.0 ;
+  SITE core ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.45 0.15 0.55 ;
+    END
+  END A
+  PIN Y
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.25 0.45 0.35 0.55 ;
+    END
+  END Y
+END INV_DIR
+
+MACRO AND2_EXTRA
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.8 BY 1.0 ;
+  SITE core ;
+  PIN EXTRA
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.05 0.15 0.15 ;
+    END
+  END EXTRA
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.25 0.15 0.35 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.65 0.15 0.75 ;
+    END
+  END B
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.65 0.45 0.75 0.55 ;
+    END
+  END Y
+END AND2_EXTRA
+
+MACRO OR2_MISSING
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.6 BY 1.0 ;
+  SITE core ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.25 0.15 0.35 ;
+    END
+  END A
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.45 0.45 0.55 0.55 ;
+    END
+  END Y
+END OR2_MISSING
+
+MACRO TIE1_EXTRA
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.4 BY 1.0 ;
+  SITE core ;
+  PIN EN
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.45 0.15 0.55 ;
+    END
+  END EN
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.25 0.45 0.35 0.55 ;
+    END
+  END Y
+END TIE1_EXTRA
+
+MACRO DFF_P_EXTRA
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 1.0 BY 1.0 ;
+  SITE core ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.45 0.15 0.55 ;
+    END
+  END D
+  PIN SE
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.65 0.15 0.75 ;
+    END
+  END SE
+  PIN CK
+    DIRECTION INPUT ;
+    USE CLOCK ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.05 0.15 0.15 ;
+    END
+  END CK
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.85 0.45 0.95 0.55 ;
+    END
+  END Q
+END DFF_P_EXTRA
+
+END LIBRARY

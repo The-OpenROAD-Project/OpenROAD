@@ -3,3 +3,14 @@ worst slack max -0.0503
 [WARNING RET-0044] The design is routed; it is not retimed.
 worst slack max -0.0503
 q1 keeps its wire: 1
+[WARNING RET-0044] The design is routed; it is not retimed.
+q1 keeps its special wire: 1
+[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 2 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.0503 |       -0.0503 |         2
+     1 |        3 |      1 |    3 |     -0.0297 |       -0.0297 |         2
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 3, rounds 1, WNS -0.0297, TNS -0.0297, registers 2, placed 0, resized 0.
+VDD special wires: 1
+VSS special wires: 1

@@ -3,7 +3,6 @@
 
 #include "SequentialUnmapper.h"
 
-#include <algorithm>
 #include <cstddef>
 #include <string>
 #include <unordered_set>
@@ -81,8 +80,10 @@ const sta::LibertyPort* onlyOutput(const sta::LibertyCell* cell,
     if (port->direction()->isOutput()) {
       output = port;
       ++output_count;
-    } else {
+    } else if (port->direction()->isInput()) {
       ++input_count;
+    } else {
+      return nullptr;
     }
   }
   return input_count == inputs && output_count == 1 ? output : nullptr;
@@ -111,7 +112,9 @@ SequentialUnmapper::SequentialUnmapper(odb::dbDatabase* db,
 bool SequentialUnmapper::usableCell(const sta::LibertyCell* cell,
                                     const bool tie) const
 {
-  return isUsableCell(cell, tie ? nullptr : resizer_);
+  odb::dbMaster* master = db_->findMaster(cell->name().c_str());
+  return isUsableCell(cell, tie ? nullptr : resizer_) && master != nullptr
+         && hasLibertyPins(cell, master);
 }
 
 bool SequentialUnmapper::prepare()
@@ -378,7 +381,9 @@ std::vector<SequentialUnmapper::Register> SequentialUnmapper::collectRegisters(
     const sta::Sequential* seq = singleSequential(sta_, inst);
     if (seq == nullptr
         || (seq->isRegister()
-            && clockMTerm(seq, inst->getMaster()) == nullptr)) {
+            && !isReplaceable(sta_->getDbNetwork()->libertyCell(inst),
+                              seq,
+                              inst->getMaster()))) {
       ++untouched.other;
     } else if (!seq->isRegister()) {
       ++untouched.latches;
@@ -449,6 +454,7 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
   in_port_net_.clear();
   mod_net_.clear();
   setParent(inst);
+  register_ = inst;
   out_port_ = seq->output();
   out_inv_port_ = seq->outputInv();
 
@@ -466,7 +472,8 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
   }
 
   sta::dbNetwork* network = sta_->getDbNetwork();
-  odb::dbInst* flop = makeCell(sta_, parent_, "unmap_ff", base.master);
+  odb::dbInst* flop
+      = makeCell(sta_, parent_, "unmap_ff", base.master, register_);
   odb::dbITerm* clock_pin = registerClockPin(sta_, flop);
   if (clock_pin == nullptr) {
     logger_->warn(utl::RET,
@@ -638,7 +645,7 @@ odb::dbNet* SequentialUnmapper::makeGate(const char* base_name,
                                          odb::dbMaster* master,
                                          const std::vector<odb::dbNet*>& inputs)
 {
-  odb::dbInst* gate = makeCell(sta_, parent_, base_name, master);
+  odb::dbInst* gate = makeCell(sta_, parent_, base_name, master, register_);
   odb::dbNet* output = makeNet(sta_, parent_, "unmap_net");
   size_t next = 0;
   for (odb::dbITerm* iterm : gate->getITerms()) {
@@ -646,8 +653,7 @@ odb::dbNet* SequentialUnmapper::makeGate(const char* base_name,
       continue;
     }
     if (iterm->getIoType() == odb::dbIoType::INPUT) {
-      connectPin(iterm, inputs[std::min(next, inputs.size() - 1)], mod_net_);
-      ++next;
+      connectPin(iterm, inputs[next++], mod_net_);
     } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
       iterm->connect(output);
     }
@@ -673,8 +679,8 @@ odb::dbNet* SequentialUnmapper::makeOr(odb::dbNet* a, odb::dbNet* b)
 odb::dbNet* SequentialUnmapper::makeTie(const bool one)
 {
   const TieCell& cell = tieCell(one);
-  odb::dbInst* tie
-      = makeCell(sta_, parent_, one ? "unmap_tie1" : "unmap_tie0", cell.master);
+  odb::dbInst* tie = makeCell(
+      sta_, parent_, one ? "unmap_tie1" : "unmap_tie0", cell.master, register_);
   odb::dbNet* output = makeNet(sta_, parent_, "unmap_net");
   if (cell.output != nullptr) {
     tie->getITerm(cell.output)->connect(output);

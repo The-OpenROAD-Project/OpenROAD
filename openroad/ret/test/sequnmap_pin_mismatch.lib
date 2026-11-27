@@ -1,0 +1,98 @@
+/* ========================================================================== */
+/* sequnmap_pin_mismatch.lib: cells whose LEF pins are not their liberty pins, */
+/* layered on sequnmap_basic.  Each is a TRAP priced below the basic cell it */
+/* stands in for, and none may be the cell of a new instance: */
+/*   INV_DIR      Y is an inout pin in LEF */
+/*   AND2_EXTRA   LEF has an input EXTRA, listed before A and B */
+/*   OR2_MISSING  LEF has no pin B */
+/*   TIE1_EXTRA   LEF has an input EN */
+/*   DFF_P_EXTRA  LEF has an input SE */
+/* No timing tables on purpose: decompose reads FUNCTIONS, not delays. */
+/* ========================================================================== */
+library (sequnmap_pin_mismatch) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  capacitive_load_unit (1, pf);
+  pulling_resistance_unit : "1kohm";
+  leakage_power_unit : "1nW";
+  default_fanout_load : 1.0;
+  default_inout_pin_cap : 0.001;
+  default_input_pin_cap : 0.001;
+  default_output_pin_cap : 0.0;
+
+  cell (INV_DIR) {
+    area : 0.5;
+    pin (A) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Y) {
+      direction : output;
+      function : "!A";
+    }
+  }
+
+  cell (AND2_EXTRA) {
+    area : 0.5;
+    pin (A) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (B) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Y) {
+      direction : output;
+      function : "(A * B)";
+    }
+  }
+
+  cell (OR2_MISSING) {
+    area : 0.5;
+    pin (A) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (B) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Y) {
+      direction : output;
+      function : "(A + B)";
+    }
+  }
+
+  cell (TIE1_EXTRA) {
+    area : 0.5;
+    pin (Y) {
+      direction : output;
+      function : "1";
+    }
+  }
+
+  cell (DFF_P_EXTRA) {
+    area : 1.0;
+    ff (IQ, IQN) {
+      clocked_on : "CK";
+      next_state : "D";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+    }
+  }
+
+}

@@ -66,10 +66,13 @@ void sortUnique(std::vector<int>& values);
 std::vector<odb::dbInst*> inIdOrder(
     const std::unordered_set<odb::dbInst*>& cells);
 
+// like: the cell the new one replaces or serves.  Its supply pins give the
+// nets of the new cell's supply pins of the same name.
 odb::dbInst* makeCell(sta::dbSta* sta,
                       sta::Instance* parent,
                       const char* base_name,
-                      odb::dbMaster* master);
+                      odb::dbMaster* master,
+                      odb::dbInst* like);
 odb::dbNet* makeNet(sta::dbSta* sta,
                     sta::Instance* parent,
                     const char* base_name);
@@ -117,9 +120,13 @@ void connectPin(
 // In a group or a region (a power domain, a placement region): a new cell
 // would be in neither.
 bool isGrouped(odb::dbInst* inst);
+// The pin drives a net that keeps its driver and its loads: a don't-touch
+// net, or one with a non-default routing rule, which a net made for the
+// loads would not have.
+bool drivesKeptNet(odb::dbITerm* pin);
 // A cell that must stay as it is: don't-touch, fixed, grouped, in a scan
-// chain, or with a pin on a don't-touch net, supply nets included (odb
-// refuses to delete such a cell).
+// chain, driving a net that is kept (drivesKeptNet), or with a pin on a
+// don't-touch net, supply nets included (odb refuses to delete such a cell).
 bool isHeld(odb::dbInst* inst);
 
 // An SDC constraint on one of the cell's pins or on a net it drives (case
@@ -137,8 +144,21 @@ std::vector<odb::dbInst*> portDelayReferenceCells(sta::dbSta* sta);
 // A cell with a scan pin in LEF or a liberty test_cell.
 bool isScanCell(sta::dbSta* sta, odb::dbInst* inst);
 
+// An output of the cell does not always drive (three_state).
+bool hasTristateOutput(const sta::LibertyCell* cell);
+// The signal pins of the master are the liberty pins of the cell, each an
+// input, an output or an inout in both.  Cells are read through their
+// liberty pins and connected through their LEF pins.
+bool hasLibertyPins(const sta::LibertyCell* cell, odb::dbMaster* master);
+// A register of this cell can be replaced by other cells: one clock pin
+// (clockMTerm), no tri-state output, and LEF pins that are its liberty pins.
+bool isReplaceable(const sta::LibertyCell* cell,
+                   const sta::Sequential* seq,
+                   odb::dbMaster* master);
+
 // A scan cell, a cell with an input left open, one that is not a register
-// with one clock pin (clockMTerm), or one with a live asynchronous control.
+// that can be replaced (isReplaceable), or one with a live asynchronous
+// control.
 bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst);
 
 // An asynchronous set or reset that is not tied to its inactive value.
@@ -147,7 +167,8 @@ bool hasLiveAsyncControl(sta::dbSta* sta,
                          const sta::Sequential* seq);
 
 // `constants`: (pin, tied high) holding every asynchronous control inactive.
-// False without such a control or such constants, or when the cell has an
+// False without such a control or such constants, when the data or the clock
+// reads a control pin too (tying it would tie them), or when the cell has an
 // input that is not a control, a data pin, or the clock.
 struct PinConstant
 {

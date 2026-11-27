@@ -38,8 +38,13 @@ struct StaSlack
   float hold_total = 0.0f;
   std::vector<StaSlack> scenes;
 };
-// Brings the wire estimates up to date first.
-StaSlack staSlack(sta::dbSta* sta, est::IncrementalParasiticsGuard& guard);
+// Brings the wire estimates up to date first.  shared_drivers: a driver of
+// each net with two, timed again here: STA's incremental delay calculation
+// times such a net only from the driver it picked, so a new slew at the
+// input of another one would go unseen.
+StaSlack staSlack(sta::dbSta* sta,
+                  est::IncrementalParasiticsGuard& guard,
+                  const std::vector<odb::dbITerm*>& shared_drivers);
 
 struct PlaceStats
 {

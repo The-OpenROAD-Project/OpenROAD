@@ -10,9 +10,11 @@
 #include <cstddef>
 #include <functional>
 #include <limits>
+#include <queue>
 #include <utility>
 #include <vector>
 
+#include "RegisterUtils.h"
 #include "RetimingGraph.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -58,11 +60,44 @@ void Retime::run(const int max_moves, const double margin)
   rankSlides();
 }
 
+void Retime::FailingGates::init(const int n)
+{
+  order.clear();
+  slacks.assign(n, 0.0);
+}
+
+void Retime::FailingGates::set(const int gate, const double slack)
+{
+  const double negative = std::min(slack, 0.0);
+  if (negative == slacks[gate]) {
+    return;
+  }
+  if (slacks[gate] < 0.0) {
+    order.erase(FailingGate{.slack = slacks[gate], .gate = gate});
+  }
+  if (negative < 0.0) {
+    order.insert(FailingGate{.slack = negative, .gate = gate});
+  }
+  slacks[gate] = negative;
+}
+
+void Retime::updateFailing()
+{
+  for (const int v : scratch_.dirty) {
+    negative_.set(v, negativeSlackAt(v));
+    failing_.set(v, forwardMovable(v) ? slackThrough(v) : 0.0);
+  }
+}
+
 void Retime::search(const int max_moves, const double margin_fraction)
 {
   const int cap = max_moves <= 0 ? INT_MAX : max_moves;
   const double margin = margin_fraction * graph_->clockPeriod();
+  const int n = graph_->size();
+  failing_.init(n);
+  negative_.init(n);
   computeTails();
+  updateFailing();  // computeTails marked every gate
   while (getMoves() < cap) {
     double gain = 0.0;
     const int v = pickSlide(margin, gain);
@@ -70,6 +105,7 @@ void Retime::search(const int max_moves, const double margin_fraction)
       break;
     }
     applySlide(v);
+    updateFailing();
     slides_.push_back(v);
     gains_.push_back(gain);
     debugPrint(logger_,
@@ -80,13 +116,15 @@ void Retime::search(const int max_moves, const double margin_fraction)
                getMoves(),
                graph_->nodes()[v]->getName());
     updateTails(v);
+    updateFailing();
   }
 }
 
 int Retime::pickSlide(const double margin, double& gain)
 {
-  const double worst = worstSlack();
-  for (const auto& [before, v] : failingGates()) {
+  const double worst
+      = negative_.order.empty() ? 0.0 : negative_.order.begin()->slack;
+  for (const auto& [before, v] : failing_.order) {
     const SlideEffect effect = slideEffect(v);
     const double after = std::min(effect.into, effect.out);
     const bool harms = effect.total_change < -margin || after < worst - margin;
@@ -155,50 +193,77 @@ void Retime::rankSlides()
       paths.push_back(pathOf(i, needs));
     }
   }
-  std::vector<bool> listed(count, false);
   std::vector<int> ranked;
-  while (std::cmp_less(ranked.size(), count)) {
-    const std::vector<int>* best = nullptr;
-    double best_gain = 0.0;
-    for (const std::vector<int>& path : paths) {
-      double gain = 0.0;
-      bool open = false;
-      for (const int i : path) {
-        if (!listed[i]) {
-          gain += gains_[i];
-          open = true;
-        }
-      }
-      if (open && (best == nullptr || gain > best_gain)) {
-        best = &path;
-        best_gain = gain;
-      }
-    }
-    for (const int i : *best) {
-      if (!listed[i]) {
-        listed[i] = true;
-        ranked.push_back(slides_[i]);
-      }
-    }
+  for (const int i : rankPaths(paths, gains_)) {
+    ranked.push_back(slides_[i]);
   }
   slides_ = std::move(ranked);
 }
 
-std::vector<Retime::FailingGate> Retime::failingGates() const
+std::vector<int> rankPaths(const std::vector<std::vector<int>>& paths,
+                           const std::vector<double>& gains)
 {
-  const int n = graph_->size();
-  std::vector<FailingGate> gates;
-  for (int v = 0; v < n; ++v) {
-    if (!forwardMovable(v)) {
-      continue;
-    }
-    const double slack = slackThrough(v);
-    if (slack < 0.0) {
-      gates.push_back({.slack = slack, .gate = v});
+  const int path_count = static_cast<int>(paths.size());
+  std::vector<std::vector<int>> paths_of(gains.size());
+  for (int p = 0; p < path_count; ++p) {
+    for (const int i : paths[p]) {
+      paths_of[i].push_back(p);
     }
   }
-  std::ranges::sort(gates);
-  return gates;
+
+  // An entry is stale once a slide of its path got listed: the path is
+  // entered again with what is left of its gain.
+  struct Entry
+  {
+    double gain;
+    int path;
+    int version;
+  };
+  const auto later = [](const Entry& a, const Entry& b) {
+    return a.gain < b.gain || (a.gain == b.gain && a.path > b.path);
+  };
+  std::priority_queue<Entry, std::vector<Entry>, decltype(later)> queue(later);
+  std::vector<int> version(path_count, 0);
+  std::vector<bool> listed(gains.size(), false);
+  const auto enqueue = [&](const int p) {
+    double gain = 0.0;
+    bool open = false;
+    for (const int i : paths[p]) {
+      if (!listed[i]) {
+        gain += gains[i];
+        open = true;
+      }
+    }
+    if (open) {
+      queue.push({.gain = gain, .path = p, .version = version[p]});
+    }
+  };
+  for (int p = 0; p < path_count; ++p) {
+    enqueue(p);
+  }
+
+  std::vector<int> ranked;
+  while (!queue.empty()) {
+    const Entry best = queue.top();
+    queue.pop();
+    if (best.version != version[best.path]) {
+      continue;
+    }
+    std::vector<int> changed;
+    for (const int i : paths[best.path]) {
+      if (!listed[i]) {
+        listed[i] = true;
+        ranked.push_back(i);
+        changed.insert(changed.end(), paths_of[i].begin(), paths_of[i].end());
+      }
+    }
+    sortUnique(changed);
+    for (const int p : changed) {
+      ++version[p];
+      enqueue(p);
+    }
+  }
+  return ranked;
 }
 
 Retime::SlideEffect Retime::slideEffect(const int v)
@@ -216,16 +281,6 @@ Retime::SlideEffect Retime::slideEffect(const int v)
   }
   effect.out = slackOf(new_launch_[v], out_tails_[v]);
   return effect;
-}
-
-double Retime::worstSlack() const
-{
-  const int n = graph_->size();
-  double worst = 0.0;
-  for (int t = 0; t < n; ++t) {
-    worst = std::min(worst, negativeSlackAt(t));
-  }
-  return worst;
 }
 
 double Retime::negativeSlackAt(const int t) const

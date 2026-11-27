@@ -112,8 +112,13 @@ class StaCheck
                  const StaSlack& before);
   void undoTrial();
   void keepTrial(const Trial& trial, Round& round);
+  // Of the design as it is now.
+  StaSlack slack() const;
   // Without the discarded ones.
   int registerCount() const;
+  // The search reads the current scene alone: says so when that one meets
+  // timing and another fails.
+  void warnOtherScene(const StaSlack& slack) const;
   void reportStart(const StaSlack& slack, int registers) const;
   void reportRound(int number, const Round& round) const;
   void reportRow(const std::string& round,
@@ -133,6 +138,8 @@ class StaCheck
   Apply apply_;
   Undone undone_;
   NewCells new_cells_;
+  // A driver of each net with two; they stay through the command.
+  std::vector<odb::dbITerm*> shared_drivers_;
 };
 
 }  // namespace ret

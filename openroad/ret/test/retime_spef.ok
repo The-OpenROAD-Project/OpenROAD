@@ -1,0 +1,4 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+worst slack max -0.1304
+[WARNING RET-0048] The parasitics were read from SPEF; the design is not retimed.
+worst slack max -0.1304

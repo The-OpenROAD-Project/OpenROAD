@@ -72,6 +72,61 @@ TEST_F(SequentialUnmapperCellTest, SkipsSecondClockPin)
   EXPECT_NE(block_->findInst("ff1"), nullptr);
 }
 
+// A flop with a tri-state output is left alone: the base cell always drives.
+TEST_F(SequentialUnmapperCellTest, SkipsTristateOutput)
+{
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic}));
+  makeInputPorts({"d1", "oe1", "clk"});
+  tst::InstOptions op;
+  op.iterms = {{"d1", "D"}, {"oe1", "OE"}, {"clk", "CK"}, {"q1", "Q"}};
+  makeInst(block_, getDb()->findMaster("DFF_P_TQ"), "ff1", op);
+  makeOutputPort("q1");
+
+  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
+  ASSERT_TRUE(unmapper.prepare());
+  unmapper.run();
+  expectSane();
+  EXPECT_EQ(countMaster("DFF_P_TQ"), 1);
+  EXPECT_EQ(countMaster("DFF_P"), 0);
+  EXPECT_NE(block_->findInst("ff1"), nullptr);
+}
+
+// A cell whose LEF pins are not its liberty pins (an extra LEF input, a
+// missing pin, another direction) is never the cell of a new instance: the
+// enable flop unmaps to the cells of the basic library, not to the cheaper
+// ones of kPinMismatch.
+TEST_F(SequentialUnmapperCellTest, SkipsCellsWithOtherLefPins)
+{
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic, kPinMismatch}));
+  makeInputPorts({"d1", "e1", "clk"});
+  tst::InstOptions op;
+  op.iterms = {{"d1", "D"}, {"e1", "EN"}, {"clk", "CK"}, {"q1", "Q"}};
+  makeInst(block_, getDb()->findMaster("DFFE_PP"), "ff1", op);
+  makeOutputPort("q1");
+  const sta::Sequential* seq = sequentialOf("DFFE_PP");
+  ASSERT_NE(seq, nullptr);
+  const LeafNets leaf
+      = {{"D", block_->findNet("d1")}, {"EN", block_->findNet("e1")}};
+
+  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
+  ASSERT_TRUE(unmapper.prepare());
+  EXPECT_EQ(unmapper.getBaseSequentialMaster()->getName(),
+            std::string("DFF_P"));
+  EXPECT_EQ(unmapper.getTieMaster(true)->getName(), std::string("TIE1"));
+  unmapper.run();
+  expectSane();
+  EXPECT_EQ(countMaster("INV"), 1);
+  EXPECT_EQ(countMaster("AND2"), 2);
+  EXPECT_EQ(countMaster("OR2"), 1);
+
+  odb::dbInst* base = getInstByMasterName("DFF_P");
+  ASSERT_NE(base, nullptr);
+  expectSameFunction(base->findITerm("D")->getNet(),
+                     seq,
+                     leaf,
+                     base->findITerm("Q")->getNet());
+}
+
 // DFF_P is already the base cell: rebuilt as-is, loads and port follow.
 TEST_F(SequentialUnmapperCellTest, PlainFlop)
 {
@@ -394,7 +449,8 @@ TEST_F(SequentialUnmapperCellTest, UnmapsTiedAsyncReset)
 // The base cell is the register that costs the least area once its
 // asynchronous controls are tied: DFF_PN0 (5.0 + one tie), not the smaller
 // DFFSR_PNN (4.5 + two ties), not the synchronous-reset SDFF_PP0 or the
-// enable DFFE_PP, and not DFF_PN0_HC with its heavier D pin.
+// enable DFFE_PP, not DFF_PN0_HC with its heavier D pin, and not DFF_PD0 or
+// DFF_PC0 (3.0), whose reset reads the data or the clock pin too.
 TEST_F(SequentialUnmapperCellTest, PicksTiedBase)
 {
   ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kAsyncOnly}));

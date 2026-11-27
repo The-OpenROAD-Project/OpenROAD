@@ -423,4 +423,43 @@ MACRO DFF_PN0
   END Q
 END DFF_PN0
 
+MACRO DFF_P_TQ
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 1.2 BY 1.0 ;
+  SITE core ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.45 0.15 0.55 ;
+    END
+  END D
+  PIN OE
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.75 0.15 0.85 ;
+    END
+  END OE
+  PIN CK
+    DIRECTION INPUT ;
+    USE CLOCK ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.05 0.15 0.15 ;
+    END
+  END CK
+  PIN Q
+    DIRECTION OUTPUT TRISTATE ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 1.05 0.45 1.15 0.55 ;
+    END
+  END Q
+END DFF_P_TQ
+
 END LIBRARY

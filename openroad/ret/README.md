@@ -35,8 +35,12 @@ other cell keeps its placement. Each new cell is placed at the center of the
 bounding box of the placed cells it connects to, for detailed placement to
 legalize, and a new register with negative slack takes the best of its
 equivalent cells. Estimated parasitics of the nets that changed are
-refreshed. Run `retime` before clock tree synthesis and routing: a design
-with routing or route guides is left as it is, with a warning.
+refreshed. A new cell takes the supply nets of the cell it replaces, pin
+by pin name; `global_connect` connects any that remain. Run `retime` before
+clock tree synthesis and routing. A design is left as it is, with a warning,
+when it has routing, route guides or special wires on a net that is not a
+supply, parasitics read from SPEF, or annotated delays (`read_sdf`,
+`set_assigned_delay`): STA cannot bring those back for a move that is undone.
 
 Registers move by class, read from the liberty `next_state` function:
 
@@ -55,12 +59,16 @@ These registers never move:
 - latches, scan cells, multi-bit and negative-edge registers, and registers
   clocked by more than one pin or with a second pin marked as a clock (LEF
   `USE CLOCK`, liberty `clock : true`);
+- registers with a tri-state output (liberty `three_state`), and registers
+  of a cell whose LEF pins are not its liberty pins;
 - registers with a live asynchronous set or reset, with an input left
   unconnected or on a net with a second driver (a tri-state bus), or with a
-  data input that is a constant (a tie cell, case analysis);
+  data input that is a constant (a tie cell, case analysis) or that a
+  primary input drives with no gate in between;
 - registers marked don't-touch, fixed in place, in a group or a region (a
   power domain, for example), in a scan chain, with a pin on a don't-touch
-  net, or read by a don't-touch cell;
+  net, driving a net with a non-default routing rule, or read by a
+  don't-touch cell;
 - registers named by `set_false_path`, `set_multicycle_path` or
   `set_path_margin`, with a constraint on one of their pins or on a net
   they drive, with a timing edge that `set_disable_timing` disables, or with
@@ -87,7 +95,8 @@ These gates are never crossed:
 - a gate that drives or reads a net with a second driver, and a cell that
   is not a plain combinational gate: a tri-state driver, an isolation cell,
   a level shifter, a macro, a pad, or a cell without a liberty function;
-- a gate marked don't-touch, in a group or a region, named by any of
+- a gate marked don't-touch, driving a don't-touch net or a net with a
+  non-default routing rule, in a group or a region, named by any of
   those exceptions, with a constraint on one of its pins or on the net it
   drives (case analysis, for example), or with a timing edge that
   `set_disable_timing` disables; `-move_named_registers` changes none of
@@ -95,11 +104,12 @@ These gates are never crossed:
 
 A register whose set or reset is tied inactive moves as the base flip-flop,
 and the tie cells only it read are removed unless one of the reasons above
-holds them in place. New cells never use a `dont_use` cell or a cell that
-would be left with an open input, so an enable or inverting register of
-such a cell is unmapped when it moves; tie cells ignore `set_dont_use`, as
-`repair_tie_fanout` does. The design must have one
-clock defined with `create_clock`; gated copies of it are fine.
+holds them in place. New cells never use a cell whose LEF pins are not its
+liberty pins, a `dont_use` cell or a cell that would be left with an open
+input; an enable or inverting register of one of the last two is unmapped
+when it moves. Tie cells ignore `set_dont_use`, as `repair_tie_fanout` does.
+The design must have one clock defined with `create_clock`; gated copies of
+it are fine.
 
 ```tcl
 retime
@@ -170,7 +180,10 @@ brings them back without the SDC constraints that named them.
 STA judges the timing at the time of `retime`, setup and hold, with the
 ideal clocks of that stage; the resizer, clock tree synthesis and detailed
 placement that run afterwards can change it. With several scenes the search
-reads the delays and the clock of the current one; STA judges all of them.
+reads the delays, the slacks and the clock of the current one, and STA
+judges all of them: nothing is proposed for a scene that fails while the
+current one meets timing, and `retime` says so. `set_scene` makes a scene
+the current one.
 
 ## License
 
