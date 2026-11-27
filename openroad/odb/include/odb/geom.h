@@ -577,8 +577,8 @@ inline int64_t Point::squaredDistance(Point p0, Point p1)
 
 inline int64_t Point::manhattanDistance(Point p0, Point p1)
 {
-  const int64_t dx = std::abs(p1.x_ - p0.x_);
-  const int64_t dy = std::abs(p1.y_ - p0.y_);
+  const int64_t dx = std::abs(int64_t{p1.x_} - p0.x_);
+  const int64_t dy = std::abs(int64_t{p1.y_} - p0.y_);
   return dx + dy;
 }
 

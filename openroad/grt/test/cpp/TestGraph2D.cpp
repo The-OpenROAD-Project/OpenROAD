@@ -23,6 +23,16 @@ class Graph2DTestPeer
   {
     graph.h_used_ggrid_.erase({x, y});
   }
+  static void setInUsedGridFlag(Graph2D& graph,
+                                int x,
+                                int y,
+                                EdgeDirection direction,
+                                bool value)
+  {
+    auto& edge = direction == EdgeDirection::Horizontal ? graph.h_edges_[x][y]
+                                                        : graph.v_edges_[x][y];
+    edge.in_used_grid = value;
+  }
   static void corruptStatistics(Graph2D& graph)
   {
     graph.h_overflow_.usage.add(1, 0);
@@ -758,6 +768,74 @@ TEST_F(Graph2DTest, DirtyListCheckAllowsQueuedZeroValues)
   EXPECT_NO_THROW(graph_.InitLastUsage(1));
   EXPECT_EQ(Graph2DTestPeer::estimateCount(graph_), 0u);
   EXPECT_EQ(Graph2DTestPeer::historyCount(graph_), 0u);
+}
+
+TEST_F(Graph2DTest, InUsedGridBitMirrorsSetAcrossInsertEraseClearAndRebuild)
+{
+  EXPECT_FALSE(graph_.isUsedGrid(1, 2, EdgeDirection::Horizontal));
+  EXPECT_FALSE(graph_.isUsedGrid(2, 1, EdgeDirection::Vertical));
+
+  // Duplicate positive mutations keep membership true without duplicating set
+  // entries or statistics.
+  graph_.addUsageH(1, 2, 2);
+  graph_.addUsageH(1, 2, 3);
+  graph_.updateUsageV(2, 1, &net_, 1);
+  graph_.updateEstUsageV(2, 1, &net_, 0.5);
+  EXPECT_TRUE(graph_.isUsedGrid(1, 2, EdgeDirection::Horizontal));
+  EXPECT_TRUE(graph_.isUsedGrid(2, 1, EdgeDirection::Vertical));
+  EXPECT_EQ(graph_.getUsedGridsH().size(), 1u);
+  EXPECT_EQ(graph_.getUsedGridsV().size(), 1u);
+
+  // Returning usage to zero keeps membership during the run until
+  // prepareForIncrementalRun() reconciles it.
+  graph_.addUsageH(1, 2, -5);
+  EXPECT_TRUE(graph_.isUsedGrid(1, 2, EdgeDirection::Horizontal));
+  graph_.prepareForIncrementalRun();
+  EXPECT_FALSE(graph_.isUsedGrid(1, 2, EdgeDirection::Horizontal));
+  EXPECT_TRUE(graph_.isUsedGrid(2, 1, EdgeDirection::Vertical));
+  EXPECT_TRUE(graph_.usedGridsMatchUsage());
+
+  // clearUsed() resets in_used_grid immediately; rebuildUsedGrids() restores
+  // it.
+  graph_.clearUsed();
+  EXPECT_FALSE(graph_.isUsedGrid(2, 1, EdgeDirection::Vertical));
+  graph_.rebuildUsedGrids();
+  EXPECT_TRUE(graph_.isUsedGrid(2, 1, EdgeDirection::Vertical));
+  EXPECT_TRUE(graph_.usedGridsMatchUsage());
+
+  // Reference check detects flag/set desynchronization in either direction.
+  Graph2DTestPeer::setInUsedGridFlag(
+      graph_, 2, 1, EdgeDirection::Vertical, false);
+  EXPECT_FALSE(graph_.usedGridsMatchUsage());
+  Graph2DTestPeer::setInUsedGridFlag(
+      graph_, 2, 1, EdgeDirection::Vertical, true);
+  Graph2DTestPeer::setInUsedGridFlag(
+      graph_, 0, 0, EdgeDirection::Horizontal, true);
+  EXPECT_FALSE(graph_.usedGridsMatchUsage());
+  Graph2DTestPeer::setInUsedGridFlag(
+      graph_, 0, 0, EdgeDirection::Horizontal, false);
+  EXPECT_TRUE(graph_.usedGridsMatchUsage());
+}
+
+TEST_F(Graph2DTest, UninitializedCap3DIsSafeAcrossCopyAndAdd)
+{
+  Graph2D uninit_cap;
+  uninit_cap.init(kXGrid, kYGrid, 2, &logger_);
+  EXPECT_FALSE(uninit_cap.hasCap3D());
+  uninit_cap.addCap3D(1, 1, 0, EdgeDirection::Horizontal, 4);
+  uninit_cap.addUsageH(1, 1, 2);
+
+  // Copy from uninitialized-cap3d into initialized-cap3d and back.
+  graph_.copyRoutingStateFrom(uninit_cap, false);
+  EXPECT_FALSE(graph_.hasCap3D());
+  EXPECT_EQ(graph_.getUsageH(1, 1), 2);
+
+  uninit_cap.initCap3D();
+  EXPECT_TRUE(uninit_cap.hasCap3D());
+  graph_.copyRoutingStateFrom(uninit_cap, false);
+  EXPECT_TRUE(graph_.hasCap3D());
+  graph_.clearCap3D();
+  EXPECT_FALSE(graph_.hasCap3D());
 }
 
 }  // namespace

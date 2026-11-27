@@ -15,15 +15,22 @@
 
 namespace cgt {
 
+// A library cell and the ports of it that InstanceBuilder connects.  Unused
+// ports are null.
+struct CellPorts
+{
+  sta::LibertyCell* cell = nullptr;
+  sta::LibertyPort* clk = nullptr;
+  std::array<sta::LibertyPort*, 2> inputs{};
+  sta::LibertyPort* output = nullptr;
+};
+
 class InstanceBuilder
 {
  public:
   InstanceBuilder(utl::Logger* logger,
                   sta::dbNetwork* network,
-                  sta::LibertyCell* cell,
-                  sta::LibertyPort* clk,
-                  std::array<sta::LibertyPort*, 2> inputs,
-                  sta::LibertyPort* output,
+                  const CellPorts& ports,
                   const char* name);
 
   InstanceBuilder& connectClock(sta::Net* net)
@@ -66,88 +73,49 @@ class NetworkBuilder
  public:
   void init(utl::Logger* logger, sta::dbNetwork* network);
 
-  InstanceBuilder makeAnd(const char* name)
-  {
-    return InstanceBuilder(
-        logger_, network_, and_cell_, nullptr, and_inputs_, and_output_, name);
-  }
-
   InstanceBuilder makeAnd(const std::string& name)
   {
-    return makeAnd(name.c_str());
+    return InstanceBuilder(logger_, network_, and_, name.c_str());
   }
-  InstanceBuilder makeOr(const char* name)
-  {
-    return InstanceBuilder(
-        logger_, network_, or_cell_, nullptr, or_inputs_, or_output_, name);
-  }
-
   InstanceBuilder makeOr(const std::string& name)
   {
-    return makeOr(name.c_str());
+    return InstanceBuilder(logger_, network_, or_, name.c_str());
   }
-  InstanceBuilder makeNot(const char* name)
-  {
-    return InstanceBuilder(
-        logger_, network_, not_cell_, nullptr, {not_input_}, not_output_, name);
-  }
-
   InstanceBuilder makeNot(const std::string& name)
   {
-    return makeNot(name.c_str());
+    return InstanceBuilder(logger_, network_, not_, name.c_str());
   }
-  InstanceBuilder makeClockGate(const char* name)
-  {
-    return InstanceBuilder(logger_,
-                           network_,
-                           clkgate_cell_,
-                           clkgate_clk_,
-                           {clkgate_enable_},
-                           clkgate_output_,
-                           name);
-  }
-
   InstanceBuilder makeClockGate(const std::string& name)
   {
-    return makeClockGate(name.c_str());
+    return InstanceBuilder(logger_, network_, clkgate_, name.c_str());
   }
 
  private:
+  // Uses cell as the clock gate if it has a posedge latch, and warns
+  // otherwise.
+  void setClockGate(sta::LibertyCell* cell);
+
   utl::Logger* logger_ = nullptr;
   sta::dbNetwork* network_ = nullptr;
 
-  sta::LibertyCell* and_cell_ = nullptr;
-  std::array<sta::LibertyPort*, 2> and_inputs_;
-  sta::LibertyPort* and_output_ = nullptr;
-
-  sta::LibertyCell* or_cell_ = nullptr;
-  std::array<sta::LibertyPort*, 2> or_inputs_;
-  sta::LibertyPort* or_output_ = nullptr;
-
-  sta::LibertyCell* not_cell_ = nullptr;
-  sta::LibertyPort* not_input_ = nullptr;
-  sta::LibertyPort* not_output_ = nullptr;
-
-  sta::LibertyCell* clkgate_cell_ = nullptr;
-  sta::LibertyPort* clkgate_clk_ = nullptr;
-  sta::LibertyPort* clkgate_enable_ = nullptr;
-  sta::LibertyPort* clkgate_output_ = nullptr;
+  // Two-input AND and OR, inverter, and clock gate cells
+  CellPorts and_;
+  CellPorts or_;
+  CellPorts not_;
+  CellPorts clkgate_;
 };
 
 inline InstanceBuilder::InstanceBuilder(utl::Logger* logger,
                                         sta::dbNetwork* network,
-                                        sta::LibertyCell* cell,
-                                        sta::LibertyPort* clk,
-                                        std::array<sta::LibertyPort*, 2> inputs,
-                                        sta::LibertyPort* output,
+                                        const CellPorts& ports,
                                         const char* name)
     : logger_(logger),
       network_(network),
-      clk_(clk),
-      inputs_(inputs),
-      output_(output)
+      clk_(ports.clk),
+      inputs_(ports.inputs),
+      output_(ports.output)
 {
-  inst_ = network_->makeInstance(cell, name, network_->topInstance());
+  inst_ = network_->makeInstance(ports.cell, name, network_->topInstance());
 }
 
 inline sta::Net* InstanceBuilder::makeOutputNet(const char* name)
