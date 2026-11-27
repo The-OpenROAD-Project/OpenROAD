@@ -151,6 +151,7 @@ void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
 void GlobalRouter::clear()
 {
   routes_.clear();
+  routes_from_droute_guides_ = false;
   initial_steiner_wl_.clear();
   for (auto [ignored, net] : db_net_map_) {
     delete net;
@@ -419,6 +420,15 @@ bool GlobalRouter::haveCongestedRoutes()
   loadGuidesFromDB();
   bool congested_routes = is_congested_ && !congestion_accepted_ && !use_cugr_;
   return !routes_.empty() && congested_routes;
+}
+
+bool GlobalRouter::routesFromDetailedRouteGuides()
+{
+  // Loaded routes already carry the flag; skip the placement scan.
+  if (routes_.empty() && designIsPlaced()) {
+    loadGuidesFromDB();
+  }
+  return routes_from_droute_guides_;
 }
 
 bool GlobalRouter::haveDetailedRoutes()
@@ -3328,6 +3338,7 @@ void GlobalRouter::initGridAndNets()
   }
   block_ = db_->getChip()->getBlock();
   routes_.clear();
+  routes_from_droute_guides_ = false;
   initial_steiner_wl_.clear();
   nets_to_route_.clear();
   for (auto [ignored, net] : db_net_map_) {
@@ -3506,6 +3517,8 @@ void GlobalRouter::loadGuidesFromDB()
       boxToGlobalRouting(
           guide->getBox(), layer_idx, via_layer_idx, routes_[net]);
       is_congested_ = is_congested_ || guide->isCongested();
+      routes_from_droute_guides_
+          = routes_from_droute_guides_ || guide->isFromDetailedRoute();
     }
   }
 

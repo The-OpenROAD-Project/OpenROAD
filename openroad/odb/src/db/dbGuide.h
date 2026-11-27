@@ -37,6 +37,7 @@ class _dbGuide : public _dbObject
   bool is_congested_;
   bool is_jumper_;
   bool is_connect_to_term_;
+  bool is_from_detailed_route_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGuide& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj);

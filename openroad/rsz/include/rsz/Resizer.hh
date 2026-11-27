@@ -1173,6 +1173,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   ////////////////////////////////////////////////////////////////
 
   void computeSlewShapeFactor();
+  // Whether moves keep cells on legal sites: under global or detailed
+  // routing parasitics, and on a detail-routed design whatever the
+  // parasitics source.
+  bool shouldLegalize() const;
   ////////////////////////////////////////////////////////////////
 
   // Components
@@ -1200,6 +1204,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   odb::Rect core_;
   bool core_exists_ = false;
+  // Refreshed by resizePreamble(); read by shouldLegalize().
+  bool have_detailed_routes_ = false;
 
   double design_area_ = 0.0;
   const sta::MinMax* min_ = sta::MinMax::min();
