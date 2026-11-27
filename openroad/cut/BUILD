@@ -45,6 +45,7 @@ cc_library(
         "@boost.optional",
         "@boost.phoenix",
         "@boost.spirit",
+        "@fmt",
     ],
 )
 

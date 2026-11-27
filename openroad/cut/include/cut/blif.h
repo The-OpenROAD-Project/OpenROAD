@@ -7,6 +7,8 @@
 
 #include <cstdio>
 #include <map>
+#include <optional>
+#include <ostream>
 #include <set>
 #include <string>
 #include <utility>
@@ -24,6 +26,9 @@ class Pin;
 }  // namespace sta
 
 namespace cut {
+
+struct BlifNetlist;
+struct Gate;
 
 class Blif
 {
@@ -46,6 +51,35 @@ class Blif
   void addRequired(sta::Pin* pin, const std::string& net_name);
 
  private:
+  // Returns inst's .gate/.mlatch line, or nullopt for a sequential cell
+  // without exactly one clock. Records inst's nets in netlist.
+  std::optional<std::string> gateLine(odb::dbInst* inst,
+                                      BlifNetlist& netlist,
+                                      int& dummy_nets);
+  // Records net (connected to iterm/pin) as a primary input, output, or
+  // constant of the cut, if it is one.
+  void classifyNet(odb::dbITerm* iterm,
+                   sta::Pin* pin,
+                   odb::dbNet* net,
+                   const std::string& net_name,
+                   BlifNetlist& netlist);
+  void writeNetlist(std::ostream& f,
+                    const BlifNetlist& netlist,
+                    bool write_arrival_requireds) const;
+  // Creates the instance for one parsed gate and connects it.
+  void insertGate(const Gate& gate,
+                  odb::dbBlock* block,
+                  std::map<std::string, int>& inst_ids);
+  // Inserts the tie cell for a parsed _const0_/_const1_ gate.
+  void insertTieCell(const Gate& gate,
+                     odb::dbBlock* block,
+                     std::map<std::string, int>& inst_ids);
+  std::string uniqueInstName(const std::string& master_name,
+                             odb::dbBlock* block,
+                             std::map<std::string, int>& inst_ids) const;
+  odb::dbNet* findOrCreateNet(const std::string& net_name,
+                              odb::dbBlock* block) const;
+
   odb::PtrSet<odb::dbInst> instances_to_optimize_;
   utl::Logger* logger_;
   sta::dbSta* open_sta_ = nullptr;
