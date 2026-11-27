@@ -58,6 +58,7 @@ TESTS = [
     "rebuffer_size_driver_flat_guard",
     "rebuffer_size_driver_flat_guard_logic",
     "rebuffer_size_driver_guards",
+    "rebuffer_size_driver_hurdle_critical",
     "rebuffer_size_driver_mcmm_max_cap",
     "rebuffer_size_driver_passing_leakage",
     "rebuffer_size_driver_plan_max_cap",

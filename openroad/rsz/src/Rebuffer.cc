@@ -634,7 +634,8 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
                                      const BnetPtr& unbuffered_tree,
                                      const BnetPtr& timing_tree,
                                      const BnetPtr& area_tree,
-                                     const FixedDelay slack_target)
+                                     const FixedDelay slack_target,
+                                     const sta::Delay hurdle_delay)
 {
   if (!size_driver_ || timing_tree->slackTransition() == nullptr
       || network_->isTopLevelPort(drvr_pin)) {
@@ -696,7 +697,8 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     // swaps on a passing net within the reference leakage itself.
     const BnetPtr& leakage_ref_tree
         = slack_target >= FixedDelay::ZERO ? baseline_tree : timing_tree;
-    const DriverChoices choices = driverChoices(current_cell, leakage_ref_tree);
+    DriverChoices choices = driverChoices(current_cell, leakage_ref_tree);
+    choices.hurdle_delay = hurdle_delay;
     // Evaluated lazily; the planned trees are appended to `trees` below,
     // before any tree leakage is read.
     TreeDriverEvaluation eval(trees);
@@ -708,8 +710,8 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     // net near the worst slack.  Anchored to the current driver, it lets a
     // cheaper combination win over a resize that gains slack.  When it is
     // negative, anchor it instead to the best slack any tree reaches with any
-    // allowed driver cell, less the same relaxation; the smallest area meeting
-    // it still wins.
+    // allowed driver cell (less the area hurdle off the critical band), less
+    // the same relaxation; the smallest area meeting it still wins.
     FixedDelay target = slack_target;
     if (slack_target < FixedDelay::ZERO) {
       const FixedDelay relaxation
@@ -763,9 +765,9 @@ std::pair<BnetPtr, BnetPtr> Rebuffer::planTreesForBestDriver(
   // plan must go to a cell the final choice can accept: a cell that fails
   // the upstream side-load check, or a tree over the planned cell's max cap,
   // would waste it and leave the feasible faster cells with no planned tree.
-  // So the cell is picked by slack among cells that pass the leakage and
-  // side-load checks, and evaluateOption() refuses trees over its max
-  // capacitance while planning.
+  // So the cell is picked by hurdle-adjusted slack among cells that pass the
+  // leakage and side-load checks, and evaluateOption() refuses trees over
+  // its max capacitance while planning.
   const BnetPtr& timing_tree = eval.trees[kTimingTreeIndex];
   sta::LibertyCell* best_cell = nullptr;
   FixedDelay best_slack = slackAtDriverPin(timing_tree);
@@ -780,20 +782,23 @@ std::pair<BnetPtr, BnetPtr> Rebuffer::planTreesForBestDriver(
         continue;
       }
     }
-    // Only plan for a cell that improves the current timing tree and keeps
-    // upstream side loads feasible.
+    // Only plan for a cell that improves the current timing tree net of the
+    // non-critical area-upsize hurdle and keeps upstream side loads feasible.
     const std::optional<FixedDelay> slack
         = slackWithDriverCell(eval, cell, kTimingTreeIndex);
     if (!slack) {
       continue;
     }
+    const FixedDelay hurdle
+        = areaUpsizeHurdle(current_cell, cell, choices.hurdle_delay);
+    const FixedDelay effective = *slack - hurdle;
     // A new best must also keep the upstream side loads at its slack less
     // relaxation, the check bestSlackWithDriver() applies later.
-    if (*slack > best_slack) {
+    if (effective > best_slack) {
       if (upstreamSideLoadSlack(eval, cell) < *slack - relaxation) {
         continue;
       }
-      best_slack = *slack;
+      best_slack = effective;
       best_cell = cell;
     }
   }
@@ -998,6 +1003,38 @@ FixedDelay Rebuffer::upstreamSideLoadSlack(TreeDriverEvaluation& eval,
   return slack;
 }
 
+// Without a hurdle every failing net aims its sizing target at the best slack
+// any cell reaches, so nets far from the worst slack upsize for slack that
+// does not move WNS.  Outside the critical band a candidate that grows the
+// driver area is scored slower by kAreaUpsizeHurdle x relative area growth x
+// the driver gate delay, so a larger cell must beat a smaller one by more
+// than the hurdle to raise the target.  Same-area swaps such as VT changes
+// and critical nets pay nothing, and the smallest area meeting the target
+// still wins.
+FixedDelay Rebuffer::areaUpsizeHurdle(const sta::LibertyCell* current_cell,
+                                      const sta::LibertyCell* cell,
+                                      const sta::Delay hurdle_delay) const
+{
+  // No hurdle on a critical net, which chases slack at any area and gets a
+  // zero hurdle_delay, or without a gate delay to scale it.
+  if (hurdle_delay <= 0.0f) {
+    return FixedDelay::ZERO;
+  }
+  // A candidate that does not grow area, such as a VT swap, is free.
+  const float cur_area = current_cell->area();
+  const float cand_area = cell->area();
+  if (cur_area <= 0.0f || cand_area <= cur_area) {
+    return FixedDelay::ZERO;
+  }
+  // kAreaUpsizeHurdle x relative area growth x driver gate delay, clamped
+  // so the FixedDelay conversion cannot overflow.
+  const float rel_area_inc = (cand_area / cur_area) - 1.0f;
+  const float hurdle_sec = std::min(
+      kAreaUpsizeHurdle * rel_area_inc * static_cast<float>(hurdle_delay),
+      FixedDelay::INF.toSeconds() * 0.5f);
+  return FixedDelay(hurdle_sec, resizer_);
+}
+
 FixedDelay Rebuffer::bestSlackWithDriver(TreeDriverEvaluation& eval,
                                          sta::LibertyCell* current_cell,
                                          const DriverChoices& choices,
@@ -1005,24 +1042,32 @@ FixedDelay Rebuffer::bestSlackWithDriver(TreeDriverEvaluation& eval,
 {
   FixedDelay best_slack = -FixedDelay::INF;
   auto consider = [&](sta::LibertyCell* cell) {
+    // Every tree driven by `cell` is ranked by its slack less this hurdle.
+    const FixedDelay hurdle
+        = areaUpsizeHurdle(current_cell, cell, choices.hurdle_delay);
     for (size_t i = 0; i < eval.trees.size(); i++) {
       if (!eval.trees[i] || !withinLeakageBudget(eval, choices, cell, i)) {
         continue;
       }
       const std::optional<FixedDelay> slack
           = slackWithDriverCell(eval, cell, i);
-      if (!slack || *slack <= best_slack) {
+      if (!slack) {
         continue;
       }
-      // The target this slack sets for chooseTreeAndDriver(), which checks
-      // the side loads against it.
+      const FixedDelay effective = *slack - hurdle;
+      if (effective <= best_slack) {
+        continue;
+      }
+      // Keep upstream side loads no worse than this candidate's slack less
+      // relaxation (which also ensures chooseTreeAndDriver() accepts `cell`
+      // since effective <= *slack).
       const FixedDelay side_load_slack
           = cell == current_cell ? FixedDelay::INF
                                  : upstreamSideLoadSlack(eval, cell);
       if (side_load_slack < *slack - relaxation) {
         continue;
       }
-      best_slack = *slack;
+      best_slack = effective;
     }
   };
   consider(current_cell);
@@ -3714,6 +3759,20 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
   sta_->findRequireds();
 
+  // Each driver's slack at pass start, for the driver sizing area hurdle;
+  // its critical band below is measured against the pass-start worst slack
+  // too.
+  std::vector<sta::Slack> start_slacks;
+  if (size_driver_) {
+    start_slacks.reserve(filtered_pins.size());
+    for (const sta::Pin* pin : filtered_pins) {
+      const sta::Path* path
+          = sta_->vertexWorstSlackPath(graph_->pinDrvrVertex(pin), max_);
+      start_slacks.push_back(path != nullptr ? path->slack(sta_)
+                                             : sta::Slack(sta::INF));
+    }
+  }
+
   initial_design_area_ = resizer_->computeDesignArea();
   print_interval_ = std::max((int) filtered_pins.size() / 10, 1);
   removed_count_ = 0;
@@ -3793,6 +3852,11 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
                                resizer_);
   const FixedDelay critical_band(-kCriticalSlackBand * worst_slack.toSeconds(),
                                  resizer_);
+  // Whether a stored STA slack lies within the critical band.
+  auto in_critical_band = [&](const sta::Slack slack) {
+    return worst_slack < FixedDelay::ZERO && slack < sta::INF
+           && FixedDelay(slack, resizer_) <= worst_slack + critical_band;
+  };
   for (auto iter = 0; iter < filtered_pins.size(); iter++) {
     printProgress(iter, false, false, filtered_pins.size() - iter);
 
@@ -3918,14 +3982,25 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     //
 
     FixedDelay target_slack = -FixedDelay::INF;
+    // Whether driver sizing skips the area hurdle: this failing net is within
+    // kCriticalSlackBand of the worst slack, now or at pass start.
+    bool hurdle_free = false;
+    // Gate delay of the current driver, never negative; a term of the
+    // relaxation below and the scale of the driver sizing area hurdle.
+    const sta::Delay clamped_gate_delay
+        = std::max(0.0f, static_cast<float>(drvr_gate_delay));
 
     // Check the tree isn't fully unconstrained
     if (timing_tree->slackTransition() != nullptr) {
       const FixedDelay timing_slack = slackAtDriverPin(timing_tree);
       const bool critical
-          = timing_slack < FixedDelay::ZERO && worst_slack < FixedDelay::ZERO
-            && sta_slack < sta::INF
-            && FixedDelay(sta_slack, resizer_) <= worst_slack + critical_band;
+          = timing_slack < FixedDelay::ZERO && in_critical_band(sta_slack);
+      // Rebuffering downstream nets earlier in the pass can lift a driver on
+      // the worst path out of the band, which stays at the pass-start worst
+      // slack; one that was in the band at pass start pays no hurdle either.
+      hurdle_free = critical
+                    || (size_driver_ && timing_slack < FixedDelay::ZERO
+                        && in_critical_band(start_slacks[iter]));
       sta::Delay relaxation = 0.0;
       if (!critical) {
         relaxation
@@ -3935,7 +4010,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
                    - std::min(static_cast<float>(original_tree_slack_error),
                               0.0f)))
                   / 4.0f
-              + (std::max(static_cast<float>(drvr_gate_delay), 0.0f)
+              + (clamped_gate_delay
                  + criticalPathDelay(logger_, timing_tree).toSeconds())
                     * relaxation_factor_;
       }
@@ -3959,7 +4034,12 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     const int prev_resize_count = driver_resize_count_;
     area_opt_tree = sizeDriverWithTree(
-        drvr_pin, unbuffered_tree, timing_tree, area_opt_tree, target_slack);
+        drvr_pin,
+        unbuffered_tree,
+        timing_tree,
+        area_opt_tree,
+        target_slack,
+        hurdle_free ? sta::Delay(0.0f) : clamped_gate_delay);
     const bool driver_resized = driver_resize_count_ != prev_resize_count;
 
     sta::Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
