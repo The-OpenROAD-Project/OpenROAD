@@ -5082,6 +5082,20 @@ void DbMarkerDescriptor::visitAllObjects(
   }
 }
 
+void DbMarkerDescriptor::paintMarkers(odb::dbMarkerCategory* category,
+                                      Painter& painter) const
+{
+  Painter::Color brush = Painter::kWhite;
+  brush.a = 50;
+  painter.setPen(Painter::kWhite, true, 0);
+  painter.setBrush(brush, Painter::Brush::kDiagonal);
+  for (odb::dbMarker* marker : category->getAllMarkers()) {
+    if (marker->isVisible()) {
+      paintMarker(marker, painter);
+    }
+  }
+}
+
 void DbMarkerDescriptor::paintMarker(odb::dbMarker* marker,
                                      Painter& painter) const
 {

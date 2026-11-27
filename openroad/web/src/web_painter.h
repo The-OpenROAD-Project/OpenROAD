@@ -4,6 +4,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -99,10 +100,15 @@ using DrawOp = std::variant<DrawRectOp,
 class WebPainter : public web::Painter
 {
  public:
-  WebPainter(const odb::Rect& bounds, double pixels_per_dbu);
+  // With cull_subpixel, a rect or circle under a pixel with a hairline pen
+  // is dropped, which suits tiles; a saved image keeps them, as Qt does.
+  WebPainter(const odb::Rect& bounds,
+             double pixels_per_dbu,
+             bool cull_subpixel = true);
   ~WebPainter() override = default;
 
   const std::vector<DrawOp>& ops() const { return ops_; }
+  std::vector<DrawOp> takeOps() { return std::move(ops_); }
 
   // --- web::Painter overrides ---
   // Pull in the non-virtual helper overloads that the three-arg
@@ -159,6 +165,7 @@ class WebPainter : public web::Painter
     FontState font;
   };
 
+  bool cull_subpixel_;
   PenState pen_;
   BrushState brush_;
   FontState font_;

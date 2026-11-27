@@ -28,56 +28,59 @@ proc expect { label pattern_script want } {
   }
 }
 
-if { ![gui::supported] } {
-  # Built without the GUI; select is not available.
-  puts "pass"
-} else {
+# The patterns, run with no window, where the web viewer's script view takes
+# the selection, and again in a Qt window when there is one.
+proc check_patterns { } {
+  # An ITerm is named inst/mterm, so this only matches if * crosses the /.
+  # A Qt6 build used to answer 0 here while a Qt5 build answered 179.
+  expect "*A1" { select -type ITerm -name {*A1} } 179
+
+  # A * that does not have to cross the separator, which both agreed on.
+  expect "*_/A1" { select -type ITerm -name {*_/A1} } 177
+
+  expect "literal" { select -type Inst -name {FILLER_0_0_1} } 1
+  expect "prefix" { select -type Inst -name {FILLER*} } 266
+  expect "case insensitive" \
+    { select -type Inst -name {filler*} -case_insensitive } 266
+
+  # A literal pattern skips fnmatch, so the case-insensitive compare on that
+  # path is a separate one and needs its own case.
+  expect "case insensitive literal" \
+    { select -type Inst -name {filler_0_0_1} -case_insensitive } 1
+  expect "character class" { select -type Inst -name {[Ff]ILLER*} } 266
+
+  # A bus bit: the brackets are the name, so they have to be escaped.  This
+  # also guards the literal fast path: a pattern containing a backslash is
+  # not literal, and treating it as one is the bug this used to have.
+  expect "escaped bus bit" { select -type Net -name {req_msg\[0\]} } 1
+
+  # Unescaped they are a character class, so this asks for req_msg0,
+  # which no net is called.
+  expect "unescaped bus bit" { select -type Net -name {req_msg[0]} } 0
+}
+
+suppress_message ODB 127
+suppress_message ODB 128
+suppress_message ODB 130
+suppress_message ODB 131
+suppress_message ODB 132
+suppress_message ODB 133
+suppress_message ODB 134
+suppress_message ODB 227
+
+read_lef [file join $openroad_test_dir Nangate45 Nangate45.lef]
+read_def [file join $openroad_test_dir gcd_nangate45.def]
+
+check_patterns
+
+if { [gui::supported] } {
   if { ![info exists ::env(QT_QPA_PLATFORM)] } {
     set ::env(QT_QPA_PLATFORM) offscreen
   }
-
-  suppress_message ODB 127
-  suppress_message ODB 128
-  suppress_message ODB 130
-  suppress_message ODB 131
-  suppress_message ODB 132
-  suppress_message ODB 133
-  suppress_message ODB 134
-  suppress_message ODB 227
-
-  read_lef [file join $openroad_test_dir Nangate45 Nangate45.lef]
-  read_def [file join $openroad_test_dir gcd_nangate45.def]
-
   gui::show {
-    # An ITerm is named inst/mterm, so this only matches if * crosses the /.
-    # A Qt6 build used to answer 0 here while a Qt5 build answered 179.
-    expect "*A1" { select -type ITerm -name {*A1} } 179
-
-    # A * that does not have to cross the separator, which both agreed on.
-    expect "*_/A1" { select -type ITerm -name {*_/A1} } 177
-
-    expect "literal" { select -type Inst -name {FILLER_0_0_1} } 1
-    expect "prefix" { select -type Inst -name {FILLER*} } 266
-    expect "case insensitive" \
-      { select -type Inst -name {filler*} -case_insensitive } 266
-
-    # A literal pattern skips fnmatch, so the case-insensitive compare on that
-    # path is a separate one and needs its own case.
-    expect "case insensitive literal" \
-      { select -type Inst -name {filler_0_0_1} -case_insensitive } 1
-    expect "character class" { select -type Inst -name {[Ff]ILLER*} } 266
-
-    # A bus bit: the brackets are the name, so they have to be escaped.  This
-    # also guards the literal fast path: a pattern containing a backslash is
-    # not literal, and treating it as one is the bug this used to have.
-    expect "escaped bus bit" { select -type Net -name {req_msg\[0\]} } 1
-
-    # Unescaped they are a character class, so this asks for req_msg0,
-    # which no net is called.
-    expect "unescaped bus bit" { select -type Net -name {req_msg[0]} } 0
-
+    check_patterns
     gui::hide
   } false
-
-  puts "pass"
 }
+
+puts "pass"
