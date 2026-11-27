@@ -397,8 +397,7 @@ void Opendp::place()
     bool rip_up_move = false;
 
     if (!diamond_move) {
-      // TODO: this is non-deteministic due to std::set<Node*>,
-      // and experiments show no legalization for failed diamond searches.
+      // Experiments show no legalization for failed diamond searches.
       // ripUpAndReplace() counts its own moves: it relocates the target cell
       // plus every surrounding cell it rips up, and those neighbors were
       // already placed (and counted) by an earlier iteration of this loop.
@@ -707,7 +706,11 @@ bool Opendp::ripUpAndReplace(Node* target_cell)
   const GridY boundary_margin{3};
   const GridX margin_width{grid_->gridPaddedWidth(target_cell).v
                            * (1 + boundary_margin.v)};
-  std::set<Node*> region_cells;
+  // The cells are unplaced and re-placed in this order, and the earlier ones
+  // take the free sites first, so order them by id rather than by address.
+  auto by_id
+      = [](const Node* a, const Node* b) { return a->getId() < b->getId(); };
+  std::set<Node*, decltype(by_id)> region_cells(by_id);
   for (GridX x = taget_cell_pixel.x - margin_width;
        x <= (taget_cell_pixel.x + margin_width);
        x++) {
