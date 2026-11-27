@@ -2,6 +2,7 @@
 # This demonstrates the trouble with blockage unaware fixing.
 
 source "helpers.tcl"
+source "clock_tree_checks.tcl"
 source Nangate45/Nangate45.vars
 
 # Settings
@@ -143,3 +144,16 @@ repair_clock_nets
 
 estimate_parasitics -placement
 report_clock_skew
+
+# Every register and every tile's clock pin is driven from the clk port
+# through the tree CTS built, and the tree is balanced.
+check "every tile is clocked from clk" \
+  { unclocked_count [clock_pins $block inst_* clk] clk } 0
+check "every flop is clocked from clk" \
+  { unclocked_count [clock_pins $block dff_* CK] clk } 0
+check "the clk port drives the tree's root, not the sinks" \
+  { llength [[$block findNet clk] getITerms] } 1
+check "the clock skew is within 5% of the 5 ns period" \
+  { expr { abs([sta::worst_clock_skew -setup]) < 0.25 } } 1
+
+exit_summary

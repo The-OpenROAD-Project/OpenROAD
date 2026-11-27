@@ -1,4 +1,5 @@
 source "helpers.tcl"
+source "clock_tree_checks.tcl"
 read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib
 read_def "max_wl_two_sinks.def"
@@ -15,5 +16,26 @@ set_cts_config -wire_unit 20 \
   -root_buf CLKBUF_X3 \
   -buf_list CLKBUF_X3
 
-clock_tree_synthesis
+tee -quiet -variable cts_log { clock_tree_synthesis }
 report_cts
+
+# The sinks lie on a horizontal line. Level 1 splits it in two; level 2
+# splits vertically, which leaves sink regions of zero height, and the
+# H-tree must stop there on one of its stop criteria (the regions stopped
+# getting shorter, CTS-0054, or are shorter than the max wire length,
+# CTS-0038) instead of subdividing to its maximum depth. Which one is not
+# pinned here: the sink region has zero height, so each level-2 branch's
+# two children sit on the same point and the clustering's assignment of
+# ff0 and ff1 to them is a tie. htree_stop_no_improvement requires
+# CTS-0054 and array_max_wl CTS-0038.
+check "the H-tree stops on a stop criterion" \
+  { regexp {CTS-00(54|38)\]\s+Stop criterion found} $cts_log } 1
+check "the H-tree stops at level 2" \
+  { regexp {CTS-0017\]\s+Max level of the clock tree: (\d+)} $cts_log -> levels
+    set levels } 2
+
+set block [ord::get_db_block]
+check "every flop is clocked from clk" \
+  { unclocked_count [clock_pins $block ff* CK] clk } 0
+
+exit_summary
