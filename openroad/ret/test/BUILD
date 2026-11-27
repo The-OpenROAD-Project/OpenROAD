@@ -82,6 +82,7 @@ TESTS = [
     "retime_spef",
     "retime_sta_unmap_undo",
     "retime_supply_bias",
+    "retime_supply_hier",
     "retime_supply_pins",
     "retime_supply_rails",
     "retime_swap_pins",

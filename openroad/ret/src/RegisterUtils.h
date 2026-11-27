@@ -89,10 +89,10 @@ bool sameSupply(const SupplyPins& a, const SupplyPins& b);
 // Every supply pin of `other` has a pin of its name and kind on `master`.
 bool hasSupplyPinsOf(odb::dbMaster* master, odb::dbMaster* other);
 
-// like: the cell the new one replaces or serves.  A supply pin of the new
-// cell takes the net of like's pin of that name, open included; without
-// such a pin, the net of like's pins of its kind (power, ground) when they
-// are on one net.
+// like: the cell the new one replaces or serves, in the same module.  A
+// supply pin of the new cell takes the net, and the module net, of like's
+// pin of that name, open included; without such a pin, those of a pin of
+// its kind (power, ground) when like's pins of that kind are on one net.
 odb::dbInst* makeCell(sta::dbSta* sta,
                       sta::Instance* parent,
                       const char* base_name,

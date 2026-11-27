@@ -1,0 +1,22 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: retime_supply_bias.lef, created 6 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 2 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.0700 |       -0.0700 |         2
+     1 |        3 |      1 |    3 |      0.0200 |        0.0000 |         2
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 3, rounds 1, WNS 0.0200, TNS 0.0000, registers 2, placed 0, resized 0.
+BDFF_X1 r2 (.D(n4),
+.CK(clk),
+.Q(q2),
+.VPWR(rail),
+.VPB(well),
+.VGND(gnd));
+BDFF_X1 ret_ff_1 (.D(n3),
+.CK(clk),
+.Q(ret_net_1),
+.VPWR(rail),
+.VPB(well),
+.VGND(gnd));

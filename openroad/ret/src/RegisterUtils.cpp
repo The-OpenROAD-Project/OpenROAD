@@ -248,31 +248,47 @@ bool hasSupplyPinsOf(odb::dbMaster* master, odb::dbMaster* other)
 
 namespace {
 
+// The pin of `like` that a supply pin of a new cell is connected like: the
+// pin of that name, else a connected pin of its kind when those are on one
+// net.
+odb::dbITerm* supplySource(odb::dbITerm* pin,
+                           odb::dbInst* like,
+                           const bool one_net_per_kind)
+{
+  const odb::dbSigType kind = pin->getSigType();
+  odb::dbITerm* same = like->findITerm(pin->getMTerm()->getConstName());
+  if (same != nullptr && same->getSigType() == kind) {
+    return same;
+  }
+  if (one_net_per_kind) {
+    for (odb::dbITerm* other : like->getITerms()) {
+      if (other->getSigType() == kind && other->getNet() != nullptr) {
+        return other;
+      }
+    }
+  }
+  return nullptr;
+}
+
 void connectSupplyLike(odb::dbInst* inst, odb::dbInst* like)
 {
-  const std::optional<SupplyNets> of_kind = supplyNets(like);
+  const bool one_net_per_kind = supplyNets(like).has_value();
   for (odb::dbITerm* pin : inst->getITerms()) {
-    const odb::dbSigType kind = pin->getSigType();
-    if (!kind.isSupply()) {
+    if (!pin->getSigType().isSupply()) {
       continue;
     }
-    odb::dbITerm* same = like->findITerm(pin->getMTerm()->getConstName());
-    odb::dbNet* net = nullptr;
-    if (same != nullptr && same->getSigType() == kind) {
-      net = same->getNet();
-    } else if (of_kind.has_value()) {
-      net = kind == odb::dbSigType::POWER ? of_kind->power : of_kind->ground;
-    }
-    if (net == nullptr) {
+    odb::dbITerm* source = supplySource(pin, like, one_net_per_kind);
+    if (source == nullptr || source->getNet() == nullptr) {
       continue;
     }
-    pin->connect(net);
-    // Marked as like's pins on that net are: global_connect marks them.
-    const bool special
-        = std::ranges::any_of(like->getITerms(), [net](odb::dbITerm* on_net) {
-            return on_net->getNet() == net && on_net->isSpecial();
-          });
-    if (special) {
+    // With the module net: in a hierarchical netlist the cell reads the
+    // supply under the name it has in its module.
+    odb::dbModNet* mod_net = source->getModNet();
+    const bool same_module
+        = mod_net != nullptr && mod_net->getParent() == inst->getModule();
+    movePin(pin, source->getNet(), same_module ? mod_net : nullptr);
+    // As global_connect leaves it.
+    if (source->isSpecial()) {
       pin->setSpecial();
     }
   }
