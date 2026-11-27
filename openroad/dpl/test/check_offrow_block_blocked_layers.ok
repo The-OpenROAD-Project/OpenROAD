@@ -1,0 +1,26 @@
+[INFO ODB-0227] LEF file: offrow_block.lef, created 3 layers, 2 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0131]     Created 2 components and 1 component-terminals.
+[INFO ODB-0132]     Created 1 special nets and 0 connections.
+[INFO ODB-0133]     Created 1 nets and 1 connections.
+== block below stripe A, top at 7.9 um: ram at 2000 3600, inv at 16000 0 R0
+result: pass
+== block bottom at 9.2 um, over stripe A: ram at 2000 9200, inv at 16000 0 R0
+[WARNING DPL-0010] Blocked layers check failed (1).
+ ram
+[ERROR DPL-0033] detailed placement checks failed during check placement.
+result: fail
+== block on row 6, over stripe A: ram at 2000 8400, inv at 16000 0 R0
+[WARNING DPL-0010] Blocked layers check failed (1).
+ ram
+[ERROR DPL-0033] detailed placement checks failed during check placement.
+result: fail
+== off-site block, right edge 12.15 um over stripe B: ram at 2150 2800, inv at 16000 0 R0
+[WARNING DPL-0010] Blocked layers check failed (1).
+ ram
+[ERROR DPL-0033] detailed placement checks failed during check placement.
+result: fail
+== off-site block, right edge 11.95 um clear of stripe B: ram at 1950 2800, inv at 16000 0 R0
+result: pass
+Summary 5 / 5 (100% pass)
+pass

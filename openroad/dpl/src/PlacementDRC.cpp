@@ -949,8 +949,11 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
 
 bool PlacementDRC::checkBlockedLayers(const Node* cell) const
 {
-  return checkBlockedLayers(
-      cell, grid_->gridX(cell), grid_->gridRoundY(cell), cell->getOrient());
+  return checkBlockedLayersOnGrid(cell,
+                                  grid_->gridCovering(cell),
+                                  cell->getLeft(),
+                                  cell->getBottom(),
+                                  cell->getOrient());
 }
 
 bool PlacementDRC::checkBlockedLayers(const Node* cell,
@@ -958,14 +961,29 @@ bool PlacementDRC::checkBlockedLayers(const Node* cell,
                                       const GridY y,
                                       const odb::dbOrientType& orient) const
 {
-  const GridX x_begin = x;
-  const GridY y_begin = y;
-  const GridX x_end = x + grid_->gridWidth(cell);
-  const GridY y_end = grid_->gridEndY(grid_->gridYToDbu(y) + cell->getHeight());
+  return checkBlockedLayersOnGrid(
+      cell,
+      GridRect{
+          .xlo = x,
+          .ylo = y,
+          .xhi = x + grid_->gridWidth(cell),
+          .yhi = grid_->gridEndY(grid_->gridYToDbu(y) + cell->getHeight())},
+      gridToDbu(x, grid_->getSiteWidth()),
+      grid_->gridYToDbu(y),
+      orient);
+}
+
+bool PlacementDRC::checkBlockedLayersOnGrid(
+    const Node* cell,
+    const GridRect& grid_rect,
+    const DbuX x_real,
+    const DbuY y_real,
+    const odb::dbOrientType& orient) const
+{
   // Pin layers whose power via/patch metal lies somewhere in the footprint
   uint8_t pin_layers = 0;
-  for (GridY y1 = y_begin; y1 < y_end; y1++) {
-    for (GridX x1 = x_begin; x1 < x_end; x1++) {
+  for (GridY y1 = grid_rect.ylo; y1 < grid_rect.yhi; y1++) {
+    for (GridX x1 = grid_rect.xlo; x1 < grid_rect.xhi; x1++) {
       const Pixel* pixel = grid_->gridPixel(x1, y1);
       if (pixel == nullptr) {
         continue;
@@ -984,8 +1002,6 @@ bool PlacementDRC::checkBlockedLayers(const Node* cell,
   // shapes on those layers against the actual metal.
   const Master* master = cell->getMaster();
   odb::dbInst* inst = cell->getDbInst();
-  const DbuX x_real = gridToDbu(x, grid_->getSiteWidth());
-  const DbuY y_real = grid_->gridYToDbu(y);
   for (int level = 1; level <= kMaxPinLevel; level++) {
     if ((pin_layers & (1 << level)) == 0) {
       continue;
