@@ -93,6 +93,7 @@ COMPULSORY_TESTS = [
     "simple09",
     "simple10",
     "edge_spacing",
+    "edge_spacing_cellrow",
     "aes-opt",
     "blockage1-opt",
     "gcd-opt",
@@ -204,6 +205,10 @@ filegroup(
             "edge_spacing-opt": [
                 "edge_spacing.lef",
                 "multi_height_rows.def",
+                "Nangate45/fake_macros.lef",
+            ],
+            "edge_spacing_cellrow": [
+                "edge_spacing.lef",
                 "Nangate45/fake_macros.lef",
             ],
             "fillers1": [

@@ -369,7 +369,12 @@ Master* Network::addMaster(odb::dbMaster* db_master,
     return master;
   }
   std::map<odb::dbMasterEdgeType::EdgeDir, std::vector<odb::Rect>> typed_segs;
-  int num_rows = grid->gridHeight(db_master).v;
+  int max_cell_row = 0;
+  for (auto edge : db_master->getEdgeTypes()) {
+    max_cell_row = std::max(max_cell_row, edge->getCellRow());
+  }
+  const int num_rows
+      = max_cell_row > 0 ? max_cell_row : grid->gridHeight(db_master).v;
   for (auto edge : db_master->getEdgeTypes()) {
     auto dir = edge->getEdgeDir();
     odb::Rect edge_rect = getBoundarySegment(bbox, dir);
