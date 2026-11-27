@@ -196,8 +196,18 @@ bazelisk build --config=lint -- //openroad/<module>/...
 bash tools/lint/collect_clang_tidy.sh "$bin/openroad/<module>" $out/tidy.txt
 ```
 
-`$out` is the scratch directory from step 1. Pass the module's directory under `bazel-bin`, not `bazel-bin` itself.
-Stale outputs from other modules make the collector report tool
-failures. Fix the findings on lines you changed, and the include-cleaner
-findings your change caused, such as a header you made unused. Then
-format with `bazelisk run //:tidy_cc` and rerun the module's tests.
+`$out` is the scratch directory from step 1. Pass the module's directory
+under `bazel-bin`, not `bazel-bin` itself. Stale outputs from other
+modules make the collector report tool failures.
+
+The collector reports every finding in the module, most of them in code
+you didn't touch. CI flags only those on lines the PR changes. List the
+findings in the files you changed, then check each against the diff:
+
+```bash
+git diff --name-only master | grep -Ff - $out/tidy.txt
+```
+
+Fix the findings on lines you changed, and the include-cleaner findings
+your change caused, such as a header you made unused. Then format with
+`bazelisk run //:tidy_cc` and rerun the module's tests.
