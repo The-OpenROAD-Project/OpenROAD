@@ -170,11 +170,13 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
                              const sta::Net* net,
                              sta::SpefWriter* spef_writer = nullptr,
                              sta::ArcDelayCalc* arc_delay_calc = nullptr);
+  // is_clk uses the clock layer RC instead of the signal layer's.
   void makeWireParasitic(sta::Net* net,
                          sta::Pin* drvr_pin,
                          sta::Pin* load_pin,
                          double wire_length,  // meters
-                         const sta::Scene* corner);
+                         const sta::Scene* corner,
+                         bool is_clk = false);
   bool haveEstimatedParasitics() const;
   void parasiticsInvalid(const sta::Net* net);
   void parasiticsInvalid(const odb::dbNet* net);

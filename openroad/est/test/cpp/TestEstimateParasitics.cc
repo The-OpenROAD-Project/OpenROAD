@@ -625,4 +625,67 @@ TEST_F(TestEstimateParasitics, GuideRestoreUndoEcoUpdatesParasitics)
   }
 }
 
+// Verifies that makeWireParasitic() uses the clock layer RC when is_clk is set
+// and the signal layer RC otherwise.
+TEST_F(TestEstimateParasitics, MakeWireParasiticLayerRc)
+{
+  readVerilogAndSetup("TestEstimateParasitics.v");
+
+  sta::Scene* scene = sta_->scenes().front();
+  ep_.initChip(db_->getChip());
+  ep_.setHWireSignalRC(nullptr, scene, 1.0e3, 1.0e-10);
+  ep_.setVWireSignalRC(nullptr, scene, 1.0e3, 1.0e-10);
+  ep_.setHWireClkRC(nullptr, scene, 2.0e2, 3.0e-10);
+  ep_.setVWireClkRC(nullptr, scene, 2.0e2, 3.0e-10);
+
+  sta::Pin* drvr = db_network_->findPin("reg0/Q");
+  ASSERT_NE(drvr, nullptr);
+  sta::Pin* load = findTopPin("q0");
+  ASSERT_NE(load, nullptr);
+  sta::Net* net = flatNet(load);
+  ASSERT_NE(net, nullptr);
+
+  constexpr double kLength = 1.0e-4;  // meters
+  sta::Parasitics* parasitics = scene->parasitics(sta::MinMax::max());
+
+  // Total ground capacitance and resistance of the net's parasitic network.
+  const auto totals = [&](double& cap, double& res) {
+    sta::Parasitic* network = parasitics->findParasiticNetwork(net);
+    ASSERT_NE(network, nullptr);
+    cap = 0.0;
+    res = 0.0;
+    for (const sta::ParasiticNode* node : parasitics->nodes(network)) {
+      cap += parasitics->nodeGndCap(node);
+    }
+    for (const sta::ParasiticResistor* resistor :
+         parasitics->resistors(network)) {
+      res += parasitics->value(resistor);
+    }
+  };
+
+  double signal_cap = 0.0;
+  double signal_res = 0.0;
+  ep_.makeWireParasitic(net, drvr, load, kLength, scene);
+  totals(signal_cap, signal_res);
+  parasitics->deleteParasitics(net);
+
+  double clk_cap = 0.0;
+  double clk_res = 0.0;
+  ep_.makeWireParasitic(net, drvr, load, kLength, scene, /*is_clk=*/true);
+  totals(clk_cap, clk_res);
+  parasitics->deleteParasitics(net);
+
+  const double exp_signal_cap = kLength * ep_.wireSignalCapacitance(scene);
+  const double exp_signal_res = kLength * ep_.wireSignalResistance(scene);
+  const double exp_clk_cap = kLength * ep_.wireClkCapacitance(scene);
+  const double exp_clk_res = kLength * ep_.wireClkResistance(scene);
+  ASSERT_NE(exp_signal_cap, exp_clk_cap);
+  ASSERT_NE(exp_signal_res, exp_clk_res);
+
+  EXPECT_NEAR(signal_cap, exp_signal_cap, exp_signal_cap * 1e-6);
+  EXPECT_NEAR(signal_res, exp_signal_res, exp_signal_res * 1e-6);
+  EXPECT_NEAR(clk_cap, exp_clk_cap, exp_clk_cap * 1e-6);
+  EXPECT_NEAR(clk_res, exp_clk_res, exp_clk_res * 1e-6);
+}
+
 }  // namespace est

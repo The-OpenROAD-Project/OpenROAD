@@ -999,7 +999,8 @@ void EstimateParasitics::makeWireParasitic(sta::Net* net,
                                            sta::Pin* drvr_pin,
                                            sta::Pin* load_pin,
                                            double wire_length,  // meters
-                                           const Scene* corner)
+                                           const Scene* corner,
+                                           const bool is_clk)
 {
   sta::Parasitics* parasitics = corner->parasitics(max_);
   sta::Parasitic* parasitic = parasitics->makeParasiticNetwork(net, false);
@@ -1007,8 +1008,13 @@ void EstimateParasitics::makeWireParasitic(sta::Net* net,
       = parasitics->ensureParasiticNode(parasitic, drvr_pin, network_);
   sta::ParasiticNode* n2
       = parasitics->ensureParasiticNode(parasitic, load_pin, network_);
-  double wire_cap = wire_length * wireSignalCapacitance(corner);
-  double wire_res = wire_length * wireSignalResistance(corner);
+  // Same choice estimateWireParasiticSteiner() makes per net.
+  double wire_cap
+      = wire_length
+        * (is_clk ? wireClkCapacitance(corner) : wireSignalCapacitance(corner));
+  double wire_res
+      = wire_length
+        * (is_clk ? wireClkResistance(corner) : wireSignalResistance(corner));
 
   // Reduce resistance if the net has NDR with increased width
   odb::dbTechNonDefaultRule* ndr
