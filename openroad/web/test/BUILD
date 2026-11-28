@@ -119,6 +119,16 @@ js_test(
 )
 
 js_test(
+    name = "schematic_names_test",
+    data = DOM_TEST_DATA + [
+        "//openroad/web:node_modules/netlistsvg",
+        "//openroad/web:src/openroad_skin.svg",
+    ],
+    entry_point = "js/test-schematic-names.js",
+    no_copy_to_bin = JS_FILES + ["//openroad/web:src/openroad_skin.svg"],
+)
+
+js_test(
     name = "schematic_pins_test",
     data = [
         "//openroad/web:esbuild.config.mjs",

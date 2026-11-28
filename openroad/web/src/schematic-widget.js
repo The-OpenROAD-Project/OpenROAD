@@ -4,7 +4,8 @@
 // NetlistsVG renders a Yosys-compatible JSON netlist into an SVG.
 
 import { fmtTime } from './timing-widget.js';
-import { beginSelection, isCurrentSelection, isStaticMode } from './ui-utils.js';
+import { beginSelection, escapeMarkup, isCurrentSelection, isStaticMode }
+    from './ui-utils.js';
 import {
     downloadBlob,
     svgToString,
@@ -1375,14 +1376,15 @@ export class SchematicWidget {
             // but older versions used a callback: render(skin, json, done).
             // Support both so the widget works with either bundle.
             let svgString;
-            const result = this.netlistsvg.render(this.skin, renderJson);
+            const markupJson = escapeNetlistMarkup(renderJson);
+            const result = this.netlistsvg.render(this.skin, markupJson);
             if (result && typeof result.then === 'function') {
                 // Promise-based (v1.x)
                 svgString = await result;
             } else {
                 // Callback-based (older); wrap in a Promise
                 svgString = await new Promise((resolve, reject) => {
-                    this.netlistsvg.render(this.skin, renderJson, (err, svg) => {
+                    this.netlistsvg.render(this.skin, markupJson, (err, svg) => {
                         if (err) reject(err); else resolve(svg);
                     });
                 });
@@ -2149,6 +2151,19 @@ export function canonicalizeCell(cell) {
         connections: newConns, port_directions: newDirs,
         port_labels: portLabels,
     };
+}
+
+// Return a copy of the netlist with every key and string escaped for markup.
+// netlistsvg writes names into the SVG's attributes and text unescaped; the
+// browser decodes them back, so ids and labels still carry the real names.
+function escapeNetlistMarkup(value) {
+    if (typeof value === 'string') return escapeMarkup(value);
+    if (Array.isArray(value)) return value.map(escapeNetlistMarkup);
+    if (value && typeof value === 'object') {
+        return Object.fromEntries(Object.entries(value).map(
+            ([key, item]) => [escapeMarkup(key), escapeNetlistMarkup(item)]));
+    }
+    return value;
 }
 
 // Return a copy of the netlist with recognized logic gates rewritten to the

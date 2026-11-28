@@ -7,8 +7,8 @@
 //    QApplication::setFont.
 // Both write through the app setters, which own persistence.
 
-import { buildModal, clampArrowStep, kArrowStepDefault, kArrowStepMax,
-         kArrowStepMin } from './ui-utils.js';
+import { buildModal, clampArrowStep, escapeMarkup, kArrowStepDefault,
+         kArrowStepMax, kArrowStepMin } from './ui-utils.js';
 
 const kDialogClass = 'options-dialog';
 
@@ -92,13 +92,14 @@ export function showAppFontDialog(app) {
     // option rather than silently snapping the dropdown to "System default".
     const current = app.fontFamily || '';
     const known = kFontFamilies.some((f) => f.value === current);
+    // Font stacks carry quotes, which would close the value attribute early.
     const options = kFontFamilies
-        .map((f) => `<option value="${escapeAttr(f.value)}"`
+        .map((f) => `<option value="${escapeMarkup(f.value)}"`
                     + `${f.value === current ? ' selected' : ''}>`
                     + `${f.label}</option>`)
         .join('')
         + (known ? ''
-                 : `<option value="${escapeAttr(current)}" selected>Custom`
+                 : `<option value="${escapeMarkup(current)}" selected>Custom`
                    + `</option>`);
 
     const { overlay, close, okBtn, showError } = buildModal(
@@ -111,7 +112,7 @@ export function showAppFontDialog(app) {
             <label>Custom family</label>
             <input type="text" class="fb-path-input opt-custom"
                    placeholder="optional CSS font-family"
-                   value="${known ? '' : escapeAttr(current)}">
+                   value="${known ? '' : escapeMarkup(current)}">
         </div>
         <div class="sn-row">
             <label>Size (%)</label>
@@ -169,10 +170,4 @@ export function showAppFontDialog(app) {
         });
     }
     return { close };
-}
-
-// Font stacks carry quotes, which would close the value attribute early.
-function escapeAttr(value) {
-    return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
-        .replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
