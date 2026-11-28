@@ -244,6 +244,7 @@ PASSFAIL_TESTS = [
     "test_net",
     "test_tcl_handles",
     "test_wire_codec",
+    "write_def_rect_mask",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -328,6 +329,7 @@ filegroup(
         "data/ndr.def",
         "data/parser_test.def",
         "data/path_assertions.3dbx",
+        "data/rect_mask.def",
         "data/rounding.def",
         "data/row_no_step.def",
         "data/sky130_fd_sc_hd__inv_1.gds",
