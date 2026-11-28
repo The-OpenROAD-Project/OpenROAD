@@ -305,6 +305,14 @@ void RouteBase::revertToMinCongestion()
 
     nbVec_[j]->setTargetDensity(minRcTargetDensity_[j]);
     nbVec_[j]->restoreRemovedFillers();
+    // The cells are back at the minimum's sizes, and the overflow is a
+    // fraction of their area: without this it would be measured against the
+    // sizes the cells just left. The same bookkeeping routability() does
+    // after inflating.
+    nbVec_[j]->updateAreas();
+    nbVec_[j]->setMovableArea(static_cast<int64_t>(
+        nbVec_[j]->getWhiteSpaceArea() * nbVec_[j]->getTargetDensity()));
+    nbVec_[j]->checkConsistency();
     nbVec_[j]->updateDensitySize();
     accumulatedInflatedAreaDelta_[j] = minRcInflatedAreaDelta_[j];
   }

@@ -1391,6 +1391,7 @@ class NesterovBase
 
  private:
   friend class TimingRepairIntegrationTest;
+  friend class RoutabilityMinimumTest;
 
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
