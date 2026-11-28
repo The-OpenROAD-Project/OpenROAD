@@ -176,7 +176,7 @@ bool tokenAllowed(const std::map<std::string, std::string>& params,
 bool requestTokenAllowed(std::string_view target, std::string_view expected);
 
 // The redirect for a redeemed ticket: the request's raw query with `ticket`
-// swapped for `token`, so viewer options like ?mergetiles=0 survive.
+// swapped for `token`, so viewer options like ?preservebuffer=1 survive.
 std::string authRedirectTarget(std::string_view target, std::string_view token);
 
 // What presenting a launch ticket got.  kReused is the right ticket after it

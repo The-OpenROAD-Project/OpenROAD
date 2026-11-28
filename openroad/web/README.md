@@ -712,9 +712,17 @@ The module has two parts:
   Tiles are rendered from ODB geometry and encoded as PNG using lodepng.
 
 - **JavaScript frontend** (`src/main.js`, `src/index.html`, `src/style.css`) —
-  A single-page application using Leaflet.js for the map and GoldenLayout for
-  resizable panels. Communicates with the server over a binary WebSocket
-  protocol.
+  A single-page application using deck.gl (WebGL) for the layout view and lit
+  components for the panels. Communicates with the server over a binary
+  WebSocket protocol.
+
+## Browser requirements
+
+The layout view is drawn with WebGL 2, in the live viewer and in a saved
+report alike. A browser without WebGL 2 shows the panels but no layout, and
+says so; one that runs WebGL 2 in software, without the GPU, draws more slowly
+and says that too. Current Chrome, Edge, Firefox, and Safari all have WebGL 2,
+but may lose it when hardware acceleration is turned off in the browser.
 
 ## Browser libraries
 
@@ -727,7 +735,7 @@ the result, so the browser only talks to the OpenROAD process.
 
 | Package | Used for |
 | --- | --- |
-| `leaflet` | the tiled layout view |
+| `@deck.gl/core`, `@deck.gl/layers`, `@deck.gl/extensions` | the layout view, drawn with WebGL through `deck-global.js` |
 | `golden-layout` | the dockable panel layout |
 | `netlistsvg` | the schematic, laid out by its own `elkjs` |
 | `three` | the 3D viewer, through `three-subset.js` |
@@ -774,6 +782,16 @@ There are a set of regression tests in `./test`.
 
 ```shell
 bazelisk test //openroad/web/test/...
+```
+
+`browser_smoke_test` opens the live viewer and a saved report, the report from
+disk with the network off, in a real Chrome and checks that a tile is drawn.
+It is tagged manual, since Chrome is not part of the build; CI runs it, and
+locally it needs Chrome with WebGL 2 (software rendering is enough):
+
+```shell
+bazelisk test //openroad/web/test:browser_smoke_test \
+    --test_env=CHROME=$(command -v google-chrome)
 ```
 
 ## License

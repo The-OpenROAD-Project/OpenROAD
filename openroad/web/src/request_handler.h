@@ -58,6 +58,9 @@ inline constexpr const char* kExitResultMsg = "_WEB_EXITING_";
 inline constexpr const char* kScriptBusyMsg
     = "The script is running; try again when it pauses or finishes.";
 
+// Error text for a request the client cancelled; routine during pan and zoom.
+inline constexpr const char* kCancelledMsg = "cancelled";
+
 // Server push announcing that the script started or stopped running, i.e.
 // that the ScriptGate closed or opened.
 inline std::string scriptRunningJson(bool running)
@@ -548,9 +551,9 @@ struct SessionState
 // Map an HTTP request target onto an embedded asset path.
 //
 // Strips the query string and fragment, which the asset lookup must not see:
-// the viewer's options are passed as query parameters (?mergetiles=0 and
-// friends), and matching "/?mergetiles=0" against the asset table simply fails,
-// so the whole page 404s.  Also maps "/" onto the index document.
+// the viewer's options are passed as query parameters (?preservebuffer=1 and
+// friends), and matching "/?preservebuffer=1" against the asset table simply
+// fails, so the whole page 404s.  Also maps "/" onto the index document.
 std::string assetPathFromTarget(std::string_view target);
 
 // Join `t`, or detach it when called from `t` itself, where a join throws
@@ -653,8 +656,8 @@ constexpr int kMaxTileZoom = 30;
 // Read the z/x/y grid coordinates of a tile request into `z`/`x`/`y`.
 // Returns false, with `error` describing the offending field, when a
 // coordinate is missing, is not an integer, or the zoom is outside
-// [0, kMaxTileZoom].  x and y are not bounded to the grid: Leaflet asks for
-// off-grid tiles as a matter of course and the renderers answer with a
+// [0, kMaxTileZoom].  x and y are not bounded to the grid: the client may
+// ask for off-grid tiles and the renderers answer with a
 // transparent tile.
 //
 // The type check is not paranoia about hand-written clients: JSON.stringify

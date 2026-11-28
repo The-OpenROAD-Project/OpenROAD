@@ -31,16 +31,41 @@ const elkBrowserBuild = {
     },
 };
 
+// loaders.gl fetches worker scripts and codec libraries from unpkg when it has
+// no copy of its own, so that fallback is pointed at nothing remote.  Only a
+// saved report's path overlay loads through it: a data: URL, decoded in page.
+const kLoadersCdn = 'https://unpkg.com/@loaders.gl';
+const noLoadersCdn = {
+    name: 'no-loaders-cdn',
+    setup(build) {
+        build.onLoad({ filter: /[\\/]@loaders\.gl[\\/].*\.js$/ },
+            async ({ path }) => {
+                const text = await readFile(path, 'utf8');
+                if (!text.includes(kLoadersCdn)) {
+                    return undefined;
+                }
+                return {
+                    contents: text.replaceAll(kLoadersCdn,
+                                              'loaders.gl-cdn-disabled'),
+                    loader: 'js',
+                };
+            });
+    },
+};
+
 export default {
     // iife: one self-contained script whose top-level names stay out of the
     // page's global scope, however the page loads it.
     format: 'iife',
     platform: 'browser',
     target: ['es2022'],
+    // deck.gl's builds without WebGPU; the viewer draws with WebGL only.
+    // Custom conditions drop esbuild's default 'module', so it is listed too.
+    conditions: ['visgl:webgl-only', 'module'],
     loader: {
-        // leaflet.css and the golden-layout themes reach icons through relative
+        // The golden-layout stylesheets reach icons through relative
         // url(); inlined, the page needs no file besides the bundles.
         '.png': 'dataurl',
     },
-    plugins: [compactSvg, elkBrowserBuild],
+    plugins: [compactSvg, elkBrowserBuild, noLoadersCdn],
 };

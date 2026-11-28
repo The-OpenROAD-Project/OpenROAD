@@ -1,0 +1,65 @@
+name: web-browser-smoke
+# The web viewer's unit tests draw against a stand-in for deck.gl; this one
+# opens the live viewer and a saved report in Chrome and checks that a tile is
+# drawn (//openroad/web/test:browser_smoke_test, tagged manual).
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - openroad/web/**
+      - MODULE.bazel
+      - MODULE.bazel.lock
+      - .github/workflows/github-actions-web-browser-smoke.yml
+permissions:
+  contents: read
+# A new push to the PR cancels the run still building the last one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  Web-Browser-Smoke:
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          submodules: recursive
+      - name: Set up bazel
+        uses: bazel-contrib/setup-bazel@f34d6a05eae3c24acab7fa54587492daeaeffdab  # 0.19.2
+        with:
+          bazelisk-version: 1.x
+          bazelisk-cache: true
+      - name: Install Chrome when the runner has none
+        run: |
+          if ! command -v google-chrome >/dev/null; then
+            curl -fsSLo "${RUNNER_TEMP}/chrome.deb" \
+              https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+            sudo apt-get update
+            sudo apt-get install -y "${RUNNER_TEMP}/chrome.deb"
+          fi
+          google-chrome --version
+      - name: Draw the layout in Chrome
+        env:
+          BAZEL_CACHE_LOGIN: ${{ secrets.BAZEL_CACHE_LOGIN }}
+        run: |-
+          # Same remote cache as github-actions-clang-tidy-bazel.yml: authed
+          # when the secret is there, the .bazelrc anonymous read otherwise.
+          LOGIN="${BAZEL_CACHE_LOGIN}"
+          REMOTE_FLAGS=()
+          if [ -n "${LOGIN}" ]; then
+            TOKEN_B64=$(printf '%s' "${LOGIN}" | base64 | tr -d '\n')
+            echo "::add-mask::${TOKEN_B64}"
+            REMOTE_FLAGS=(
+              --remote_cache=grpcs://bazel.precisioninno.com:443
+              --experimental_remote_downloader=grpcs://bazel.precisioninno.com:443
+              --remote_upload_local_results=true
+              --remote_header="Authorization=Basic ${TOKEN_B64}"
+            )
+          fi
+          set -x
+          bazel test \
+            "${REMOTE_FLAGS[@]}" \
+            --test_output=errors \
+            --test_env=CHROME="$(command -v google-chrome)" \
+            //openroad/web/test:browser_smoke_test

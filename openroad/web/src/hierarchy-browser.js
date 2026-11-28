@@ -266,9 +266,8 @@ export class HierarchyBrowser {
             console.error('set_module_colors failed:', err);
             return;
         }
-        // Only the module overlay reads these colors, so refresh that layer
-        // instead of every mounted one — a full redraw re-requests every metal
-        // layer's grid for a color they ignore.
+        // Only the module overlay reads these colors, so refresh the slot that
+        // draws it instead of every slot.
         if (this._app.modulesLayer) {
             this._app.modulesLayer.refreshTiles();
         } else {
