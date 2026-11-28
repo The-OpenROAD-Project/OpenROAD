@@ -234,5 +234,194 @@ TEST_F(CongestionRecoveryUndoTest, EcoUndoRestoresRecoveryReroutes)
   EXPECT_THAT(off_original_route, testing::IsEmpty());
 }
 
+// An ODB-loaded CUGR design (guides loaded via haveRoutes()/loadGuidesFromDB()
+// with initialized_ == false) must initialize CUGR cleanly on IncrementalGRoute
+// without requiring global_route -start_incremental, and reroute moved nets
+// instead of silently erasing their routes and guides.
+TEST_F(GuideRestoreFixture, CugrIncrementalFromOdbGuidesReroutesMovedNet)
+{
+  ASSERT_NO_FATAL_FAILURE(readNangate45Design("gcd.def"));
+  router_.setUseCUGR(true);
+  router_.setMinRoutingLayer(2);
+  router_.setMaxRoutingLayer(8);
+  router_.globalRoute(/*save_guides=*/true);
+
+  odb::dbBoolProperty* prop = odb::dbBoolProperty::find(block_, "grt_use_cugr");
+  ASSERT_NE(prop, nullptr);
+  ASSERT_TRUE(prop->getValue());
+
+  // Fresh GlobalRouter simulates a new process after read_db before any
+  // haveRoutes() call (routes_ empty, engine uninitialized).
+  GlobalRouter fresh_router(
+      &logger_, &registry_, &stt_, db_.get(), sta_.get(), &ant_, &dpl_);
+
+  odb::dbInst* target_inst = nullptr;
+  odb::dbNet* target_net = nullptr;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->getPlacementStatus() != odb::dbPlacementStatus::PLACED) {
+      continue;
+    }
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      odb::dbNet* net = iterm->getNet();
+      if (net != nullptr && !net->isSpecial()
+          && net->getSigType() == odb::dbSigType::SIGNAL
+          && net->getTermCount() >= 2 && !net->getGuides().empty()) {
+        target_inst = inst;
+        target_net = net;
+        break;
+      }
+    }
+    if (target_inst != nullptr) {
+      break;
+    }
+  }
+  ASSERT_NE(target_inst, nullptr);
+  ASSERT_NE(target_net, nullptr);
+
+  const odb::Rect die = block_->getDieArea();
+  int old_x = 0;
+  int old_y = 0;
+  target_inst->getLocation(old_x, old_y);
+  const int new_x
+      = (old_x < die.xCenter()) ? (die.xMax() - 10000) : (die.xMin() + 10000);
+  const int new_y
+      = (old_y < die.yCenter()) ? (die.yMax() - 10000) : (die.yMin() + 10000);
+
+  IncrementalGRoute incremental(&fresh_router, block_);
+  EXPECT_TRUE(fresh_router.isUseCUGR());
+  target_inst->setLocation(new_x, new_y);
+  const std::vector<odb::dbNet*> rerouted
+      = incremental.updateRoutes(/*save_guides=*/true);
+
+  EXPECT_THAT(rerouted, testing::Contains(target_net));
+  ASSERT_TRUE(fresh_router.getRoutes().contains(target_net));
+  EXPECT_FALSE(fresh_router.getRoutes().at(target_net).empty());
+  EXPECT_FALSE(target_net->getGuides().empty());
+}
+
+// Both routing engines on an ODB-loaded design (guides loaded with
+// initialized_ == false) must initialize eagerly in IncrementalGRoute so ECO
+// undo preserves guide-restore flags instead of wiping db_net_map_ entries on
+// the first updateRoutes().
+class OdbGuideIncrementalUndoTest : public GuideRestoreFixture,
+                                    public testing::WithParamInterface<bool>
+{
+};
+
+TEST_P(OdbGuideIncrementalUndoTest, PreservesEcoUndo)
+{
+  const bool use_cugr = GetParam();
+  ASSERT_NO_FATAL_FAILURE(readNangate45Design("gcd.def"));
+  router_.setUseCUGR(use_cugr);
+  router_.setMinRoutingLayer(2);
+  router_.setMaxRoutingLayer(8);
+  router_.globalRoute(/*save_guides=*/true);
+
+  GlobalRouter fresh_router(
+      &logger_, &registry_, &stt_, db_.get(), sta_.get(), &ant_, &dpl_);
+  fresh_router.setMinRoutingLayer(2);
+  fresh_router.setMaxRoutingLayer(8);
+  ASSERT_TRUE(fresh_router.haveRoutes());
+  ASSERT_EQ(fresh_router.isUseCUGR(), use_cugr);
+
+  odb::dbNet* target_net = nullptr;
+  for (odb::dbNet* net : block_->getNets()) {
+    if (!net->isSpecial() && net->getSigType() == odb::dbSigType::SIGNAL
+        && net->getTermCount() >= 2 && !net->getGuides().empty()
+        && fresh_router.getRoutes().contains(net)) {
+      target_net = net;
+      break;
+    }
+  }
+  ASSERT_NE(target_net, nullptr);
+
+  std::vector<int> grid_x;
+  std::vector<int> grid_y;
+  block_->getGCellGrid()->getGridX(grid_x);
+  block_->getGCellGrid()->getGridY(grid_y);
+  const int gcell_w = grid_x[1] - grid_x[0];
+  const int gcell_h = grid_y[1] - grid_y[0];
+  const auto orig_edges
+      = getWireEdges(fresh_router.getRoutes().at(target_net), gcell_w, gcell_h);
+
+  IncrementalGRoute incremental(&fresh_router, block_);
+  odb::dbDatabase::beginEco(block_);
+  // Trigger inDbNetPostGuideRestore BEFORE the first updateRoutes() call.
+  // Without eager engine initialization in IncrementalGRoute, lazy engine
+  // initialization in updateRoutes() would recreate db_net_map_ and wipe the
+  // restore_route_from_guides flag, forcing an unnecessary reroute.
+  target_net->clearGuides();
+  odb::dbDatabase::undoEco(block_);
+  const std::vector<odb::dbNet*> rerouted
+      = incremental.updateRoutes(/*save_guides=*/true);
+  EXPECT_THAT(rerouted, testing::IsEmpty());
+  ASSERT_TRUE(fresh_router.getRoutes().contains(target_net));
+  EXPECT_EQ(
+      getWireEdges(fresh_router.getRoutes().at(target_net), gcell_w, gcell_h),
+      orig_edges);
+}
+
+TEST_P(OdbGuideIncrementalUndoTest, AdoptsInProcessDetailedRoutesOnce)
+{
+  const bool use_cugr = GetParam();
+  ASSERT_NO_FATAL_FAILURE(readNangate45Design("gcd.def"));
+  router_.setUseCUGR(use_cugr);
+  router_.setMinRoutingLayer(2);
+  router_.setMaxRoutingLayer(8);
+  router_.globalRoute(/*save_guides=*/true);
+  ASSERT_TRUE(router_.isInitialized());
+  ASSERT_FALSE(router_.hasAdoptedDetailedRoutes());
+
+  odb::dbNet* wired_net = nullptr;
+  odb::dbNet* other_net = nullptr;
+  for (odb::dbNet* net : block_->getNets()) {
+    if (!net->isSpecial() && net->getSigType() == odb::dbSigType::SIGNAL
+        && net->getTermCount() >= 2 && !net->getGuides().empty()
+        && router_.getRoutes().contains(net)) {
+      if (wired_net == nullptr) {
+        wired_net = net;
+      } else {
+        other_net = net;
+        break;
+      }
+    }
+  }
+  ASSERT_NE(wired_net, nullptr);
+  ASSERT_NE(other_net, nullptr);
+
+  // Simulate in-process detailed_route writing a routed wire after globalRoute.
+  odb::dbWire* wire = odb::dbWire::create(wired_net);
+  ASSERT_NE(wire, nullptr);
+  wired_net->setWireType(odb::dbWireType::ROUTED);
+  ASSERT_TRUE(router_.haveDetailedRoutes());
+
+  {
+    IncrementalGRoute incr(&router_, block_);
+    EXPECT_TRUE(router_.hasAdoptedDetailedRoutes());
+  }
+
+  // A subsequent IncrementalGRoute scope must reuse the adopted engine state
+  // without wiping db_net_map_ or rerouting an ECO-undone net.
+  Net* adopted_other_net = router_.getNet(other_net);
+  ASSERT_NE(adopted_other_net, nullptr);
+  {
+    IncrementalGRoute incr(&router_, block_);
+    EXPECT_EQ(router_.getNet(other_net), adopted_other_net);
+    odb::dbDatabase::beginEco(block_);
+    other_net->clearGuides();
+    odb::dbDatabase::undoEco(block_);
+    const std::vector<odb::dbNet*> rerouted
+        = incr.updateRoutes(/*save_guides=*/true);
+    EXPECT_THAT(rerouted, testing::IsEmpty());
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(RoutingEngines,
+                         OdbGuideIncrementalUndoTest,
+                         testing::Bool(),
+                         [](const testing::TestParamInfo<bool>& info) {
+                           return info.param ? "CUGR" : "FastRoute";
+                         });
+
 }  // namespace
 }  // namespace grt

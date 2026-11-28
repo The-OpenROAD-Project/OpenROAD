@@ -109,6 +109,12 @@ set_congestion_iterations(int iterations)
 }
 
 void
+reset_congestion_iterations()
+{
+  getGlobalRouter()->resetCongestionIterations();
+}
+
+void
 set_congestion_report_iter_step(int congestion_report_iter_step)
 {
   getGlobalRouter()->setCongestionReportIterStep(congestion_report_iter_step);

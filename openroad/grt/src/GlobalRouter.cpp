@@ -65,6 +65,7 @@
 #include "utl/Logger.h"
 #include "utl/ServiceRegistry.h"
 #include "utl/algorithms.h"
+#include "utl/scope.h"
 #include "utl/timer.h"
 
 namespace grt {
@@ -156,6 +157,7 @@ void GlobalRouter::clear()
     delete net;
   }
   db_net_map_.clear();
+  dirty_nets_.clear();
   routing_tracks_.clear();
   routing_layers_.clear();
   grid_->clear();
@@ -167,6 +169,7 @@ void GlobalRouter::clear()
   vertical_capacities_.clear();
   horizontal_capacities_.clear();
   initialized_ = false;
+  detailed_routes_adopted_ = false;
   edges_3d_released_ = false;
   congestion_accepted_ = false;
 }
@@ -222,11 +225,14 @@ std::vector<Net*> GlobalRouter::initCUGR(int min_routing_layer,
   reportMacrosAndBlockages();
   std::vector<Net*> nets = initNets(true);
   initialized_ = true;
+  detailed_routes_adopted_ = false;
   odb::PtrSet<odb::dbNet> clock_nets;
   findClockNets(nets, clock_nets);
   reportNetDegree(nets);
 
-  cugr_->setCongestionIterations(congestion_iterations_);
+  constexpr int kDefaultCugrCongestionIterations = 5;
+  cugr_->setCongestionIterations(
+      congestion_iterations_.value_or(kDefaultCugrCongestionIterations));
   cugr_->setSkipLargeFanoutNets(skip_large_fanout_);
   cugr_->setSelectedNets(nets_to_route_);
   // Set before init so Design::read() gates its statistics on verbosity.
@@ -270,6 +276,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   initNetlist(nets);
 
   initialized_ = true;
+  detailed_routes_adopted_ = false;
   return nets;
 }
 
@@ -489,19 +496,42 @@ bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
   return false;
 }
 
-void GlobalRouter::startIncremental()
+void GlobalRouter::prepareIncrementalRouting(bool require_existing_routes,
+                                             bool force_reinit_detailed,
+                                             bool quiet)
 {
   ensureEngineSelected();
   discardCongestionOnlyState();
-  is_incremental_ = true;
   // A design read from odb has its global routing only as guides; load them
-  // so the update starts from the existing routing, not an empty grid.
-  if (designIsPlaced()) {
+  // before attaching callbacks so pre-ECO routes and pin positions are known.
+  if (routes_.empty() && designIsPlaced()) {
     loadGuidesFromDB();
   }
-  if (!initialized_ || haveDetailedRoutes()) {
+  const bool has_detailed = haveDetailedRoutes();
+  const bool needs_init
+      = !initialized_
+        || (has_detailed
+            && (force_reinit_detailed || !detailed_routes_adopted_));
+  if (!needs_init) {
+    return;
+  }
+  if (require_existing_routes && routes_.empty() && !has_detailed) {
+    return;
+  }
+  if (quiet) {
+    utl::SetAndRestore verbose_guard(verbose_, false);
+    initEngineWithExistingRouting();
+  } else {
     initEngineWithExistingRouting();
   }
+}
+
+void GlobalRouter::startIncremental()
+{
+  is_incremental_ = true;
+  prepareIncrementalRouting(/*require_existing_routes=*/false,
+                            /*force_reinit_detailed=*/true,
+                            /*quiet=*/false);
   grouter_cbk_ = new GRouteDbCbk(this);
   grouter_cbk_->addOwner(block_);
 }
@@ -740,6 +770,7 @@ void GlobalRouter::initEngineWithExistingRouting()
 {
   int min_layer, max_layer;
   getMinMaxLayer(min_layer, max_layer);
+  const bool has_detailed = haveDetailedRoutes();
   if (use_cugr_) {
     initCUGR(min_layer, max_layer);
     // Adopt the existing routing into CUGR's demand, like FastRoute's
@@ -789,6 +820,12 @@ void GlobalRouter::initEngineWithExistingRouting()
                failed);
     // The overflow relief only clears overflow above the adopted routing.
     cugr_->captureOverflowBaseline();
+    // Sync pin on-grid positions to the adopted CUGR routes after initCUGR()
+    // recreated db_net_map_.
+    updatePinAccessPoints();
+    // Adoption marks every traversed GCell dirty; clear those so incremental
+    // updates only refresh tiles touched by subsequent reroutes.
+    cugr_->clearCongestionDirtyTiles();
   } else {
     initFastRoute(min_layer, max_layer);
     // Repopulate edge usage from routes_ using updateNetResources, which
@@ -817,13 +854,17 @@ void GlobalRouter::initEngineWithExistingRouting()
     // Global routing read from odb: take back the capacities it was routed
     // with, those of the odb congestion map, rather than recompute them for
     // cells that moved after (e.g. legalized by the stage that routed it).
-    if (!haveDetailedRoutes()) {
+    if (!has_detailed) {
       fastroute_->restoreCapacitiesFromDb(min_layer, max_layer);
     }
     // Disable the extra edge cost for NDR nets on congested 2D edges.
     // Uses routes_ segments directly since sttrees are not yet populated.
     disableCongestedNDRNetsFromRoutes(ndr_nets);
+    // Adoption marks every traversed GCell dirty; clear those so incremental
+    // updates only refresh tiles touched by subsequent reroutes.
+    fastroute_->clearCongestionDirtyTiles();
   }
+  detailed_routes_adopted_ = has_detailed;
 }
 
 int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
@@ -3221,6 +3262,11 @@ void GlobalRouter::setCongestionIterations(int iterations)
   congestion_iterations_ = iterations;
 }
 
+void GlobalRouter::resetCongestionIterations()
+{
+  congestion_iterations_.reset();
+}
+
 void GlobalRouter::setCongestionReportIterStep(int congestion_report_iter_step)
 {
   congestion_report_iter_step_ = congestion_report_iter_step;
@@ -3355,7 +3401,9 @@ void GlobalRouter::initGridAndNets()
 void GlobalRouter::configFastRoute()
 {
   fastroute_->setVerbose(verbose_);
-  fastroute_->setOverflowIterations(congestion_iterations_);
+  constexpr int kDefaultFastRouteCongestionIterations = 50;
+  fastroute_->setOverflowIterations(
+      congestion_iterations_.value_or(kDefaultFastRouteCongestionIterations));
   fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
   fastroute_->setResistanceAware(resistance_aware_);
   fastroute_->setSnapshotBatchedWidth(snapshot_batched_width_);
@@ -5982,7 +6030,8 @@ void GlobalRouter::updateNetPins(Net* net)
 
 Net* GlobalRouter::getNet(odb::dbNet* db_net)
 {
-  return db_net_map_[db_net];
+  const auto it = db_net_map_.find(db_net);
+  return it != db_net_map_.end() ? it->second : nullptr;
 }
 
 int GlobalRouter::getTileSize() const
@@ -7558,7 +7607,16 @@ bool operator==(const RoutePt& p1, const RoutePt& p2)
 IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
     : groute_(groute), db_cbk_(groute)
 {
-  db_cbk_.addOwner(block);
+  // Initialize eagerly before attaching db_cbk_ so pre-ECO routes and pin
+  // positions are snapshotted before any ODB mutation fires a callback
+  // (runs once for initial ODB/guide adoption and once if detailed wires
+  // appear after an in-process global_route).
+  groute_->prepareIncrementalRouting(/*require_existing_routes=*/true,
+                                     /*force_reinit_detailed=*/false,
+                                     /*quiet=*/true);
+  if (groute_->initialized_) {
+    db_cbk_.addOwner(block);
+  }
 }
 
 std::vector<odb::dbNet*> IncrementalGRoute::updateRoutes(bool save_guides,
@@ -7605,6 +7663,11 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides,
                                                   bool update_pin_access)
 {
+  if (!initialized_) {
+    dirty_nets_.clear();
+    return {};
+  }
+
   if (update_pin_access) {
     if (auto* pa = service_registry_->find<drt::PinAccessService>()) {
       // New access points mark their nets dirty, so they are rerouted below.
@@ -7674,6 +7737,9 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr(bool save_guides)
   for (odb::dbNet* db_net : dirty_nets_) {
     // Rebuild the pin set from the netlist; positions are synced below.
     Net* net = getNet(db_net);
+    if (net == nullptr) {
+      continue;
+    }
     updateNetPins(net);
     // Stale detailed wires (post-detailed-route repair) must go: the
     // reroute and its guides supersede them, and the antenna checker
@@ -7744,10 +7810,6 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
   std::vector<Net*> dirty_nets;
 
   fastroute_->setResistanceAware(resistance_aware_);
-
-  if (!initialized_) {
-    initEngineWithExistingRouting();
-  }
 
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);

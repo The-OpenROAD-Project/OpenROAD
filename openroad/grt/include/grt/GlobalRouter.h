@@ -8,6 +8,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -152,6 +153,7 @@ class GlobalRouter
                            float reduction_percentage);
   void setVerbose(bool v);
   void setCongestionIterations(int iterations);
+  void resetCongestionIterations();
   void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* file_name);
   void setGridOrigin(int x, int y);
@@ -389,6 +391,7 @@ class GlobalRouter
   void getMinMaxLayer(int& min_layer, int& max_layer);
   void getCapacityReductionData(CapacityReductionData& cap_red_data);
   bool isInitialized() const { return initialized_; }
+  bool hasAdoptedDetailedRoutes() const { return detailed_routes_adopted_; }
   bool isCongested() const { return is_congested_; }
   // Per-layer congestion table of the current routing, FastRoute or CUGR.
   void reportCongestion();
@@ -448,6 +451,9 @@ class GlobalRouter
   void initRoutingGrid(int min_routing_layer, int max_routing_layer);
   std::vector<Net*> initCUGR(int min_routing_layer, int max_routing_layer);
   void initEngineWithExistingRouting();
+  void prepareIncrementalRouting(bool require_existing_routes,
+                                 bool force_reinit_detailed,
+                                 bool quiet);
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
   bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);
@@ -651,7 +657,7 @@ class GlobalRouter
   // Flow variables
   bool infinite_capacity_;
   float adjustment_;
-  int congestion_iterations_{50};
+  std::optional<int> congestion_iterations_;
   int congestion_report_iter_step_;
   bool allow_congestion_;
   bool resistance_aware_{false};
@@ -662,6 +668,9 @@ class GlobalRouter
   std::vector<int> horizontal_capacities_;
   int macro_extension_;
   bool initialized_;
+  // True once initEngineWithExistingRouting() has adopted detailed wires so
+  // subsequent IncrementalGRoute scopes do not re-adopt the full chip.
+  bool detailed_routes_adopted_ = false;
   // A -congestion_only pass released the 3D edges.
   bool edges_3d_released_ = false;
   int total_diodes_count_;
