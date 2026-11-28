@@ -1748,9 +1748,12 @@ void collectOppositeRfArcs(Resizer& resizer, EstimatorContext& context)
         continue;
       }
 
-      target.opposite_rf_arcs.push_back({.ref_arc = ref_arc,
-                                         .input_slew = input_slew,
-                                         .current_model_delay = delay});
+      target.opposite_rf_arcs.push_back({
+          .ref_arc = ref_arc,
+          .input_slew = input_slew,
+          .current_model_delay = delay,
+          .current_model_slew = output_slew,
+      });
     }
   }
 
@@ -1775,35 +1778,13 @@ void applyDualRfCheck(const EstimatorContext& context,
                       const sta::LibertyCell* candidate_cell,
                       DelayEstimate& estimate)
 {
-  const DelayStageState& target = context.target();
-  if (target.opposite_rf_arcs.empty()) {
+  const std::optional<float> opposite_delta
+      = oppositeRfDelayDelta(context, candidate_cell);
+  if (!opposite_delta.has_value()) {
     return;
   }
 
-  float worst_delta = -std::numeric_limits<float>::infinity();
-  for (const OppositeRfArc& opposite : target.opposite_rf_arcs) {
-    float delay = 0.0f;
-    float output_slew = 0.0f;
-    if (!lookupArcDelayAndSlewForArc(target.arc.scene,
-                                     target.arc.min_max,
-                                     target.arc.pvt,
-                                     opposite.ref_arc,
-                                     opposite.input_slew,
-                                     target.load_cap,
-                                     candidate_cell,
-                                     delay,
-                                     output_slew,
-                                     ArcMatchMode::kRelaxedCandidate)) {
-      continue;
-    }
-
-    worst_delta = std::max(worst_delta, delay - opposite.current_model_delay);
-  }
-
-  if (!std::isfinite(worst_delta)) {
-    return;
-  }
-
+  const float worst_delta = *opposite_delta;
   if (worst_delta <= 0.0f || !std::isfinite(context.opposite_rf_slack)) {
     return;
   }
@@ -2167,6 +2148,47 @@ std::optional<EstimatorContext> DelayEstimator::buildContext(
     collectOppositeRfArcs(resizer, context);
   }
   return context;
+}
+
+std::optional<float> oppositeRfDelayDelta(
+    const EstimatorContext& context,
+    const sta::LibertyCell* candidate_scene_cell,
+    float* worst_slew_delta,
+    float* worst_output_slew)
+{
+  const DelayStageState& target = context.target();
+  std::optional<float> worst_delta;
+  float max_slew_delta = 0.0f;
+  float max_output_slew = 0.0f;
+  for (const OppositeRfArc& opposite : target.opposite_rf_arcs) {
+    float delay = 0.0f;
+    float output_slew = 0.0f;
+    if (!lookupArcDelayAndSlewForArc(target.arc.scene,
+                                     target.arc.min_max,
+                                     target.arc.pvt,
+                                     opposite.ref_arc,
+                                     opposite.input_slew,
+                                     target.load_cap,
+                                     candidate_scene_cell,
+                                     delay,
+                                     output_slew,
+                                     ArcMatchMode::kRelaxedCandidate)) {
+      continue;
+    }
+
+    const float delta = delay - opposite.current_model_delay;
+    worst_delta = std::max(worst_delta.value_or(delta), delta);
+    max_slew_delta
+        = std::max(max_slew_delta, output_slew - opposite.current_model_slew);
+    max_output_slew = std::max(max_output_slew, output_slew);
+  }
+  if (worst_slew_delta != nullptr) {
+    *worst_slew_delta = max_slew_delta;
+  }
+  if (worst_output_slew != nullptr) {
+    *worst_output_slew = max_output_slew;
+  }
+  return worst_delta;
 }
 
 float oppositeRfSideLoss(const float opposite_slack, const float delay_delta)

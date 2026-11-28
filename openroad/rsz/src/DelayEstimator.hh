@@ -32,6 +32,15 @@ struct Target;
 // Negative-region slack lost by the opposite output transition when its delay
 // grows by delay_delta; zero when the transition stays non-critical.
 float oppositeRfSideLoss(float opposite_slack, float delay_delta);
+// The largest delay growth of the target's opposite output transition with
+// candidate_scene_cell, or none without dual rise/fall arcs in context.
+// When provided, also records the worst opposite-RF output slew delta and
+// worst candidate opposite-RF output slew.
+std::optional<float> oppositeRfDelayDelta(
+    const EstimatorContext& context,
+    const sta::LibertyCell* candidate_scene_cell,
+    float* worst_slew_delta = nullptr,
+    float* worst_output_slew = nullptr);
 
 // Weights of the fanin side loads in buildContext().  Loads in
 // critical_load_pins, the worst paths of all violating endpoints, keep weight

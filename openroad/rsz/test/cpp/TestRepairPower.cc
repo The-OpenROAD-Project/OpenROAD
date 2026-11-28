@@ -1,0 +1,877 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026-2026, The OpenROAD Authors
+
+// repair_power: VT swaps that save power within the timing contract.
+// TestRepairPower.v chains LVT AND2 cells p0..p5 from input a to oend.  Each
+// p<k> also has a side input s<k> and an output o<k> of its own, behind a
+// typical-VT buffer that has no higher VT.  r0, r1 and f0 are LVT buffers;
+// f_out has no output delay, so f0 has no required time.  The Nangate45 LEFs
+// have no VT implant layers, so the fixture gives LVT and RVT masters them.
+
+#include <cmath>
+#include <map>
+#include <string>
+#include <vector>
+
+#include "PowerModel.hh"
+#include "TestResizerMtFixture.hh"
+#include "rsz/Resizer.hh"
+#include "sta/PowerClass.hh"
+
+namespace rsz {
+
+class TestRepairPower : public TestResizerMt
+{
+ protected:
+  static constexpr int kChain = 6;
+  static constexpr float kPeriod = 1e-9f;
+  // Float noise in the slack sums.
+  static constexpr float kNoise = 1e-15f;
+
+  virtual bool tagLvtMasters() const { return true; }
+
+  void SetUp() override
+  {
+    if (tagLvtMasters()) {
+      odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
+          db_->getTech(), "LVT", odb::dbTechLayerType::IMPLANT);
+      odb::dbTechLayer* rvt_implant = odb::dbTechLayer::create(
+          db_->getTech(), "RVT", odb::dbTechLayerType::IMPLANT);
+      for (odb::dbMaster* master : lib_->getMasters()) {
+        odb::dbTechLayer* implant
+            = master->getName().ends_with("_L") ? lvt_implant : rvt_implant;
+        odb::dbBox::create(
+            master, implant, 0, 0, master->getWidth(), master->getHeight());
+      }
+    }
+    readVerilogAndSetup("TestRepairPower.v", /*init_default_sdc=*/false);
+    sta::PinSet clk_pins(db_network_);
+    clk_pins.insert(pin("clk"));
+    sta_->makeClock("clk",
+                    clk_pins,
+                    false,
+                    kPeriod,
+                    {0.0f, kPeriod / 2},
+                    "",
+                    sta_->cmdMode());
+    setInputDelay("a", 0.0f);
+    setInputDelay("r_in", 0.0f);
+    setInputDelay("f_in", 0.0f);
+    setOutputDelay("r_out", 0.0f);
+    setOutputDelay("oend", 0.0f);
+    for (int k = 0; k < kChain; ++k) {
+      setOutputDelay(name("o", k), 0.0f);
+    }
+  }
+
+  static std::string name(const char* prefix, const int k)
+  {
+    return prefix + std::to_string(k);
+  }
+
+  sta::Pin* pin(const std::string& path) const
+  {
+    sta::Pin* found = db_network_->findPin(path.c_str());
+    EXPECT_NE(found, nullptr) << path;
+    return found;
+  }
+
+  sta::Clock* clock() const { return sta_->cmdMode()->sdc()->findClock("clk"); }
+
+  void setInputDelay(const std::string& port, const float delay)
+  {
+    sta_->setInputDelay(pin(port),
+                        sta::RiseFallBoth::riseFall(),
+                        clock(),
+                        sta::RiseFall::rise(),
+                        nullptr,
+                        false,
+                        false,
+                        sta::MinMaxAll::all(),
+                        false,
+                        delay,
+                        sta_->cmdMode()->sdc());
+  }
+
+  void setOutputDelay(const std::string& port, const float delay)
+  {
+    sta_->setOutputDelay(pin(port),
+                         sta::RiseFallBoth::riseFall(),
+                         clock(),
+                         sta::RiseFall::rise(),
+                         nullptr,
+                         false,
+                         false,
+                         sta::MinMaxAll::all(),
+                         false,
+                         delay,
+                         sta_->cmdMode()->sdc());
+  }
+
+  float arrival(const std::string& path)
+  {
+    sta_->updateTiming(false);
+    return sta::delayAsFloat(sta_->arrival(
+        pin(path), sta::RiseFallBoth::riseFall(), sta::MinMax::max()));
+  }
+
+  float slack(const std::string& port)
+  {
+    sta_->updateTiming(false);
+    return sta::delayAsFloat(sta_->slack(pin(port),
+                                         sta::RiseFallBoth::riseFall(),
+                                         sta_->scenes(),
+                                         sta::MinMax::max()));
+  }
+
+  std::string master(const std::string& inst) const
+  {
+    return block_->findInst(inst.c_str())->getMaster()->getName();
+  }
+
+  void swap(const std::string& inst, const std::string& cell)
+  {
+    sta::Instance* sta_inst = db_network_->findInstance(inst.c_str());
+    ASSERT_NE(sta_inst, nullptr) << inst;
+    sta::LibertyCell* lib_cell = db_network_->findLibertyCell(cell.c_str());
+    ASSERT_NE(lib_cell, nullptr) << cell;
+    sta_->replaceCell(sta_inst, lib_cell);
+  }
+
+  std::map<std::string, std::string> masters() const
+  {
+    std::map<std::string, std::string> result;
+    for (odb::dbInst* inst : block_->getInsts()) {
+      result[inst->getName()] = inst->getMaster()->getName();
+    }
+    return result;
+  }
+
+  int lvtCount() const
+  {
+    int count = 0;
+    for (const auto& [inst, cell] : masters()) {
+      count += cell.ends_with("_L");
+    }
+    return count;
+  }
+
+  VtBudget budget(const std::vector<std::string>& cells, const float percent)
+  {
+    VtBudget budget{.cells = {}, .max_percent = percent};
+    for (const std::string& cell : cells) {
+      budget.cells.push_back(db_network_->findLibertyCell(cell.c_str()));
+    }
+    return budget;
+  }
+
+  VtBudget lvtBudget(const float percent)
+  {
+    return budget({"AND2_X1_L", "BUF_X1_L"}, percent);
+  }
+
+  // Every p<k> on the chain to oend, which has `room` of slack: too little
+  // for a swap within the contract.
+  void timeTightChain(const float room)
+  {
+    for (int k = 0; k < kChain; ++k) {
+      setInputDelay(name("s", k), 0.0f);
+    }
+    setOutputDelay("oend", kPeriod - arrival("oend") - room);
+  }
+
+  float totalPower()
+  {
+    sta::PowerResult total, sequential, combinational, clk, macro, pad;
+    sta_->power(
+        sta_->cmdScene(), total, sequential, combinational, clk, macro, pad);
+    return total.total();
+  }
+
+  struct Contract
+  {
+    float setup_ws;
+    float setup_tns;
+    float hold_ws;
+  };
+
+  Contract contract()
+  {
+    sta_->updateTiming(false);
+    return {.setup_ws = sta::delayAsFloat(sta_->worstSlack(sta::MinMax::max())),
+            .setup_tns
+            = sta::delayAsFloat(sta_->totalNegativeSlack(sta::MinMax::max())),
+            .hold_ws = sta::delayAsFloat(sta_->worstSlack(sta::MinMax::min()))};
+  }
+
+  // The strict contract against `start`: setup and hold WS no worse below
+  // their margins, setup TNS within 1%.
+  static void expectKept(const Contract& start,
+                         const Contract& now,
+                         const float setup_margin,
+                         const float hold_margin)
+  {
+    EXPECT_GE(std::min(now.setup_ws - setup_margin, 0.0f),
+              std::min(start.setup_ws - setup_margin, 0.0f) - kNoise);
+    EXPECT_GE(now.setup_tns, 1.01f * start.setup_tns - kNoise);
+    EXPECT_GE(std::min(now.hold_ws - hold_margin, 0.0f),
+              std::min(start.hold_ws - hold_margin, 0.0f) - kNoise);
+  }
+
+  std::map<std::string, float> endpointSlacks()
+  {
+    sta_->updateTiming(false);
+    std::map<std::string, float> slacks;
+    for (sta::Vertex* endpoint : sta_->endpoints()) {
+      slacks[db_network_->pathName(endpoint->pin())]
+          = sta::delayAsFloat(sta_->slack(endpoint, sta::MinMax::max()));
+    }
+    return slacks;
+  }
+
+  // Each p<k> gets `room` on its own path s<k> -> p<k> -> o<k>: s<k> arrives
+  // after the chain at p<k>, so p<k>'s worst path holds no other p.  The
+  // chain a -> p0 .. p5 -> oend gets `room` plus the lead the side inputs
+  // built up plus `extra`, so oend itself is at `room` plus `extra`.
+  void timeChain(const float room, const float extra)
+  {
+    constexpr float kGap = 3e-12f;
+    constexpr float kLate = 500e-12f;
+    const float chain_end = arrival("oend");
+    for (int k = 0; k < kChain; ++k) {
+      const std::string out = name("p", k) + "/ZN";
+      const float through_a1 = arrival(out);
+      setInputDelay(name("s", k), kLate);
+      const float a2_delay = arrival(out) - kLate;
+      setInputDelay(name("s", k), through_a1 + kGap - a2_delay);
+    }
+    for (int k = 0; k < kChain; ++k) {
+      const std::string out = name("o", k);
+      setOutputDelay(out, kPeriod - arrival(out) - room);
+    }
+    const float lead = arrival("oend") - chain_end;
+    setOutputDelay("oend", kPeriod - chain_end - (room + lead + extra));
+  }
+};
+
+// Every LVT cell has slack to spare, the one without a required time
+// included: all of them go to the typical VT and the total power drops.
+TEST_F(TestRepairPower, SwapsEveryCellWithRoom)
+{
+  for (int k = 0; k < kChain; ++k) {
+    setInputDelay(name("s", k), 0.0f);
+  }
+  const Contract start = contract();
+  const float power = totalPower();
+  resizer_.repairPower(0.0, 0.0, 0.0, false);
+
+  for (int k = 0; k < kChain; ++k) {
+    EXPECT_EQ(master(name("p", k)), "AND2_X1");
+  }
+  EXPECT_EQ(master("r0"), "BUF_X1");
+  EXPECT_EQ(master("r1"), "BUF_X1");
+  EXPECT_EQ(master("f0"), "BUF_X1");
+  EXPECT_LT(totalPower(), power);
+  expectKept(start, contract(), 0.0f, 0.0f);
+}
+
+// The gain PowerModel predicts for a swap is the drop in the instance's STA
+// internal and leakage power.  The test libraries differ in supply voltage,
+// which STA also applies to the driven net's switching power; the model
+// takes the VTs of one cell to share a supply.
+TEST_F(TestRepairPower, PowerModelGainIsTheInstancePowerDrop)
+{
+  PowerModel model(resizer_);
+  model.init();
+  sta::Instance* r0 = db_network_->findInstance("r0");
+  model.prepare(r0);
+  const float gain = model.gain(r0, db_network_->findLibertyCell("BUF_X1"));
+  const auto own_power = [&]() {
+    totalPower();
+    const sta::PowerResult power = sta_->power(r0, sta_->cmdScene());
+    return power.internal() + power.leakage();
+  };
+  const float before = own_power();
+  swap("r0", "BUF_X1");
+  const float drop = before - own_power();
+  ASSERT_GT(drop, 0.0f);
+  EXPECT_NEAR(gain, drop, 0.01f * drop);
+}
+
+// A swap may spend at most half of its room: p0's swap costs more than half
+// of the room on its own path, though less than all of it, and is not taken.
+TEST_F(TestRepairPower, SpendsAtMostHalfTheRoom)
+{
+  for (int k = 0; k < kChain; ++k) {
+    setInputDelay(name("s", k), 0.0f);
+  }
+  const float before = slack("o0");
+  swap("p0", "AND2_X1");
+  const float cost = before - slack("o0");
+  swap("p0", "AND2_X1_L");
+  ASSERT_GT(cost, 0.0f);
+  setOutputDelay("o0", kPeriod - arrival("o0") - 1.5f * cost);
+
+  resizer_.repairPower(0.0, 0.0, 0.0, false);
+  EXPECT_EQ(master("p0"), "AND2_X1_L");
+  EXPECT_EQ(master("p1"), "AND2_X1");
+  EXPECT_GE(slack("o0"), 1.5f * cost - kNoise);
+}
+
+// Each p<k> fits its own budget, but together the swaps break the chain: the
+// batch is salvaged.  The swaps beside the chain stay and the chain keeps
+// its slack.
+TEST_F(TestRepairPower, SalvagesABatchThatBreaksAPath)
+{
+  const float room = 40e-12f;
+  timeChain(room, 2e-12f);
+  for (int k = 0; k < kChain; ++k) {
+    const std::string p = name("p", k);
+    const std::string out = name("o", k);
+    swap(p, "AND2_X1");
+    EXPECT_LT(room - slack(out), room / 2) << p << " exceeds its budget";
+    swap(p, "AND2_X1_L");
+  }
+  for (int k = 0; k < kChain; ++k) {
+    swap(name("p", k), "AND2_X1");
+  }
+  ASSERT_LT(slack("oend"), 0.0f) << "the swaps together must break oend";
+  for (int k = 0; k < kChain; ++k) {
+    swap(name("p", k), "AND2_X1_L");
+  }
+
+  const Contract start = contract();
+  ASSERT_GT(start.setup_ws, 0.0f);
+  const float power = totalPower();
+  resizer_.repairPower(0.0, 0.0, 0.0, false);
+
+  EXPECT_EQ(master("r0"), "BUF_X1");
+  EXPECT_EQ(master("r1"), "BUF_X1");
+  EXPECT_EQ(master("f0"), "BUF_X1");
+  EXPECT_GE(slack("oend"), -kNoise);
+  EXPECT_LT(totalPower(), power);
+  expectKept(start, contract(), 0.0f, 0.0f);
+}
+
+// With -setup_tolerance, the chain that the strict run left alone may spend
+// its slack below zero, and no endpoint falls below its floor.
+TEST_F(TestRepairPower, ToleranceKeepsEachEndpointAboveItsFloor)
+{
+  timeChain(40e-12f, 2e-12f);
+  resizer_.repairPower(0.0, 0.0, 0.0, false);
+  const std::map<std::string, float> start = endpointSlacks();
+
+  const double percent = 5.0;
+  resizer_.repairPower(0.0, 0.0, percent, false);
+  const float tolerance = percent / 100.0 * kPeriod;
+  for (const auto& [endpoint, slack] : endpointSlacks()) {
+    EXPECT_GE(slack, std::min(start.at(endpoint), 0.0f) - tolerance - kNoise)
+        << endpoint;
+  }
+  for (int k = 0; k < kChain; ++k) {
+    EXPECT_EQ(master(name("p", k)), "AND2_X1");
+  }
+  EXPECT_LT(slack("oend"), 0.0f);
+}
+
+// A tolerance smaller than what the whole chain would spend: the batch that
+// takes the chain breaks oend's floor and is salvaged, and every endpoint
+// stays above its floor.
+TEST_F(TestRepairPower, ToleranceSalvageKeepsTheFloors)
+{
+  timeChain(40e-12f, 2e-12f);
+  const std::map<std::string, float> start = endpointSlacks();
+  const double percent = 1.0;
+  resizer_.repairPower(0.0, 0.0, percent, false);
+  const float tolerance = percent / 100.0 * kPeriod;
+  for (const auto& [endpoint, slack] : endpointSlacks()) {
+    EXPECT_GE(slack, std::min(start.at(endpoint), 0.0f) - tolerance - kNoise)
+        << endpoint;
+  }
+  EXPECT_EQ(master("r0"), "BUF_X1");
+}
+
+// Setup violations at the start: the negative paths are not touched, the
+// rest still saves power.
+TEST_F(TestRepairPower, StartsWithSetupViolations)
+{
+  for (int k = 0; k < kChain; ++k) {
+    setInputDelay(name("s", k), 0.0f);
+  }
+  setOutputDelay("oend", kPeriod - arrival("oend") + 20e-12f);
+  const Contract start = contract();
+  ASSERT_LT(start.setup_ws, 0.0f);
+  const float power = totalPower();
+  const float margin = 5e-12f;
+  resizer_.repairPower(margin, 0.0, 0.0, false);
+
+  EXPECT_EQ(master("r0"), "BUF_X1");
+  EXPECT_LT(totalPower(), power);
+  expectKept(start, contract(), margin, 0.0f);
+}
+
+// A max transition limit and a hold margin above the hold slack: no slew
+// violation gets new or larger, and the hold WS does not drop.
+TEST_F(TestRepairPower, KeepsSlewLimitsAndHoldMargin)
+{
+  for (int k = 0; k < kChain; ++k) {
+    setInputDelay(name("s", k), 0.0f);
+  }
+  sta_->updateTiming(false);
+  const float limit
+      = 1.05f
+        * sta::delayAsFloat(sta_->graph()->slew(
+            sta_->graph()->pinDrvrVertex(pin("p0/ZN")),
+            sta::RiseFall::rise(),
+            sta_->cmdScene()->dcalcAnalysisPtIndex(sta::MinMax::max())));
+  sta_->setSlewLimit(db_network_->cell(db_network_->topInstance()),
+                     sta::MinMax::max(),
+                     limit,
+                     sta_->cmdMode()->sdc());
+
+  const auto slew_slacks = [&]() {
+    sta_->updateTiming(false);
+    sta_->checkSlewsPreamble();
+    std::map<std::string, float> slacks;
+    for (odb::dbInst* inst : block_->getInsts()) {
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        const sta::Pin* p = db_network_->dbToSta(iterm);
+        sta::Slew slew;
+        float pin_limit, pin_slack;
+        const sta::RiseFall* rf;
+        const sta::Scene* scene;
+        sta_->checkSlew(p,
+                        sta_->scenes(),
+                        sta::MinMax::max(),
+                        false,
+                        slew,
+                        pin_limit,
+                        pin_slack,
+                        rf,
+                        scene);
+        slacks[db_network_->pathName(p)] = pin_slack;
+      }
+    }
+    return slacks;
+  };
+  const std::map<std::string, float> slews = slew_slacks();
+  const Contract start = contract();
+  const float hold_margin = kPeriod;
+  resizer_.repairPower(0.0, hold_margin, 0.0, false);
+
+  for (const auto& [p, slack] : slew_slacks()) {
+    EXPECT_GE(slack, std::min(slews.at(p), 0.0f) - kNoise) << p;
+  }
+  EXPECT_GE(contract().hold_ws, start.hold_ws - kNoise);
+  expectKept(start, contract(), 0.0f, hold_margin);
+}
+
+// A clock -data_path max_transition limit (set_max_transition -data_path
+// [get_clocks ...]) must be honored by the DRV guard.
+TEST_F(TestRepairPower, KeepsClockDataPathSlewLimit)
+{
+  for (int k = 0; k < kChain; ++k) {
+    setInputDelay(name("s", k), 0.0f);
+  }
+  sta_->updateTiming(false);
+  const float limit
+      = 1.05f
+        * sta::delayAsFloat(sta_->graph()->slew(
+            sta_->graph()->pinDrvrVertex(pin("p0/ZN")),
+            sta::RiseFall::rise(),
+            sta_->cmdScene()->dcalcAnalysisPtIndex(sta::MinMax::max())));
+  sta_->setSlewLimit(clock(),
+                     sta::RiseFallBoth::riseFall(),
+                     sta::PathClkOrData::data,
+                     sta::MinMax::max(),
+                     limit,
+                     sta_->cmdMode()->sdc());
+
+  const auto slew_slacks = [&]() {
+    sta_->updateTiming(false);
+    sta_->checkSlewsPreamble();
+    std::map<std::string, float> slacks;
+    for (odb::dbInst* inst : block_->getInsts()) {
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        const sta::Pin* p = db_network_->dbToSta(iterm);
+        sta::Slew slew;
+        float pin_limit, pin_slack;
+        const sta::RiseFall* rf;
+        const sta::Scene* scene;
+        sta_->checkSlew(p,
+                        sta_->scenes(),
+                        sta::MinMax::max(),
+                        true,
+                        slew,
+                        pin_limit,
+                        pin_slack,
+                        rf,
+                        scene);
+        slacks[db_network_->pathName(p)] = pin_slack;
+      }
+    }
+    return slacks;
+  };
+  const std::map<std::string, float> slews = slew_slacks();
+  resizer_.repairPower(0.0, 0.0, 0.0, false);
+
+  for (const auto& [p, slack] : slew_slacks()) {
+    EXPECT_GE(slack, std::min(slews.at(p), 0.0f) - kNoise) << p;
+  }
+}
+
+// Cells already at the highest VT have nothing to swap.
+TEST_F(TestRepairPower, LeavesTheHighestVtAlone)
+{
+  for (int k = 0; k < kChain; ++k) {
+    swap(name("p", k), "AND2_X1");
+  }
+  for (const char* buffer : {"r0", "r1", "f0"}) {
+    swap(buffer, "BUF_X1");
+  }
+  const std::map<std::string, std::string> start = masters();
+  resizer_.repairPower(0.0, 0.0, 0.0, false);
+  EXPECT_EQ(masters(), start);
+}
+
+// Without a VT implant layer the library has a single VT: nothing to swap.
+class TestRepairPowerSingleVt : public TestRepairPower
+{
+ protected:
+  bool tagLvtMasters() const override { return false; }
+};
+
+TEST_F(TestRepairPowerSingleVt, LeavesEveryCell)
+{
+  const std::map<std::string, std::string> start = masters();
+  resizer_.repairPower(0.0, 0.0, 0.0, false);
+  EXPECT_EQ(masters(), start);
+}
+
+// 9 of the 16 logic cells are LVT.  With room everywhere the budget holds
+// within the contract, and the power swaps after it take the rest.
+TEST_F(TestRepairPower, VtBudgetWithinTheContract)
+{
+  for (int k = 0; k < kChain; ++k) {
+    setInputDelay(name("s", k), 0.0f);
+  }
+  const Contract start = contract();
+  resizer_.repairPower(0.0, 0.0, 0.0, false, {lvtBudget(25.0f)});
+  EXPECT_EQ(lvtCount(), 0);
+  expectKept(start, contract(), 0.0f, 0.0f);
+}
+
+// r_out fails by 30 ps and oend has 1 ps, too little for a swap on the
+// chain.  Within the contract only f0 goes; the budget of 6 LVT cells takes
+// two chain cells, whose endpoint oend falls below zero but not below the
+// WS: TNS grows and WNS stays.
+TEST_F(TestRepairPower, VtBudgetGrowsTnsBeforeWns)
+{
+  timeTightChain(1e-12f);
+  setOutputDelay("r_out", kPeriod - arrival("r_out") + 30e-12f);
+  const Contract start = contract();
+  ASSERT_NEAR(start.setup_ws, -30e-12f, 1e-13f);
+
+  resizer_.repairPower(0.0, 0.0, 0.0, false, {lvtBudget(37.5f)});
+  EXPECT_EQ(master("f0"), "BUF_X1");
+  EXPECT_EQ(master("r0"), "BUF_X1_L");
+  EXPECT_EQ(lvtCount(), 6);
+  const Contract now = contract();
+  EXPECT_GE(now.setup_ws, start.setup_ws - kNoise);
+  EXPECT_LT(slack("oend"), 0.0f);
+  EXPECT_LT(now.setup_tns, start.setup_tns);
+  EXPECT_GE(now.hold_ws, std::min(start.hold_ws, 0.0f) - kNoise);
+}
+
+// No endpoint fails, so no TNS can absorb the chain swaps: the budget of 4
+// LVT cells lowers the WS below zero, though not by a large share of the
+// period.
+TEST_F(TestRepairPower, VtBudgetLowersWnsLast)
+{
+  timeTightChain(1e-12f);
+  const Contract start = contract();
+  ASSERT_GT(start.setup_ws, 0.0f);
+
+  resizer_.repairPower(0.0, 0.0, 0.0, false, {lvtBudget(25.0f)});
+  EXPECT_LE(lvtCount(), 4);
+  const Contract now = contract();
+  EXPECT_LT(now.setup_ws, 0.0f);
+  EXPECT_GT(now.setup_ws, -0.2f * kPeriod);
+  EXPECT_GE(now.hold_ws, std::min(start.hold_ws, 0.0f) - kNoise);
+}
+
+// A budget on the typical-VT cells, 9 of 16, leaves room for two power swaps
+// out of the nine that fit the slack.
+TEST_F(TestRepairPower, VtBudgetLimitsThePowerSwaps)
+{
+  for (int k = 0; k < kChain; ++k) {
+    setInputDelay(name("s", k), 0.0f);
+  }
+  resizer_.repairPower(
+      0.0,
+      0.0,
+      0.0,
+      false,
+      {budget({"AND2_X1", "BUF_X1", "BUF_X4"}, 100.0f * 9 / 16)});
+  EXPECT_EQ(lvtCount(), 7);
+}
+
+// f0 cannot change VT, so a budget of no LVT cell at all ends at one, with
+// the timing kept.
+TEST_F(TestRepairPower, VtBudgetCountsTheCellsThatCannotMove)
+{
+  for (int k = 0; k < kChain; ++k) {
+    setInputDelay(name("s", k), 0.0f);
+  }
+  resizer_.setDontTouch(db_network_->findInstance("f0"), true);
+  const Contract start = contract();
+  resizer_.repairPower(0.0, 0.0, 0.0, false, {lvtBudget(0.0f)});
+  EXPECT_EQ(master("f0"), "BUF_X1_L");
+  EXPECT_EQ(lvtCount(), 1);
+  expectKept(start, contract(), 0.0f, 0.0f);
+}
+
+// A pathless LVT cell (e.g. constant via set_case_analysis) cannot produce a
+// swap target; it must be excluded from swappable_drivers_ and counted as
+// locked so -vt_budget still lowers its floor and swaps the movable cells.
+TEST_F(TestRepairPower, VtBudgetSkipsPathlessCellsAndLowersFloor)
+{
+  timeTightChain(1e-12f);
+  sta_->setCaseAnalysis(pin("f_in"), sta::LogicValue::zero, sta_->cmdMode());
+  resizer_.repairPower(0.0, 0.0, 0.0, false, {lvtBudget(25.0f)});
+  EXPECT_EQ(master("f0"), "BUF_X1_L");
+  EXPECT_LE(lvtCount(), 4);
+}
+
+// A floating (pathless) LVT cell cannot be swapped and must not prevent
+// -vt_budget from lowering its floor to swap the remaining timed LVT cells.
+TEST_F(TestRepairPower, VtBudgetIgnoresPathlessCellsDuringFloorLowering)
+{
+  odb::dbMaster* buf_lvt = lib_->findMaster("BUF_X1_L");
+  ASSERT_NE(buf_lvt, nullptr);
+  odb::dbInst* floating = odb::dbInst::create(block_, buf_lvt, "floating_lvt");
+  ASSERT_NE(floating, nullptr);
+  floating->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  timeTightChain(1e-12f);
+  resizer_.repairPower(0.0, 0.0, 0.0, false, {lvtBudget(0.0f)});
+  // Only the pathless floating cell remains LVT; all timed LVT cells swap.
+  EXPECT_EQ(master("floating_lvt"), "BUF_X1_L");
+  EXPECT_EQ(lvtCount(), 1);
+}
+
+// The same netlist and constraints give the same swaps.
+TEST_F(TestRepairPower, RepeatsItsSwaps)
+{
+  timeChain(40e-12f, 2e-12f);
+  const std::map<std::string, std::string> start = masters();
+  resizer_.repairPower(0.0, 0.0, 0.0, false);
+  const std::map<std::string, std::string> first = masters();
+  EXPECT_NE(first, start);
+  for (const auto& [inst, cell] : start) {
+    swap(inst, cell);
+  }
+  resizer_.repairPower(0.0, 0.0, 0.0, false);
+  EXPECT_EQ(masters(), first);
+}
+
+// Positive setup_margin protects paths whose slack starts above zero.
+TEST_F(TestRepairPower, RespectsPositiveSetupMargin)
+{
+  // Leave oend with ~40ps slack; a 35ps setup_margin leaves only ~5ps room,
+  // preventing the full chain from swapping.
+  timeChain(40e-12f, 2e-12f);
+  const float margin = 35e-12f;
+  resizer_.repairPower(margin, 0.0, 0.0, false);
+  EXPECT_GE(slack("oend"), margin - kNoise);
+  EXPECT_GT(lvtCount(), 0);
+}
+
+// PowerModel must return a finite gain even when an input pin has no valid
+// propagated slew (e.g., unconstrained or ideal-clock pin).
+TEST_F(TestRepairPower, PowerModelReturnsFiniteGain)
+{
+  PowerModel model(resizer_);
+  model.init();
+  sta::Instance* inst = db_network_->findInstance("f0");
+  ASSERT_NE(inst, nullptr);
+  model.prepare(inst);
+  sta::LibertyCell* target = db_network_->findLibertyCell("BUF_X1");
+  ASSERT_NE(target, nullptr);
+  const float gain = model.gain(inst, target);
+  EXPECT_TRUE(std::isfinite(gain));
+  EXPECT_GT(gain, 0.0f);
+}
+
+// Direct C++ repairPower() callers must not be blocked by a pre-existing
+// max_utilization limit since VT swaps do not change cell area.
+TEST_F(TestRepairPower, DirectCppRepairPowerIgnoresPriorMaxArea)
+{
+  for (int k = 0; k < kChain; ++k) {
+    setInputDelay(name("s", k), 0.0f);
+  }
+  resizer_.setMaxUtilization(0.01);
+  resizer_.repairPower(0.0, 0.0, 0.0, false);
+  EXPECT_EQ(lvtCount(), 0);
+}
+
+// Combining -vt_budget with -setup_tolerance must enforce a single entry
+// tolerance rather than compounding across the budget and power passes.
+TEST_F(TestRepairPower, VtBudgetWithSetupToleranceDoesNotCompound)
+{
+  timeTightChain(1e-12f);
+  const float oend_start = slack("oend");
+  const float r_out_start = slack("r_out");
+  // 2% of 1 ns = 20 ps tolerance; budget of 50% (8 LVT cells) fits within the
+  // single 2% tolerance, so neither pass may push any endpoint below -20 ps.
+  const double tolerance_pct = 2.0;
+  const float max_loss = static_cast<float>(tolerance_pct / 100.0 * kPeriod);
+  resizer_.repairPower(0.0, 0.0, tolerance_pct, false, {lvtBudget(50.0f)});
+  EXPECT_LE(lvtCount(), 8);
+  EXPECT_GE(slack("oend"), std::min(oend_start, 0.0f) - max_loss - kNoise);
+  EXPECT_GE(slack("r_out"), std::min(r_out_start, 0.0f) - max_loss - kNoise);
+}
+
+// Overlapping tiered VT budgets (narrow subset + broader superset) must both
+// be enforced simultaneously.
+TEST_F(TestRepairPower, TieredTwoGroupVtBudgetEnforcesBothLimits)
+{
+  timeTightChain(1e-12f);
+  const auto count_and2_lvt = [&]() {
+    int count = 0;
+    for (const auto& [inst_name, cell_name] : masters()) {
+      if (cell_name == "AND2_X1_L") {
+        ++count;
+      }
+    }
+    return count;
+  };
+  // Narrow group: AND2_X1_L capped at 12.5% (2 of 16 logic cells, tighter than
+  // the 4 AND2_X1_L left by lvtBudget(25%) alone); broader group: all LVT
+  // capped at 25% (4 of 16).
+  ASSERT_GT(count_and2_lvt(), 2);
+  ASSERT_GT(lvtCount(), 4);
+  resizer_.repairPower(
+      0.0, 0.0, 0.0, false, {budget({"AND2_X1_L"}, 12.5f), lvtBudget(25.0f)});
+  EXPECT_LE(count_and2_lvt(), 2);
+  EXPECT_LE(lvtCount(), 4);
+}
+
+// Sequential fixture exercising SequentialTimingEstimator floor threading on
+// LVT flip-flops under -vt_budget floor drops and positive -setup_margin.
+class TestRepairPowerSeq : public TestResizerMt
+{
+ protected:
+  static constexpr float kPeriod = 1e-9f;
+  static constexpr float kNoise = 1e-15f;
+
+  void SetUp() override
+  {
+    odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
+        db_->getTech(), "LVT", odb::dbTechLayerType::IMPLANT);
+    odb::dbTechLayer* rvt_implant = odb::dbTechLayer::create(
+        db_->getTech(), "RVT", odb::dbTechLayerType::IMPLANT);
+    for (odb::dbMaster* master : lib_->getMasters()) {
+      odb::dbTechLayer* implant
+          = master->getName().ends_with("_L") ? lvt_implant : rvt_implant;
+      odb::dbBox::create(
+          master, implant, 0, 0, master->getWidth(), master->getHeight());
+    }
+    readVerilogAndSetup("TestRepairPowerSeq.v", /*init_default_sdc=*/false);
+    sta::PinSet clk_pins(db_network_);
+    clk_pins.insert(db_network_->findPin("clk"));
+    sta_->makeClock("clk",
+                    clk_pins,
+                    false,
+                    kPeriod,
+                    {0.0f, kPeriod / 2},
+                    "",
+                    sta_->cmdMode());
+    setInputDelay("d0", 0.0f);
+    setInputDelay("d1", 0.0f);
+    setOutputDelay("q0", 0.0f);
+    setOutputDelay("q1", 0.0f);
+  }
+
+  sta::Clock* clock() const { return sta_->cmdMode()->sdc()->findClock("clk"); }
+
+  void setInputDelay(const std::string& port, const float delay)
+  {
+    sta_->setInputDelay(db_network_->findPin(port.c_str()),
+                        sta::RiseFallBoth::riseFall(),
+                        clock(),
+                        sta::RiseFall::rise(),
+                        nullptr,
+                        false,
+                        false,
+                        sta::MinMaxAll::all(),
+                        false,
+                        delay,
+                        sta_->cmdMode()->sdc());
+  }
+
+  void setOutputDelay(const std::string& port, const float delay)
+  {
+    sta_->setOutputDelay(db_network_->findPin(port.c_str()),
+                         sta::RiseFallBoth::riseFall(),
+                         clock(),
+                         sta::RiseFall::rise(),
+                         nullptr,
+                         false,
+                         false,
+                         sta::MinMaxAll::all(),
+                         false,
+                         delay,
+                         sta_->cmdMode()->sdc());
+  }
+
+  float slack(const std::string& path)
+  {
+    sta_->updateTiming(false);
+    return sta::delayAsFloat(sta_->slack(db_network_->findPin(path.c_str()),
+                                         sta::RiseFallBoth::riseFall(),
+                                         sta_->scenes(),
+                                         sta::MinMax::max()));
+  }
+
+  std::string master(const std::string& inst) const
+  {
+    return block_->findInst(inst.c_str())->getMaster()->getName();
+  }
+};
+
+// Under a -vt_budget floor drop, a flip-flop whose D-pin setup slack starts
+// negative must still be swappable once the active setup floor drops below it.
+TEST_F(TestRepairPowerSeq, VtBudgetSwapsFlipFlopWithNegativeDpinSlack)
+{
+  const float base_d0_slack = slack("ff0/D");
+  // Push ff0/D 10 ps into negative setup slack while q0 keeps room.
+  setInputDelay("d0", base_d0_slack + 10e-12f);
+  ASSERT_LT(slack("ff0/D"), 0.0f);
+
+  VtBudget lvt_budget{
+      .cells = {db_network_->findLibertyCell("DFF_X1_L")},
+      .max_percent = 0.0f,
+  };
+  resizer_.repairPower(0.0, 0.0, 0.0, false, {lvt_budget});
+  EXPECT_EQ(master("ff0"), "DFF_X1");
+  EXPECT_EQ(master("ff1"), "DFF_X1");
+}
+
+// Positive -setup_margin must protect a flip-flop's D-pin setup slack even
+// when its Q output has plenty of slack.
+TEST_F(TestRepairPowerSeq, PositiveSetupMarginProtectsFlipFlopDpin)
+{
+  const float base_d0_slack = slack("ff0/D");
+  // Place ff0/D at ~31 ps setup slack and request a 30 ps setup_margin; the
+  // higher-VT DFF_X1 slows the D-pin setup check below 30 ps and must stay LVT.
+  const float margin = 30e-12f;
+  setInputDelay("d0", base_d0_slack - margin - 1e-12f);
+  ASSERT_GT(slack("ff0/D"), margin);
+
+  resizer_.repairPower(margin, 0.0, 0.0, false);
+  EXPECT_GE(slack("ff0/D"), margin - kNoise);
+  EXPECT_EQ(master("ff1"), "DFF_X1");
+}
+
+}  // namespace rsz
