@@ -72,12 +72,15 @@ GridGraph::GridGraph(const Design* design,
     const auto& layer = design->getLayer(layer_index);
     layer_names_[layer_index] = layer.getName();
     layer_directions_[layer_index] = layer.getDirection();
-    // First non-zero sheet/via resistance is the res-aware cost reference.
-    if (ref_resistance_ <= 0.0 && layer.getResistance() > 0.0) {
-      ref_resistance_ = layer.getResistance();
-    }
-    if (ref_via_resistance_ <= 0.0 && layer.getViaResistance() > 0.0) {
-      ref_via_resistance_ = layer.getViaResistance();
+  }
+  const int ref_layer
+      = std::clamp(constants.min_routing_layer, 0, num_layers_ - 1);
+  const int ref_pitch = design->getLayer(ref_layer).getPitch();
+  congestion_scale_.assign(num_layers_, 1.0);
+  for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
+    const int pitch = design->getLayer(layer_index).getPitch();
+    if (pitch > 0 && ref_pitch > 0) {
+      congestion_scale_[layer_index] = static_cast<double>(pitch) / ref_pitch;
     }
   }
 
@@ -452,6 +455,15 @@ int GridGraph::getEdgeLength(int direction, int edge_index) const
          - grid_centers_[direction][edge_index];
 }
 
+CapacityT GridGraph::scaledResource(const int layer_index,
+                                    const CapacityT resource) const
+{
+  if (resource <= 1.0) {
+    return resource;
+  }
+  return 1.0 + (resource - 1.0) * congestion_scale_[layer_index];
+}
+
 double GridGraph::logistic(const CapacityT& input, const double slope) const
 {
   return 1.0 / (1.0 + exp(input * slope));
@@ -478,10 +490,11 @@ CostT GridGraph::getWireCost(const int layer_index,
   const CapacityT demand_length = demand * net_factor * edge_length;
   const auto& edge = graph_edges_[layer_index][lower.x()][lower.y()];
   CostT cost = demand_length * unit_length_wire_cost_;
-  cost += congestionCost(demand_length * unit_length_short_costs_[layer_index],
-                         edge.capacity,
-                         edge.capacity - edge.demand,
-                         constants_.cost_logistic_slope);
+  cost += congestionCost(
+      demand_length * unit_length_short_costs_[layer_index],
+      edge.capacity,
+      scaledResource(layer_index, edge.capacity - edge.demand),
+      constants_.cost_logistic_slope);
   // Resource gate (like FastRoute assignEdge): penalise wires that don't fit an
   // edge so the router climbs via. Wire segments only (demand >= 1.0); finite,
   // so a full layer range still falls back to min-via.
@@ -542,95 +555,113 @@ CostT GridGraph::getUnitViaCost(const int layer_index,
                     layerFactor(net_costs, layer_index + 1));
 }
 
-CostT GridGraph::getWireResistanceCost(const int layer_index,
-                                       const PointT u,
-                                       const PointT v,
-                                       const int wire_width) const
+void GridGraph::setLayerRC(std::vector<double> res_per_dbu,
+                           std::vector<double> cap_per_dbu,
+                           std::vector<double> via_res)
 {
-  const MetalLayer& layer = design_->getLayer(layer_index);
-  // NDR nets carry wider, lower-resistance wires; fall back to the layer
-  // default when the net sets no NDR width on this layer (wire_width == 0).
-  const double width = wire_width > 0 ? wire_width : layer.getWidth();
-  // First non-zero routing-layer sheet resistance is the reference; 0 if none.
-  const double ref = ref_resistance_;
-  if (width <= 0.0 || ref <= 0.0 || layer.getResistance() <= 0.0) {
+  res_per_dbu_ = std::move(res_per_dbu);
+  cap_per_dbu_ = std::move(cap_per_dbu);
+  via_res_ = std::move(via_res);
+  res_per_dbu_.resize(num_layers_, 0.0);
+  cap_per_dbu_.resize(num_layers_, 0.0);
+  via_res_.resize(num_layers_, 0.0);
+  const int min_layer
+      = std::clamp(constants_.min_routing_layer, 0, num_layers_ - 1);
+  // The lowest routing layer with both R and C sets the delay scale.
+  int ref_layer = min_layer;
+  while (
+      ref_layer < num_layers_
+      && (res_per_dbu_[ref_layer] <= 0.0 || cap_per_dbu_[ref_layer] <= 0.0)) {
+    ref_layer++;
+  }
+  worst_res_per_dbu_.fill(0.0);
+  worst_cap_per_dbu_.fill(0.0);
+  if (ref_layer == num_layers_) {
+    ref_cap_per_dbu_ = 0.0;
+    delay_norm_ = 0.0;
+    return;
+  }
+  ref_cap_per_dbu_ = cap_per_dbu_[ref_layer];
+  for (int layer_index = min_layer; layer_index < num_layers_; layer_index++) {
+    const int direction = layer_directions_[layer_index];
+    worst_res_per_dbu_[direction]
+        = std::max(worst_res_per_dbu_[direction], res_per_dbu_[layer_index]);
+    worst_cap_per_dbu_[direction]
+        = std::max(worst_cap_per_dbu_[direction], cap_per_dbu_[layer_index]);
+  }
+  // The mean gcell length sets the delay scale.
+  const double gcell_length = (gridlines_[0].back() - gridlines_[0].front())
+                              / static_cast<double>(std::max(x_size_, 1));
+  const double ref_delay = res_per_dbu_[ref_layer] * ref_cap_per_dbu_
+                           * gcell_length * gcell_length;
+  delay_norm_ = ref_delay > 0.0 ? constants_.delay_weight / ref_delay : 0.0;
+}
+
+int GridGraph::getDistance(const PointT u, const PointT v) const
+{
+  return std::abs(grid_centers_[0][u.x()] - grid_centers_[0][v.x()])
+         + std::abs(grid_centers_[1][u.y()] - grid_centers_[1][v.y()]);
+}
+
+CostT GridGraph::getWireDelayCost(const int layer_index,
+                                  const PointT u,
+                                  const PointT v,
+                                  const int wire_width,
+                                  const double net_factor,
+                                  const double load,
+                                  const double driver_res,
+                                  const float criticality) const
+{
+  if (criticality <= 0.0f || delay_norm_ <= 0.0) {
     return 0;
   }
   const int direction = layer_directions_[layer_index];
-  int length = 0;  // total wire length in DBU
-  if (direction == MetalLayer::H) {
-    const auto [lo, hi] = std::minmax({u.x(), v.x()});
-    for (int x = lo; x < hi; x++) {
-      length += getEdgeLength(direction, x);
-    }
-  } else {
-    const auto [lo, hi] = std::minmax({u.y(), v.y()});
-    for (int y = lo; y < hi; y++) {
-      length += getEdgeLength(direction, y);
+  const int lo = std::min(u[direction], v[direction]);
+  const int hi = std::max(u[direction], v[direction]);
+  double fit_length = 0;
+  double total_length = 0;
+  for (int i = lo; i < hi; i++) {
+    const GraphEdge& edge = direction == MetalLayer::H
+                                ? graph_edges_[layer_index][i][u.y()]
+                                : graph_edges_[layer_index][u.x()][i];
+    const int edge_length = getEdgeLength(direction, i);
+    total_length += edge_length;
+    // One track of headroom: on a coarse layer with a few tracks per gcell,
+    // filling the last one invites overflow the delay cost would not see.
+    // An edge with less capacity than that never qualifies, even when empty,
+    // so a layer with under two tracks per gcell earns no delay benefit.
+    if (edge.capacity - edge.demand >= net_factor + 1.0) {
+      fit_length += edge_length;
     }
   }
-  // R = sheet_resistance * length / width, normalised by layer 0;
-  // resistance_weight rescales the ~O(1) result to CUGR's cost magnitude.
-  const double resistance = layer.getResistance() * length / width;
-  return constants_.resistance_weight * resistance / ref;
+  double res = res_per_dbu_[layer_index];
+  double cap_per_dbu = cap_per_dbu_[layer_index];
+  // A wider NDR wire has proportionally lower resistance.
+  const int default_width = design_->getLayer(layer_index).getWidth();
+  if (wire_width > 0 && default_width > 0) {
+    res *= static_cast<double>(default_width) / wire_width;
+  }
+  // Edges without headroom are priced with the slowest RC in the direction,
+  // so a long wire keeps the benefit of the stretches where it fits.
+  if (total_length > 0) {
+    const double fit = fit_length / total_length;
+    res = fit * res + (1 - fit) * worst_res_per_dbu_[direction];
+    cap_per_dbu = fit * cap_per_dbu + (1 - fit) * worst_cap_per_dbu_[direction];
+  }
+  const double length = getDistance(u, v);
+  const double cap = cap_per_dbu * length;
+  const double delay = res * length * (load + cap / 2) + driver_res * cap;
+  return delay_norm_ * criticality * delay;
 }
 
-CostT GridGraph::getViaResistanceCost(const int lower_layer) const
+CostT GridGraph::getViaDelayCost(const int lower_layer,
+                                 const double load,
+                                 const float criticality) const
 {
-  // First non-zero via resistance is the reference (normally layer 0; robust
-  // if the bottom via leaves its resistance undefined).
-  const double ref = ref_via_resistance_;
-  const double via_r = design_->getLayer(lower_layer).getViaResistance();
-  // Techs that leave cut-layer resistance unpopulated make this 0
-  if (ref <= 0.0 || via_r <= 0.0) {
+  if (criticality <= 0.0f || delay_norm_ <= 0.0) {
     return 0;
   }
-  return constants_.resistance_weight * via_r / ref;
-}
-
-double GridGraph::getNetResistance(const std::shared_ptr<GRTreeNode>& tree,
-                                   const std::vector<int>& ndr_widths) const
-{
-  if (!tree) {
-    return 0.0;
-  }
-  double total_resistance = 0.0;
-  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-    for (const auto& child : node->getChildren()) {
-      if (node->getLayerIdx() == child->getLayerIdx()) {
-        // Wire segment on a single layer.
-        const int layer = node->getLayerIdx();
-        if (layer < 0) {
-          continue;
-        }
-        const MetalLayer& metal_layer = design_->getLayer(layer);
-        // NDR width if set on this layer, else the layer default; matches the
-        // width getWireResistanceCost uses.
-        const int ndr_width
-            = std::cmp_less(layer, ndr_widths.size()) ? ndr_widths[layer] : 0;
-        const double width = ndr_width > 0 ? ndr_width : metal_layer.getWidth();
-        if (width <= 0.0) {
-          continue;
-        }
-        const int direction = layer_directions_[layer];
-        const auto [lo, hi]
-            = std::minmax({(*node)[direction], (*child)[direction]});
-        int length = 0;
-        for (int c = lo; c < hi; c++) {
-          length += getEdgeLength(direction, c);
-        }
-        total_resistance += metal_layer.getResistance() * length / width;
-      } else {
-        // Via stack between the two nodes' layers.
-        const auto [lo, hi]
-            = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
-        for (int l = lo; l < hi; l++) {
-          total_resistance += design_->getLayer(l).getViaResistance();
-        }
-      }
-    }
-  });
-  return total_resistance;
+  return delay_norm_ * criticality * via_res_[lower_layer] * load;
 }
 
 int GridGraph::getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const
@@ -1443,22 +1474,23 @@ CostT GridGraph::wireCostViewCell(const WireCostViewContext& context,
     // An NDR wire can't span 3D layers: gate on best-single-layer headroom
     // so an edge whose summed slack hides "spread thin" per-layer capacity
     // reads as unusable.
-    CapacityT max_per_layer_resource = std::numeric_limits<CapacityT>::lowest();
+    effective_resource = std::numeric_limits<CapacityT>::lowest();
     for (const int layer_index : context.layers[direction]) {
       const auto& edge = getEdge(layer_index, x, y);
       capacity += edge.capacity;
-      max_per_layer_resource
-          = std::max(max_per_layer_resource, edge.capacity - edge.demand);
+      effective_resource = std::max(
+          effective_resource,
+          scaledResource(layer_index,
+                         edge.capacity - edge.demand - (net_factor - 1.0)));
     }
-    effective_resource = max_per_layer_resource - (net_factor - 1.0);
   } else {
-    CapacityT demand = 0;
+    effective_resource = 0;
     for (const int layer_index : context.layers[direction]) {
       const auto& edge = getEdge(layer_index, x, y);
       capacity += edge.capacity;
-      demand += edge.demand;
+      effective_resource
+          += scaledResource(layer_index, edge.capacity - edge.demand);
     }
-    effective_resource = capacity - demand;
   }
   const int edge_index = direction == MetalLayer::H ? x : y;
   const int length = getEdgeLength(direction, edge_index);

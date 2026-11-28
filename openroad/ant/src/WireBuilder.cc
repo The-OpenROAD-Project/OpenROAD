@@ -33,36 +33,35 @@ WireBuilder::WireBuilder(odb::dbDatabase* db, utl::Logger* logger)
 }
 WireBuilder::~WireBuilder() = default;
 
-void WireBuilder::makeNetWiresFromGuides()
+template <typename Nets>
+void WireBuilder::makeGuideWires(Nets&& nets)
 {
   const int gcell_dimension = block_->getGCellTileSize();
   default_vias_ = block_->getDefaultVias();
-  for (odb::dbNet* db_net : block_->getNets()) {
-    const bool is_detailed_routed
-        = db_net->getWireType() == odb::dbWireType::ROUTED && db_net->getWire();
-
-    if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
-        && db_net->getTermCount() > 1 && !dbNetIsLocal(db_net)
-        && !is_detailed_routed) {
+  for (odb::dbNet* db_net : nets) {
+    if (needsGuideWire(db_net)) {
       makeNetWire(db_net, gcell_dimension);
     }
   }
 }
 
+void WireBuilder::makeNetWiresFromGuides()
+{
+  makeGuideWires(block_->getNets());
+}
+
 void WireBuilder::makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets)
 {
-  const int gcell_dimension = block_->getGCellTileSize();
-  default_vias_ = block_->getDefaultVias();
-  for (odb::dbNet* db_net : nets) {
-    const bool is_detailed_routed
-        = db_net->getWireType() == odb::dbWireType::ROUTED && db_net->getWire();
+  makeGuideWires(nets);
+}
 
-    if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
-        && db_net->getTermCount() > 1 && !dbNetIsLocal(db_net)
-        && !is_detailed_routed) {
-      makeNetWire(db_net, gcell_dimension);
-    }
-  }
+bool WireBuilder::needsGuideWire(odb::dbNet* db_net)
+{
+  const bool is_detailed_routed
+      = db_net->getWireType() == odb::dbWireType::ROUTED && db_net->getWire();
+  return !db_net->isSpecial() && !db_net->isConnectedByAbutment()
+         && db_net->getTermCount() > 1 && !dbNetIsLocal(db_net)
+         && !is_detailed_routed;
 }
 
 void WireBuilder::makeNetWire(odb::dbNet* db_net, const int gcell_dimension)
@@ -79,14 +78,8 @@ void WireBuilder::makeNetWire(odb::dbNet* db_net, const int gcell_dimension)
     for (GuideSegment& seg : route) {
       int l1 = seg.pt1.layer->getRoutingLevel();
       int l2 = seg.pt2.layer->getRoutingLevel();
-      odb::dbTechLayer* bottom_tech_layer
-          = seg.pt1.layer->getRoutingLevel() < seg.pt2.layer->getRoutingLevel()
-                ? seg.pt1.layer
-                : seg.pt2.layer;
-      odb::dbTechLayer* top_tech_layer
-          = seg.pt1.layer->getRoutingLevel() > seg.pt2.layer->getRoutingLevel()
-                ? seg.pt1.layer
-                : seg.pt2.layer;
+      odb::dbTechLayer* bottom_tech_layer = seg.bottomLayer();
+      odb::dbTechLayer* top_tech_layer = seg.topLayer();
 
       if (std::abs(l1 - l2) > 1) {
         debugPrint(logger_,
@@ -132,8 +125,7 @@ void WireBuilder::makeNetWire(odb::dbNet* db_net, const int gcell_dimension)
 
             wire_encoder.addPoint(x1, y1);
             wire_encoder.addTechVia(default_vias_[bottom_tech_layer]);
-            addWireTerms(db_net,
-                         route,
+            addWireTerms(route,
                          x1,
                          y1,
                          bottom_tech_layer,
@@ -148,25 +140,13 @@ void WireBuilder::makeNetWire(odb::dbNet* db_net, const int gcell_dimension)
           int y2 = seg.pt2.pos.getY();
           if (x1 != x2 || y1 != y2) {
             odb::dbTechLayer* tech_layer = seg.pt1.layer;
-            addWireTerms(db_net,
-                         route,
-                         x1,
-                         y1,
-                         tech_layer,
-                         route_pt_pins,
-                         wire_encoder,
-                         true);
+            addWireTerms(
+                route, x1, y1, tech_layer, route_pt_pins, wire_encoder, true);
             wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
             wire_encoder.addPoint(x1, y1);
             wire_encoder.addPoint(x2, y2);
-            addWireTerms(db_net,
-                         route,
-                         x2,
-                         y2,
-                         tech_layer,
-                         route_pt_pins,
-                         wire_encoder,
-                         true);
+            addWireTerms(
+                route, x2, y2, tech_layer, route_pt_pins, wire_encoder, true);
             wire_segments.insert(seg);
             prev_conn_layer = l1;
           }
@@ -180,8 +160,7 @@ void WireBuilder::makeNetWire(odb::dbNet* db_net, const int gcell_dimension)
   }
 }
 
-void WireBuilder::addWireTerms(odb::dbNet* db_net,
-                               std::vector<GuideSegment>& route,
+void WireBuilder::addWireTerms(std::vector<GuideSegment>& route,
                                int grid_x,
                                int grid_y,
                                odb::dbTechLayer* tech_layer,
@@ -203,41 +182,36 @@ void WireBuilder::addWireTerms(odb::dbNet* db_net,
     guide_pt.pos = odb::Point(grid_x, grid_y);
     guide_pt.layer = l == layers[0] ? tech_layer : tech->findRoutingLayer(l);
     auto itr = route_pt_pins.find(guide_pt);
-    if (itr != route_pt_pins.end() && !itr->second.connected) {
-      for (odb::dbBTerm* bterm : itr->second.bterms) {
-        itr->second.connected = true;
-        std::vector<odb::Rect> pin_rects;
-        int bterm_top_layer;
-        getBTermTopLayerRects(bterm, pin_rects, bterm_top_layer);
-        odb::dbTechLayer* conn_layer = tech->findRoutingLayer(bterm_top_layer);
-        odb::Point grid_pt = itr->first.pos;
-        odb::Point pin_pt = grid_pt;
-        makeWireToTerm(wire_encoder,
-                       route,
-                       tech_layer,
-                       conn_layer,
-                       pin_rects,
-                       grid_pt,
-                       pin_pt,
-                       connect_to_segment);
-      }
-      for (odb::dbITerm* iterm : itr->second.iterms) {
-        itr->second.connected = true;
-        std::vector<odb::Rect> pin_rects;
-        int iterm_top_layer;
-        getITermTopLayerRects(iterm, pin_rects, iterm_top_layer);
-        odb::dbTechLayer* conn_layer = tech->findRoutingLayer(iterm_top_layer);
-        odb::Point grid_pt = itr->first.pos;
-        odb::Point pin_pt = grid_pt;
-        makeWireToTerm(wire_encoder,
-                       route,
-                       tech_layer,
-                       conn_layer,
-                       pin_rects,
-                       grid_pt,
-                       pin_pt,
-                       connect_to_segment);
-      }
+    if (itr == route_pt_pins.end() || itr->second.connected) {
+      continue;
+    }
+    // Connects the guide point to the pin's shapes on its top routing layer
+    auto connect_pin
+        = [&](const std::vector<odb::Rect>& pin_rects, const int top_layer) {
+            itr->second.connected = true;
+            odb::dbTechLayer* conn_layer = tech->findRoutingLayer(top_layer);
+            const odb::Point grid_pt = itr->first.pos;
+            odb::Point pin_pt = grid_pt;
+            makeWireToTerm(wire_encoder,
+                           route,
+                           tech_layer,
+                           conn_layer,
+                           pin_rects,
+                           grid_pt,
+                           pin_pt,
+                           connect_to_segment);
+          };
+    for (odb::dbBTerm* bterm : itr->second.bterms) {
+      std::vector<odb::Rect> pin_rects;
+      int top_layer;
+      getBTermTopLayerRects(bterm, pin_rects, top_layer);
+      connect_pin(pin_rects, top_layer);
+    }
+    for (odb::dbITerm* iterm : itr->second.iterms) {
+      std::vector<odb::Rect> pin_rects;
+      int top_layer;
+      getITermTopLayerRects(iterm, pin_rects, top_layer);
+      connect_pin(pin_rects, top_layer);
     }
   }
 }
@@ -344,11 +318,7 @@ bool WireBuilder::pinOverlapsGSegment(const odb::Point& pin_position,
     for (const GuideSegment& seg : route) {
       if (seg.pt1.layer == seg.pt2.layer &&  // ignore vias
           seg.pt1.layer == pin_layer) {
-        auto [x0, x1] = std::minmax({seg.pt1.pos.getX(), seg.pt2.pos.getX()});
-        auto [y0, y1] = std::minmax({seg.pt1.pos.getY(), seg.pt2.pos.getY()});
-        odb::Rect seg_rect(x0, y0, x1, y1);
-
-        if (box.intersects(seg_rect)) {
+        if (box.intersects(seg.rect())) {
           return true;
         }
       }
@@ -405,19 +375,27 @@ std::vector<GuideSegment> WireBuilder::makeWireFromGuides(
   return route;
 }
 
-bool WireBuilder::checkGuideITermConnection(const GuidePoint& guide_pt,
-                                            odb::dbITerm* iterm,
-                                            const odb::Point& box_limit,
-                                            const int gcell_dimension)
+odb::Rect WireBuilder::guidePointBox(const GuidePoint& guide_pt,
+                                     const odb::Point& box_limit,
+                                     const int gcell_dimension)
 {
-  odb::Point ll(guide_pt.pos.getX() - gcell_dimension / 2,
-                guide_pt.pos.getY() - gcell_dimension / 2);
+  const odb::Point ll(guide_pt.pos.getX() - gcell_dimension / 2,
+                      guide_pt.pos.getY() - gcell_dimension / 2);
   odb::Point ur(guide_pt.pos.getX() + gcell_dimension / 2,
                 guide_pt.pos.getY() + gcell_dimension / 2);
   if (ll != box_limit && ur != box_limit) {
     ur = box_limit;
   }
-  odb::Rect guide_box(ll, ur);
+  return odb::Rect(ll, ur);
+}
+
+bool WireBuilder::checkGuideITermConnection(const GuidePoint& guide_pt,
+                                            odb::dbITerm* iterm,
+                                            const odb::Point& box_limit,
+                                            const int gcell_dimension)
+{
+  const odb::Rect guide_box
+      = guidePointBox(guide_pt, box_limit, gcell_dimension);
   std::vector<odb::dbAccessPoint*> aps = iterm->getPrefAccessPoints();
 
   odb::dbTechLayer* iterm_top_layer = nullptr;
@@ -463,15 +441,8 @@ bool WireBuilder::checkGuideBTermConnection(const GuidePoint& guide_pt,
                                             const odb::Point& box_limit,
                                             const int gcell_dimension)
 {
-  odb::Point ll(guide_pt.pos.getX() - gcell_dimension / 2,
-                guide_pt.pos.getY() - gcell_dimension / 2);
-  odb::Point ur(guide_pt.pos.getX() + gcell_dimension / 2,
-                guide_pt.pos.getY() + gcell_dimension / 2);
-  if (ll != box_limit && ur != box_limit) {
-    ur = box_limit;
-  } else {
-  }
-  odb::Rect guide_box(ll, ur);
+  const odb::Rect guide_box
+      = guidePointBox(guide_pt, box_limit, gcell_dimension);
 
   odb::dbTechLayer* bterm_top_layer = nullptr;
   std::vector<odb::dbAccessPoint*> aps;
@@ -572,6 +543,25 @@ bool GuideSegment::operator==(const GuideSegment& segment) const
 {
   return pt1.layer == segment.pt1.layer && pt2.layer == segment.pt2.layer
          && pt1.pos == segment.pt1.pos && pt2.pos == segment.pt2.pos;
+}
+
+odb::dbTechLayer* GuideSegment::bottomLayer() const
+{
+  return pt1.layer->getRoutingLevel() < pt2.layer->getRoutingLevel()
+             ? pt1.layer
+             : pt2.layer;
+}
+
+odb::dbTechLayer* GuideSegment::topLayer() const
+{
+  return pt1.layer->getRoutingLevel() > pt2.layer->getRoutingLevel()
+             ? pt1.layer
+             : pt2.layer;
+}
+
+odb::Rect GuideSegment::rect() const
+{
+  return odb::Rect(pt1.pos, pt2.pos);
 }
 
 std::size_t GuideSegmentHash::operator()(const GuideSegment& seg) const

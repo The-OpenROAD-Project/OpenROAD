@@ -15,6 +15,7 @@
 #include <cstring>
 #include <deque>
 #include <exception>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <ios>
@@ -2286,27 +2287,22 @@ std::vector<unsigned char> resampleRgba(const std::vector<unsigned char>& src,
   return dst;
 }
 
-// The visibility the -display_option settings of saveImage and gifAddFrame
-// ask for.
-TileVisibility visibilityFrom(
-    const std::map<std::string, bool>& display_settings,
-    utl::Logger* logger)
+// The web renderer writes only PNG.  Like Qt's Utils::fixImagePath, a path
+// with another extension gets ".png" added rather than PNG bytes under it.
+std::string pngPath(const std::string& filename, utl::Logger* logger)
 {
-  boost::json::object options;
-  for (const auto& [key, value] : display_settings) {
-    options[key] = value;
+  std::string ext = std::filesystem::path(filename).extension().string();
+  std::ranges::transform(
+      ext, ext.begin(), [](unsigned char c) { return std::tolower(c); });
+  if (ext == ".png") {
+    return filename;
   }
-  TileVisibility vis;
-  try {
-    vis.parseFromJson(options);
-  } catch (const std::exception& e) {
-    logger->warn(
-        utl::WEB,
-        42,
-        "Ignoring the display options, one is not an on/off setting: {}",
-        e.what());
-  }
-  return vis;
+  const std::string fixed = filename + ".png";
+  logger->warn(utl::WEB,
+               132,
+               "File path does not end with .png, new path is: {}",
+               fixed);
+  return fixed;
 }
 
 // The background a saved image or GIF frame carries behind the layers.  Tiles
@@ -2339,6 +2335,31 @@ Color viewerBackground(const WebViewerHook* hook)
   }
   return kBlack;
 }
+
+// A background a script chose wins over the one a browser synced.
+Color imageBackground(const ScriptView::Frame& frame, const WebViewerHook* hook)
+{
+  if (frame.background) {
+    return toTileColor(*frame.background);
+  }
+  return viewerBackground(hook);
+}
+
+// What save_image -web draws: the script view with the -display_option
+// settings on top.
+struct ScriptImage
+{
+  TileVisibility vis;
+  Color background;
+};
+
+ScriptImage scriptImage(ScriptView& view,
+                        const WebViewerHook* hook,
+                        const std::map<std::string, bool>& display_settings)
+{
+  const ScriptView::Frame frame = view.frame(display_settings);
+  return {.vis = frame.vis, .background = imageBackground(frame, hook)};
+}
 }  // namespace
 
 void WebServer::saveImage(const std::string& filename,
@@ -2354,13 +2375,14 @@ void WebServer::saveImage(const std::string& filename,
   ensureGenerator().ensureInit();
 
   const odb::Rect region(x0, y0, x1, y1);
-  const TileVisibility vis = visibilityFrom(display_settings, logger_);
-  generator_->saveImage(filename,
+  const ScriptImage image
+      = scriptImage(*script_view_, viewer_hook_.get(), display_settings);
+  generator_->saveImage(pngPath(filename, logger_),
                         region,
                         width_px,
                         dbu_per_pixel,
-                        vis,
-                        viewerBackground(viewer_hook_.get()));
+                        image.vis,
+                        image.background);
 }
 
 namespace {
@@ -2778,17 +2800,12 @@ void WebServer::gifAddFrame(std::optional<int> key,
     generator_->ensureInit();
   }
 
-  const TileVisibility vis = visibilityFrom(display_settings, logger_);
+  const ScriptImage image
+      = scriptImage(*script_view_, viewer_hook_.get(), display_settings);
   int w = 0;
   int h = 0;
-  std::vector<unsigned char> rgba
-      = generator_->renderImageBuffer(region,
-                                      width_px,
-                                      dbu_per_pixel,
-                                      vis,
-                                      viewerBackground(viewer_hook_.get()),
-                                      &w,
-                                      &h);
+  std::vector<unsigned char> rgba = generator_->renderImageBuffer(
+      region, width_px, dbu_per_pixel, image.vis, image.background, &w, &h);
 
   const int d = delay.value_or(kDefaultGifDelay);
   if (gif->frame_count == 0) {

@@ -46,6 +46,32 @@ InstanceBuilder& InstanceBuilder::connectPort(sta::LibertyPort* const port,
   return *this;
 }
 
+// Records cell as gate when port's function is op applied directly to input
+// ports: one for not_, two otherwise.
+static void matchGate(sta::LibertyCell* const cell,
+                      sta::LibertyPort* const port,
+                      const sta::FuncExpr* const expr,
+                      const sta::FuncExpr::Op op,
+                      CellPorts& gate)
+{
+  if (expr->op() != op || expr->left()->op() != sta::FuncExpr::Op::port) {
+    return;
+  }
+  if (op == sta::FuncExpr::Op::not_) {
+    if (expr->right()) {
+      return;
+    }
+    gate.inputs = {expr->left()->port(), nullptr};
+  } else {
+    if (expr->right()->op() != sta::FuncExpr::Op::port) {
+      return;
+    }
+    gate.inputs = {expr->left()->port(), expr->right()->port()};
+  }
+  gate.cell = cell;
+  gate.output = port;
+}
+
 void NetworkBuilder::init(utl::Logger* const logger,
                           sta::dbNetwork* const network)
 {
@@ -62,27 +88,8 @@ void NetworkBuilder::init(utl::Logger* const logger,
       if (cell->dontUse()) {
         continue;
       }
-      if (!clkgate_cell_ && cell->isClockGate()) {
-        if (!cell->isClockGateLatchPosedge()) {
-          logger_->warn(CGT,
-                        11,
-                        "Skipping clock gate cell {}. Clock gates other than "
-                        "with posedge latches are not supported",
-                        cell->name());
-          continue;
-        }
-        clkgate_cell_ = cell;
-        sta::LibertyCellPortIterator port_iter(cell);
-        while (port_iter.hasNext()) {
-          auto port = port_iter.next();
-          if (port->isClockGateEnable()) {
-            clkgate_enable_ = port;
-          } else if (port->isClockGateClock()) {
-            clkgate_clk_ = port;
-          } else if (port->isClockGateOut()) {
-            clkgate_output_ = port;
-          }
-        }
+      if (!clkgate_.cell && cell->isClockGate()) {
+        setClockGate(cell);
         continue;
       }
       sta::LibertyCellPortIterator port_iter(cell);
@@ -91,51 +98,52 @@ void NetworkBuilder::init(utl::Logger* const logger,
         if (port->direction()->isAnyInput()) {
           assert(!port->function());
         } else if (auto expr = port->function()) {
-          if (expr->op() == sta::FuncExpr::Op::and_) {
-            if (expr->left()->op() == sta::FuncExpr::Op::port
-                && expr->right()->op() == sta::FuncExpr::Op::port) {
-              and_cell_ = cell;
-              and_inputs_[0] = expr->left()->port();
-              and_inputs_[1] = expr->right()->port();
-              and_output_ = port;
-            }
-          }
-          if (expr->op() == sta::FuncExpr::Op::or_) {
-            if (expr->left()->op() == sta::FuncExpr::Op::port
-                && expr->right()->op() == sta::FuncExpr::Op::port) {
-              or_cell_ = cell;
-              or_inputs_[0] = expr->left()->port();
-              or_inputs_[1] = expr->right()->port();
-              or_output_ = port;
-            }
-          }
-          if (expr->op() == sta::FuncExpr::Op::not_) {
-            if (expr->left()->op() == sta::FuncExpr::Op::port
-                && !expr->right()) {
-              not_cell_ = cell;
-              not_input_ = expr->left()->port();
-              not_output_ = port;
-            }
-          }
+          matchGate(cell, port, expr, sta::FuncExpr::Op::and_, and_);
+          matchGate(cell, port, expr, sta::FuncExpr::Op::or_, or_);
+          matchGate(cell, port, expr, sta::FuncExpr::Op::not_, not_);
         }
       }
     }
-    if (and_cell_ && not_cell_ && or_cell_) {
+    if (and_.cell && not_.cell && or_.cell) {
       break;
     }
   }
   delete lib_iter;
-  if (!and_cell_) {
+  if (!and_.cell) {
     logger_->error(CGT, 6, "Cannot find AND stdcell");
   }
-  if (!or_cell_) {
+  if (!or_.cell) {
     logger_->error(CGT, 7, "Cannot find OR stdcell");
   }
-  if (!not_cell_) {
+  if (!not_.cell) {
     logger_->error(CGT, 8, "Cannot find NOT stdcell");
   }
-  if (!clkgate_cell_) {
+  if (!clkgate_.cell) {
     logger_->error(CGT, 9, "Cannot find a compatible clock gate stdcell");
+  }
+}
+
+void NetworkBuilder::setClockGate(sta::LibertyCell* const cell)
+{
+  if (!cell->isClockGateLatchPosedge()) {
+    logger_->warn(CGT,
+                  11,
+                  "Skipping clock gate cell {}. Clock gates other than "
+                  "with posedge latches are not supported",
+                  cell->name());
+    return;
+  }
+  clkgate_.cell = cell;
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    auto port = port_iter.next();
+    if (port->isClockGateEnable()) {
+      clkgate_.inputs[0] = port;
+    } else if (port->isClockGateClock()) {
+      clkgate_.clk = port;
+    } else if (port->isClockGateOut()) {
+      clkgate_.output = port;
+    }
   }
 }
 

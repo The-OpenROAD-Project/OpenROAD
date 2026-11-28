@@ -19,7 +19,7 @@ global_placement
 ```
 
 ## Flow Control
-* __skip_initial_place__ : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs.
+* __skip_initial_place__ : Skip the initial placement (conjugate gradient solving) before Nesterov placement. IP improves HPWL by ~5% on large designs.
 * __incremental__ : Enable the incremental global placement. Users would need to tune other parameters (e.g. init_density_penalty) with the pre-placed solutions.
 
 When timing-driven and routability-driven placement are both enabled, retained

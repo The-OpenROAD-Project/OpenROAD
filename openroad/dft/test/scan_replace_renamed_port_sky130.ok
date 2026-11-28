@@ -1,0 +1,30 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+Instance ff1
+ Cell: sky130_fd_sc_hd__sdfxbp_1
+ Library: sky130_fd_sc_hd_merged
+ Path cells: sky130_fd_sc_hd__sdfxbp_1
+ Input pins:
+  D input port1
+  SCD input (unconnected)
+  SCE input (unconnected)
+  CLK input clock
+ Output pins:
+  Q output output2
+  Q_N output output1
+###############################################################################
+# Created by write_sdc
+###############################################################################
+current_design top
+###############################################################################
+# Timing Constraints
+###############################################################################
+create_clock -name main_clock -period 2.0000 [get_ports {clock}]
+set_disable_timing -from {CLK} -to {Q_N} [get_cells {ff1}]
+set_disable_timing [get_timing_edges -from [get_pins {ff1/CLK}] -to [get_pins {ff1/Q}]]
+###############################################################################
+# Environment
+###############################################################################
+###############################################################################
+# Design Rules
+###############################################################################

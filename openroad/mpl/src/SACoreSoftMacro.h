@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "MplObserver.h"
-#include "SimulatedAnnealingCore.h"
+#include "SACore.h"
 #include "clusterEngine.h"
 #include "mpl-util.h"
 #include "object.h"
@@ -33,15 +33,9 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   float notch_h_threshold,
                   float notch_v_threshold,
                   // action prob
-                  float pos_swap_prob,
-                  float neg_swap_prob,
-                  float double_swap_prob,
-                  float exchange_prob,
-                  float resize_prob,
-                  // Fast SA hyperparameter
-                  float init_prob,
-                  int max_num_step,
-                  int num_perturb_per_step,
+                  const SACoreActionProbs& action_probs,
+                  const SASoftActionsProbs& soft_action_probs,
+                  const SAHyperparams& hyperparams,
                   unsigned seed,
                   MplObserver* graphics,
                   utl::Logger* logger,
@@ -49,8 +43,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   void run() override;
   bool isValid() const override;
-
-  void printResults() const;  // just for test
 
   // adjust the size of MixedCluster to fill the empty space
   void fillDeadSpace() override;
@@ -86,11 +78,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
     kNotch
   };
 
-  void calPenalty() override;
+  void calExtraPenalties() override;
 
-  void perturb() override;
-  void saveState() override;
-  void restoreState() override;
   // actions used
   void resizeOneCluster();
 
@@ -138,9 +127,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                      // horizontally
   int adjust_v_th_;  // the threshold for adjust hard macro clusters
                      // vertically
-
-  // action prob
-  float resize_prob_ = 0.0;
 
   bool enhancements_on_ = false;
   bool centralization_was_reverted_ = false;

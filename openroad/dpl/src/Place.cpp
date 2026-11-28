@@ -1350,9 +1350,11 @@ void Opendp::legalCellPos(odb::dbInst* db_inst)
   if (db_inst->getPlacementStatus().isFixed()) {
     return;
   }
-  if (grid_->pixelsReleased()) {
-    // detailed_placement and check_placement free the pixels on return;
-    // pointOffMacro below reads them.
+  if (!grid_->hasPixels()) {
+    // pointOffMacro below reads the pixels. detailed_placement and
+    // check_placement free them on return, and no dpl command may have
+    // made them yet in this process (e.g. the design was read from an ODB
+    // and the resizer is the first to call here).
     initMacrosAndGrid();
   }
   Node cell;

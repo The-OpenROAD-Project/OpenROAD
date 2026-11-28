@@ -23,6 +23,8 @@ COMPULSORY_TESTS = [
     "scan_replace_clock_mismatch_sky130",
     "scan_replace_dont_use_sky130",
     "scan_replace_inverted_data_sky130",
+    "scan_replace_renamed_port_sky130",
+    "scan_replace_sdc_sky130",
     "scan_replace_state_binding_sky130",
     "scandef_core_sky130",
     "scandef_sky130",
@@ -87,6 +89,9 @@ filegroup(
                 "one_cell_reset_sky130.def",
             ],
             "scan_replace_dont_use_sky130": [
+                "one_cell_sky130.def",
+            ],
+            "scan_replace_sdc_sky130": [
                 "one_cell_sky130.def",
             ],
             "scan_replace_state_binding_sky130": [
