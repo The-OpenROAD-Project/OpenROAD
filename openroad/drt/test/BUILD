@@ -198,6 +198,29 @@ cc_test(
 )
 
 test_suite(
+    name = "io_test",
+    tests = [":io_unittest"],
+)
+
+cc_test(
+    name = "io_unittest",
+    srcs = [
+        "viaCutClassTest.cpp",
+    ],
+    includes = [
+        "../src",
+    ],
+    deps = [
+        "//openroad/drt:base_types",
+        "//openroad/drt:drt_impl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
     name = "ta_test",
     tests = [":ta_unittest"],
 )
