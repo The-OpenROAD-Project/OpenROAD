@@ -632,6 +632,16 @@ export function computeScaleBar({ targetPx, pxPerDbu, dbuPerMicron, showDbu }) {
     return { barPx, label, segments };
 }
 
+// Quote text as one Tcl word that is read literally, with no substitution.
+export function tclQuote(text) {
+    return '"' + String(text).replace(/[\\[\]$"]/g, '\\$&') + '"';
+}
+
+// A server-side file dialog's title, naming the machine its files are on.
+export function titleOnHost(title, host) {
+    return host ? `${title} (on ${host})` : title;
+}
+
 // Run a Tcl script from a custom menu item / toolbar button: prefer the
 // console-aware app.runTclScript (echo + result in the console), falling back
 // to a bare tcl_eval request when it isn't wired (e.g. in unit tests).

@@ -23,6 +23,7 @@
 
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
+#include "boost/asio/ip/host_name.hpp"
 #include "boost/asio/post.hpp"
 #include "boost/beast/http/field.hpp"
 #include "boost/beast/http/message.hpp"
@@ -486,6 +487,25 @@ TEST(JsonOrTest, WrongTypePresentValueThrows)
 {
   auto obj = parseObj(R"({"i":"not an int"})");
   EXPECT_THROW(jsonOr<int>(obj, "i", 0), std::exception);
+}
+
+//------------------------------------------------------------------------------
+// list_dir
+//------------------------------------------------------------------------------
+
+TEST(ListDirTest, NamesTheServerHost)
+{
+  WebSocketRequest req;
+  req.id = 9;
+  req.type = WebSocketRequest::kListDir;
+  req.json = parseObj(R"({"path":""})");
+
+  const WebSocketResponse resp = handleListDir(req);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
+  boost::system::error_code ec;
+  const std::string host = boost::asio::ip::host_name(ec);
+  ASSERT_FALSE(ec);
+  EXPECT_EQ(parseObj(payloadStr(resp)).at("host").as_string(), host);
 }
 
 //------------------------------------------------------------------------------

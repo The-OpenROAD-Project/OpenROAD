@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-import './setup-dom.js';
+import { waitForMicrotasks } from './setup-dom.js';
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { DrcWidget } from '../../src/drc-widget.js';
@@ -316,6 +316,23 @@ describe('DrcWidget', () => {
             await new Promise(r => setTimeout(r, 50));
 
             assert.equal(loadedCategory, 'DRC');
+        });
+    });
+
+    describe('load dialog', () => {
+        it('names the server in its title', async () => {
+            const app = createMockApp({
+                drc_categories: () => ({ categories: [] }),
+                list_dir: () => ({ path: '/work', entries: [], host: 'farm-42' }),
+            });
+            const widget = new DrcWidget(app, () => {});
+            widget.element.querySelector('.drc-toolbar .or-btn').click();
+            await waitForMicrotasks();
+
+            const overlay = document.querySelector('.modal-overlay');
+            assert.equal(overlay.querySelector('h3').textContent,
+                         'Load DRC Report (on farm-42)');
+            overlay.querySelector('.cancel').click();
         });
     });
 });

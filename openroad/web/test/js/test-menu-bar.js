@@ -10,58 +10,94 @@ import {
     eventShortcut,
 } from '../../src/menu-bar.js';
 
-describe('MenuBar', () => {
-    it('keeps the file dialog open when tcl_eval returns is_error', async () => {
-        document.body.innerHTML = '<div id="menu-bar"></div>';
-        const requests = [];
-        const app = {
-            designScale: null,
-            websocketManager: {
-                request(msg) {
-                    requests.push(msg);
-                    if (msg.type === 'list_dir') {
-                        return Promise.resolve({
-                            path: '/work',
-                            entries: [{ name: 'bad.odb', is_dir: false, size: 10 }],
-                        });
-                    }
-                    if (msg.type === 'tcl_eval') {
-                        return Promise.resolve({
-                            output: 'cannot read db',
-                            result: 'failed',
-                            is_error: true,
-                        });
-                    }
-                    return Promise.resolve({});
-                },
+const kDir = '/work/proj[0]';
+const kFile = 'chip $x;y.odb';
+const kQuotedPath = String.raw`"/work/proj\[0\]/chip \$x;y.odb"`;
+
+// Opens File > `label` with `listing` as the list_dir reply and returns the
+// requests the dialog sends.  Open DB is enabled only without a design, Save
+// DB only with one.
+async function openFileDialog(label, listing) {
+    document.body.innerHTML = '<div id="menu-bar"></div>';
+    const requests = [];
+    const app = {
+        designScale: label === 'Save DB' ? 1 : null,
+        websocketManager: {
+            request(msg) {
+                requests.push(msg);
+                if (msg.type === 'list_dir') {
+                    return Promise.resolve(listing);
+                }
+                // An error keeps the dialog open and skips the page reload.
+                return Promise.resolve({ result: 'cannot read db', is_error: true });
             },
-            focusComponent() {},
-        };
+        },
+        focusComponent() {},
+    };
+    createMenuBar(app);
+    rowByLabel(openMenu('File'), label).click();
+    await waitForMicrotasks();
+    return requests;
+}
 
-        createMenuBar(app);
+// Picks `file` in `dir` from File > `label`, presses OK, and returns the
+// tcl_eval command.
+async function fileDialogCommand(label, dir, file) {
+    const requests = await openFileDialog(label, {
+        path: dir,
+        entries: [{ name: file, is_dir: false, size: 10 }],
+    });
+    document.querySelector('.fb-entry').click();
+    document.querySelector('.modal-buttons .ok').click();
+    await waitForMicrotasks();
+    return requests.find(req => req.type === 'tcl_eval').cmd;
+}
 
-        const fileMenu = document.querySelector('.menu-label');
-        fileMenu.click();
-        const openItem = document.querySelector('.menu-item');
-        openItem.click();
-        await waitForMicrotasks();
+describe('MenuBar', () => {
+    it('quotes the path Open DB passes to Tcl', async () => {
+        assert.equal(await fileDialogCommand('Open DB', kDir, kFile),
+                     `read_db ${kQuotedPath}`);
+    });
 
-        const input = document.querySelector('.fb-path-input');
-        const ok = document.querySelector('.modal-buttons .ok');
-        input.value = '/work/bad.odb';
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        ok.click();
-        await waitForMicrotasks();
+    it('quotes the path Save DB passes to Tcl', async () => {
+        assert.equal(await fileDialogCommand('Save DB', kDir, kFile),
+                     `write_db ${kQuotedPath}`);
+    });
 
-        const evalReq = requests.find(req => req.type === 'tcl_eval');
-        assert.equal(evalReq.cmd, 'read_db /work/bad.odb');
+    it('keeps the file dialog open when tcl_eval returns is_error', async () => {
+        assert.equal(await fileDialogCommand('Open DB', '/work', 'bad.odb'),
+                     'read_db "/work/bad.odb"');
         assert.ok(document.querySelector('.modal-overlay'),
                   'dialog remains open after Tcl error');
         const error = document.querySelector('.modal-error');
         assert.equal(error.style.display, '');
         assert.equal(error.textContent, 'cannot read db');
+        const ok = document.querySelector('.modal-buttons .ok');
         assert.equal(ok.disabled, false);
         assert.equal(ok.textContent, 'Open');
+    });
+
+    it('keeps a typed relative path from reading as an option', async () => {
+        const requests = await openFileDialog('Open DB', { path: '/work', entries: [] });
+        const input = document.querySelector('.fb-path-input');
+        input.value = '-final.odb';
+        input.dispatchEvent(new Event('input'));
+        document.querySelector('.modal-buttons .ok').click();
+        await waitForMicrotasks();
+        assert.equal(requests.find(req => req.type === 'tcl_eval').cmd,
+                     'read_db "./-final.odb"');
+    });
+
+    it('names the server in the file dialog title', async () => {
+        await openFileDialog('Save DB', { path: '/work', entries: [], host: 'farm-42' });
+        assert.equal(document.querySelector('.file-browser-dialog h3').textContent,
+                     'Save DB (on farm-42)');
+    });
+
+    it('keeps the file dialog title when the server sends no host', async () => {
+        await openFileDialog('Open DB', { path: '/work', entries: [] });
+        assert.equal(document.querySelector('.file-browser-dialog h3').textContent,
+                     'Open DB');
     });
 
     it('renders Tcl-registered custom items with a hierarchical path', () => {

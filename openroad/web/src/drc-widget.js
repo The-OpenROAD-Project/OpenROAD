@@ -4,7 +4,7 @@
 // DRC viewer widget — category selector, violation tree, load/highlight.
 // Matches the capabilities of the Qt GUI DRCWidget.
 
-import { zoomToBBox } from './ui-utils.js';
+import { titleOnHost, zoomToBBox } from './ui-utils.js';
 
 export class DrcWidget {
     constructor(app, redrawAllLayers, refreshOverlay) {
@@ -554,6 +554,8 @@ export class DrcWidget {
     }
 }
 
+const kLoadDialogTitle = 'Load DRC Report';
+
 // Modal file browser for selecting a DRC report on the server. The dialog owns
 // its DOM overlay and tracks listeners so that `close()` fully tears down.
 class DrcFileDialog {
@@ -570,7 +572,7 @@ class DrcFileDialog {
         this._overlay.className = 'modal-overlay';
         this._overlay.innerHTML = `
             <div class="modal-dialog file-browser-dialog">
-                <h3>Load DRC Report</h3>
+                <h3>${kLoadDialogTitle}</h3>
                 <div class="fb-breadcrumb"></div>
                 <div class="fb-file-list"></div>
                 <input type="text" class="fb-path-input"
@@ -583,6 +585,7 @@ class DrcFileDialog {
             </div>`;
         document.body.appendChild(this._overlay);
 
+        this._heading = this._overlay.querySelector('h3');
         this._breadcrumb = this._overlay.querySelector('.fb-breadcrumb');
         this._fileList = this._overlay.querySelector('.fb-file-list');
         this._pathInput = this._overlay.querySelector('.fb-path-input');
@@ -716,6 +719,7 @@ class DrcFileDialog {
             });
             if (this._closed) return;
             this._currentPath = resp.path;
+            this._heading.textContent = titleOnHost(kLoadDialogTitle, resp.host);
             this._renderBreadcrumb(resp.path);
             this._renderEntries(resp.entries);
             this._pathInput.value = '';

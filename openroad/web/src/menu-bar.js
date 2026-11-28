@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 import { showFindDialog, showGotoDialog } from './search-nav.js';
-import { runTclScript } from './ui-utils.js';
+import { runTclScript, tclQuote, titleOnHost } from './ui-utils.js';
 
 // The menu bar in #menu-bar: static menus merged with the custom items
 // registered from Tcl (`create_menu_item`, delivered in app.customMenu).
@@ -418,6 +418,7 @@ function showPathDialog(app, title, tclCmd) {
 
     document.body.appendChild(overlay);
 
+    const heading = overlay.querySelector('h3');
     const breadcrumb = overlay.querySelector('.fb-breadcrumb');
     const fileList = overlay.querySelector('.fb-file-list');
     const pathInput = overlay.querySelector('.fb-path-input');
@@ -532,6 +533,7 @@ function showPathDialog(app, title, tclCmd) {
                 path: dirPath || '',
             });
             currentPath = resp.path;
+            heading.textContent = titleOnHost(title, resp.host);
             renderBreadcrumb(resp.path);
             renderEntries(resp.entries);
             // For save mode, keep the filename if user typed one
@@ -558,6 +560,8 @@ function showPathDialog(app, title, tclCmd) {
     async function submit() {
         const path = pathInput.value.trim();
         if (!path) return;
+        // Without "./", a relative path starting with "-" reads as an option.
+        const arg = path.startsWith('/') ? path : `./${path}`;
 
         okBtn.disabled = true;
         okBtn.textContent = 'Working...';
@@ -566,7 +570,7 @@ function showPathDialog(app, title, tclCmd) {
         try {
             const resp = await app.websocketManager.request({
                 type: 'tcl_eval',
-                cmd: `${tclCmd} ${path}`,
+                cmd: `${tclCmd} ${tclQuote(arg)}`,
             });
 
             if (resp.is_error) {
