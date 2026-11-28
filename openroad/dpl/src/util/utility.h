@@ -14,7 +14,6 @@ namespace dpl {
 using Placer_RNG = boost::mt19937;
 
 class Network;
-class Edge;
 
 class Utility
 {
@@ -39,10 +38,7 @@ class Utility
 
   static double disp_l1(Network* nw, double& tot, double& max, double& avg);
 
-  static uint64_t hpwl(const Network* nw);
   static uint64_t hpwl(const Network* nw, uint64_t& hpwlx, uint64_t& hpwly);
-  static uint64_t hpwl(const Edge* ed);
-  static uint64_t hpwl(const Edge*, uint64_t& hpwlx, uint64_t& hpwly);
 };
 
 }  // namespace dpl

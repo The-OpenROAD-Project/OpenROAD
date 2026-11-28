@@ -513,6 +513,16 @@ void dbSta::copyUserActivity(odb::dbITerm* from, odb::dbITerm* to)
   }
 }
 
+void dbSta::moveConstraints(odb::dbITerm* from, odb::dbITerm* to)
+{
+  Sta::moveConstraints(db_network_->dbToSta(from), db_network_->dbToSta(to));
+}
+
+void dbSta::moveConstraints(odb::dbInst* from, odb::dbInst* to)
+{
+  Sta::moveConstraints(db_network_->dbToSta(from), db_network_->dbToSta(to));
+}
+
 odb::PtrSet<odb::dbNet> dbSta::findClkNets()
 {
   return findClkNets(cmdMode());

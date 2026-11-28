@@ -174,25 +174,15 @@ void AntennaChecker::Impl::saveGates(odb::dbNet* db_net,
         Polygon pin_pol = rectToPolygon(pin_rect);
         // Save polygon to add on DSU
         pin_polys.emplace_back(tech_layer->getRoutingLevel(), pin);
-        // if has wire on same layer connect to pin
-        ids = findNodesWithIntersection(node_by_layer_map[tech_layer], pin_pol);
-        for (const int& index : ids) {
-          pin_nbrs[pin].push_back(node_by_layer_map[tech_layer][index]->id);
-        }
-        // if has via on upper layer connected to pin
-        if (upper_layer) {
-          ids = findNodesWithIntersection(node_by_layer_map[upper_layer],
-                                          pin_pol);
-          for (const int& index : ids) {
-            pin_nbrs[pin].push_back(node_by_layer_map[upper_layer][index]->id);
+        // connect the pin to wires on its layer and to vias on the layers
+        // above and below it
+        for (odb::dbTechLayer* layer : {tech_layer, upper_layer, lower_layer}) {
+          if (layer == nullptr) {
+            continue;
           }
-        }
-        // if has via on lower layer connected to pin
-        if (lower_layer) {
-          ids = findNodesWithIntersection(node_by_layer_map[lower_layer],
-                                          pin_pol);
+          ids = findNodesWithIntersection(node_by_layer_map[layer], pin_pol);
           for (const int& index : ids) {
-            pin_nbrs[pin].push_back(node_by_layer_map[lower_layer][index]->id);
+            pin_nbrs[pin].push_back(node_by_layer_map[layer][index]->id);
           }
         }
       }
@@ -598,155 +588,96 @@ void AntennaChecker::Impl::calculateCAR(const PinAntennas& pins,
   }
 }
 
+namespace {
+
+// Compares a node's ratio with one antenna rule, after reducing the rule's
+// limits by ratio_margin percent.  The diffusion-dependent limit applies when
+// the node reaches diffusion area or the plain limit is not defined.  When
+// excess is given, it records the largest actual/limit ratio seen.
+RatioCheck checkRatio(double ratio,
+                      const odb::dbTechLayerAntennaRule::pwl_pair& diff_pwl,
+                      const double diff_area,
+                      const double actual,
+                      const double diff_actual,
+                      const float ratio_margin,
+                      double* excess)
+{
+  double diff_ratio = getPwlFactor(diff_pwl, diff_area, 0.0);
+  ratio *= (1.0 - ratio_margin / 100.0);
+  diff_ratio *= (1.0 - ratio_margin / 100.0);
+
+  const bool use_diff = diff_area != 0 || ratio == 0;
+  const double limit = use_diff ? diff_ratio : ratio;
+  const double value = use_diff ? diff_actual : actual;
+
+  RatioCheck check;
+  if (limit != 0) {
+    check.violated = value > limit;
+    if (excess) {
+      *excess = std::max(*excess, value / limit);
+    }
+  }
+  check.actual = value;
+  check.required = limit;
+  return check;
+}
+
+}  // namespace
+
 RatioCheck AntennaChecker::Impl::checkPAR(odb::dbTechLayer* tech_layer,
                                           NodeInfo& info,
                                           const float ratio_margin)
 {
-  // get rules
-  const odb::dbTechLayerAntennaRule* antenna_rule
-      = tech_layer->getDefaultAntennaRule();
-  double par_ratio = antenna_rule->getPAR();
-  odb::dbTechLayerAntennaRule::pwl_pair diff_par = antenna_rule->getDiffPAR();
-  double diff_par_pwl_ratio = getPwlFactor(diff_par, info.iterm_diff_area, 0.0);
-
-  // apply ratio_margin
-  par_ratio *= (1.0 - ratio_margin / 100.0);
-  diff_par_pwl_ratio *= (1.0 - ratio_margin / 100.0);
-
-  RatioCheck check;
-  // If node is connected to diffusion area or ANTENNAAREARATIO is not
-  // defined, compare with ANTENNADIFFAREARATIO. Otherwise compare with
-  // ANTENNAAREARATIO.
-  if (info.iterm_diff_area != 0 || par_ratio == 0) {
-    if (diff_par_pwl_ratio != 0) {
-      check.violated = info.diff_par > diff_par_pwl_ratio;
-      info.excess_ratio_par
-          = std::max(info.excess_ratio_par, info.diff_par / diff_par_pwl_ratio);
-    }
-    check.actual = info.diff_par;
-    check.required = diff_par_pwl_ratio;
-  } else {
-    if (par_ratio != 0) {
-      check.violated = info.par > par_ratio;
-      info.excess_ratio_par
-          = std::max(info.excess_ratio_par, info.par / par_ratio);
-    }
-    check.actual = info.par;
-    check.required = par_ratio;
-  }
-  return check;
+  const odb::dbTechLayerAntennaRule* rule = tech_layer->getDefaultAntennaRule();
+  return checkRatio(rule->getPAR(),
+                    rule->getDiffPAR(),
+                    info.iterm_diff_area,
+                    info.par,
+                    info.diff_par,
+                    ratio_margin,
+                    &info.excess_ratio_par);
 }
 
 RatioCheck AntennaChecker::Impl::checkPSR(odb::dbTechLayer* tech_layer,
                                           NodeInfo& info,
                                           const float ratio_margin)
 {
-  // get rules
-  const odb::dbTechLayerAntennaRule* antenna_rule
-      = tech_layer->getDefaultAntennaRule();
-  double psr_ratio = antenna_rule->getPSR();
-  const odb::dbTechLayerAntennaRule::pwl_pair diff_psr
-      = antenna_rule->getDiffPSR();
-  double diff_psr_pwl_ratio = getPwlFactor(diff_psr, info.iterm_diff_area, 0.0);
-
-  // apply ratio_margin
-  psr_ratio *= (1.0 - ratio_margin / 100.0);
-  diff_psr_pwl_ratio *= (1.0 - ratio_margin / 100.0);
-
-  RatioCheck check;
-  // If node is connected to diffusion area or ANTENNASIDEAREARATIO is not
-  // defined, compare with ANTENNADIFFSIDEAREARATIO. Otherwise compare with
-  // ANTENNASIDEAREARATIO.
-  if (info.iterm_diff_area != 0 || psr_ratio == 0) {
-    if (diff_psr_pwl_ratio != 0) {
-      check.violated = info.diff_psr > diff_psr_pwl_ratio;
-      info.excess_ratio_psr
-          = std::max(info.excess_ratio_psr, info.diff_psr / diff_psr_pwl_ratio);
-    }
-    check.actual = info.diff_psr;
-    check.required = diff_psr_pwl_ratio;
-  } else {
-    if (psr_ratio != 0) {
-      check.violated = info.psr > psr_ratio;
-      info.excess_ratio_psr
-          = std::max(info.excess_ratio_psr, info.psr / psr_ratio);
-    }
-    check.actual = info.psr;
-    check.required = psr_ratio;
-  }
-  return check;
+  const odb::dbTechLayerAntennaRule* rule = tech_layer->getDefaultAntennaRule();
+  return checkRatio(rule->getPSR(),
+                    rule->getDiffPSR(),
+                    info.iterm_diff_area,
+                    info.psr,
+                    info.diff_psr,
+                    ratio_margin,
+                    &info.excess_ratio_psr);
 }
 
 RatioCheck AntennaChecker::Impl::checkCAR(odb::dbTechLayer* tech_layer,
                                           const NodeInfo& info,
                                           const float ratio_margin)
 {
-  // get rules
-  const odb::dbTechLayerAntennaRule* antenna_rule
-      = tech_layer->getDefaultAntennaRule();
-  double car_ratio = antenna_rule->getCAR();
-  const odb::dbTechLayerAntennaRule::pwl_pair diff_car
-      = antenna_rule->getDiffCAR();
-  double diff_car_pwl_ratio = getPwlFactor(diff_car, info.iterm_diff_area, 0);
-
-  // apply ratio_margin
-  car_ratio *= (1.0 - ratio_margin / 100.0);
-  diff_car_pwl_ratio *= (1.0 - ratio_margin / 100.0);
-
-  RatioCheck check;
-  // If node is connected to diffusion area or ANTENNACUMAREARATIO is not
-  // defined, compare with ANTENNACUMDIFFAREARATIO. Otherwise compare with
-  // ANTENNACUMAREARATIO.
-  if (info.iterm_diff_area != 0 || car_ratio == 0) {
-    if (diff_car_pwl_ratio != 0) {
-      check.violated = info.diff_car > diff_car_pwl_ratio;
-    }
-    check.actual = info.diff_car;
-    check.required = diff_car_pwl_ratio;
-  } else {
-    if (car_ratio != 0) {
-      check.violated = info.car > car_ratio;
-    }
-    check.actual = info.car;
-    check.required = car_ratio;
-  }
-  return check;
+  const odb::dbTechLayerAntennaRule* rule = tech_layer->getDefaultAntennaRule();
+  return checkRatio(rule->getCAR(),
+                    rule->getDiffCAR(),
+                    info.iterm_diff_area,
+                    info.car,
+                    info.diff_car,
+                    ratio_margin,
+                    nullptr);
 }
 
 RatioCheck AntennaChecker::Impl::checkCSR(odb::dbTechLayer* tech_layer,
                                           const NodeInfo& info,
                                           const float ratio_margin)
 {
-  // get rules
-  const odb::dbTechLayerAntennaRule* antenna_rule
-      = tech_layer->getDefaultAntennaRule();
-  double csr_ratio = antenna_rule->getCSR();
-  const odb::dbTechLayerAntennaRule::pwl_pair diff_csr
-      = antenna_rule->getDiffCSR();
-  double diff_csr_pwl_ratio = getPwlFactor(diff_csr, info.iterm_diff_area, 0);
-
-  // apply ratio_margin
-  csr_ratio *= (1.0 - ratio_margin / 100.0);
-  diff_csr_pwl_ratio *= (1.0 - ratio_margin / 100.0);
-
-  RatioCheck check;
-  // If node is connected to diffusion area or ANTENNACUMSIDEAREARATIO is not
-  // defined, compare with ANTENNACUMDIFFSIDEAREARATIO. Otherwise compare with
-  // ANTENNACUMSIDEAREARATIO.
-  if (info.iterm_diff_area != 0 || csr_ratio == 0) {
-    if (diff_csr_pwl_ratio != 0) {
-      check.violated = info.diff_csr > diff_csr_pwl_ratio;
-    }
-    check.actual = info.diff_csr;
-    check.required = diff_csr_pwl_ratio;
-  } else {
-    if (csr_ratio != 0) {
-      check.violated = info.csr > csr_ratio;
-    }
-    check.actual = info.csr;
-    check.required = csr_ratio;
-  }
-  return check;
+  const odb::dbTechLayerAntennaRule* rule = tech_layer->getDefaultAntennaRule();
+  return checkRatio(rule->getCSR(),
+                    rule->getDiffCSR(),
+                    info.iterm_diff_area,
+                    info.csr,
+                    info.diff_csr,
+                    ratio_margin,
+                    nullptr);
 }
 
 LayerCheck AntennaChecker::Impl::checkRatioViolations(odb::dbTechLayer* layer,
@@ -767,15 +698,12 @@ LayerCheck AntennaChecker::Impl::checkRatioViolations(odb::dbTechLayer* layer,
   return check;
 }
 
-int AntennaChecker::Impl::checkGates(odb::dbNet* db_net,
-                                     odb::dbMTerm* diode_mterm,
-                                     float ratio_margin,
-                                     GateToLayerToNodeInfo& gate_info,
-                                     Violations& antenna_violations,
-                                     NetCheck& net_check)
+GateToViolationLayers AntennaChecker::Impl::checkPins(
+    odb::dbNet* db_net,
+    const float ratio_margin,
+    GateToLayerToNodeInfo& gate_info,
+    NetCheck& net_check)
 {
-  int pin_violation_count = 0;
-
   GateToViolationLayers gates_with_violations;
 
   net_check.net = db_net;
@@ -795,11 +723,21 @@ int AntennaChecker::Impl::checkGates(odb::dbNet* db_net,
         pin_check.layers.push_back(std::move(layer_check));
       }
     }
-    if (pin_check.violated) {
-      pin_violation_count++;
-    }
     net_check.pins.push_back(std::move(pin_check));
   }
+  return gates_with_violations;
+}
+
+int AntennaChecker::Impl::checkGates(odb::dbNet* db_net,
+                                     odb::dbMTerm* diode_mterm,
+                                     float ratio_margin,
+                                     GateToLayerToNodeInfo& gate_info,
+                                     Violations& antenna_violations,
+                                     NetCheck& net_check)
+{
+  const GateToViolationLayers gates_with_violations
+      = checkPins(db_net, ratio_margin, gate_info, net_check);
+  const int pin_violation_count = gates_with_violations.size();
   std::unordered_map<odb::dbITerm*, int> num_diodes_added;
   odb::PtrMap<odb::dbTechLayer, odb::PtrSet<odb::dbITerm>> pin_added;
   // if checkGates is used by repair antennas
@@ -816,61 +754,23 @@ int AntennaChecker::Impl::checkGates(odb::dbNet* db_net,
               = valueAtOrBelow(diode_diff_areas, layer);
           NodeInfo violation_info = gate_info[gate][layer];
           std::vector<odb::dbITerm*> gates = violation_info.iterms;
-          odb::dbTechLayer* violation_layer = layer;
           int diode_count_per_gate = 0;
           // check violations only PAR & PSR
-          bool par_violation
-              = checkPAR(violation_layer, violation_info, ratio_margin)
-                    .violated;
-          bool psr_violation = false;
-          // Only routing layers have side areas
-          if (violation_layer->getRoutingLevel() != 0) {
-            psr_violation
-                = checkPSR(violation_layer, violation_info, ratio_margin)
-                      .violated;
-          }
-          bool violated = par_violation || psr_violation;
+          const bool violated
+              = violatesPartialRatio(layer, violation_info, ratio_margin);
           double excess_ratio = 1.0;
           if (violated) {
             excess_ratio = std::max(violation_info.excess_ratio_par,
                                     violation_info.excess_ratio_psr);
           }
-          // while it has violation, increase iterm_diff_area
-          if (diode_mterm) {
-            while (par_violation || psr_violation) {
-              // increasing iterm_diff_area and count
-              violation_info.iterm_diff_area += diode_diff_area * gates.size();
-              diode_count_per_gate++;
-              // re-calculate info only PAR & PSR
-              if (violation_layer->getRoutingLevel() == 0) {
-                calculateViaPar(violation_layer, violation_info);
-              } else {
-                calculateWirePar(violation_layer, violation_info);
-              }
-              // re-check violations only PAR & PSR
-              par_violation
-                  = checkPAR(violation_layer, violation_info, ratio_margin)
-                        .violated;
-              // Only routing layers have side areas
-              if (violation_layer->getRoutingLevel() != 0) {
-                psr_violation
-                    = checkPSR(violation_layer, violation_info, ratio_margin)
-                          .violated;
-              }
-              if (diode_count_per_gate > kMaxDiodeCountPerGate) {
-                debugPrint(logger_,
-                           utl::ANT,
-                           "check_gates",
-                           1,
-                           "Net {} requires more than {} diodes per gate to "
-                           "repair violations.",
-                           db_net->getConstName(),
-                           kMaxDiodeCountPerGate);
-                break;
-              }
-            }
+          if (diode_mterm && violated) {
+            diode_count_per_gate = countDiodes(db_net,
+                                               layer,
+                                               violation_info,
+                                               diode_diff_area * gates.size(),
+                                               ratio_margin);
           }
-          pin_added[violation_layer].insert(gate);
+          pin_added[layer].insert(gate);
           std::vector<odb::dbITerm*> gates_for_diode_insertion;
           gates_for_diode_insertion.push_back(gate);
           // Reduce the number of added diodes in other layer
@@ -886,11 +786,9 @@ int AntennaChecker::Impl::checkGates(odb::dbNet* db_net,
           }
 
           bool car_violation
-              = checkCAR(violation_layer, violation_info, ratio_margin)
-                    .violated;
+              = checkCAR(layer, violation_info, ratio_margin).violated;
           bool csr_violation
-              = checkCSR(violation_layer, violation_info, ratio_margin)
-                    .violated;
+              = checkCSR(layer, violation_info, ratio_margin).violated;
 
           // naive approach for cumulative area violations. here, all the pins
           // of the net are included, and placing one diode per pin is not the
@@ -915,6 +813,52 @@ int AntennaChecker::Impl::checkGates(odb::dbNet* db_net,
     }
   }
   return pin_violation_count;
+}
+
+bool AntennaChecker::Impl::violatesPartialRatio(odb::dbTechLayer* layer,
+                                                NodeInfo& info,
+                                                const float ratio_margin)
+{
+  const bool par_violation = checkPAR(layer, info, ratio_margin).violated;
+  bool psr_violation = false;
+  // Only routing layers have side areas
+  if (layer->getRoutingLevel() != 0) {
+    psr_violation = checkPSR(layer, info, ratio_margin).violated;
+  }
+  return par_violation || psr_violation;
+}
+
+int AntennaChecker::Impl::countDiodes(odb::dbNet* db_net,
+                                      odb::dbTechLayer* layer,
+                                      NodeInfo& info,
+                                      const double diode_diff_area,
+                                      const float ratio_margin)
+{
+  int diode_count = 0;
+  bool violated = true;
+  while (violated) {
+    info.iterm_diff_area += diode_diff_area;
+    diode_count++;
+    // re-calculate info only PAR & PSR
+    if (layer->getRoutingLevel() == 0) {
+      calculateViaPar(layer, info);
+    } else {
+      calculateWirePar(layer, info);
+    }
+    violated = violatesPartialRatio(layer, info, ratio_margin);
+    if (diode_count > kMaxDiodeCountPerGate) {
+      debugPrint(logger_,
+                 utl::ANT,
+                 "check_gates",
+                 1,
+                 "Net {} requires more than {} diodes per gate to "
+                 "repair violations.",
+                 db_net->getConstName(),
+                 kMaxDiodeCountPerGate);
+      break;
+    }
+  }
+  return diode_count;
 }
 
 void AntennaChecker::Impl::buildLayerMaps(odb::dbNet* db_net,

@@ -12,6 +12,7 @@ package(
 cc_library(
     name = "optimizer",
     srcs = [
+        "KMeans.cpp",
         "OdbScanCellAdapter.cpp",
         "Opt.cpp",
     ],
