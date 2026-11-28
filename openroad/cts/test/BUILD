@@ -42,6 +42,7 @@ COMPULSORY_TESTS = [
     "insertion_delay",
     "inverter_sinks",
     "inverters",
+    "latency_offset",
     "lvt_lib",
     "max_cap",
     "max_wl_two_sinks",
@@ -221,6 +222,11 @@ filegroup(
             "inverters": [
                 "array_tile_ins_delay.lef",
                 "array_tile_ins_delay.lib",
+            ],
+            "latency_offset": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
+                "insertion_delay.def",
             ],
             "lvt_lib": [
                 "cts-helpers.tcl",

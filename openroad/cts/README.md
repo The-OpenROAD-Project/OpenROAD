@@ -112,6 +112,32 @@ clock_tree_synthesis
 | clkload | Dummy loads to help balance the clock tree |
 | delaybuf | Delay buffers to help balance the tree |
 
+### Set CTS Latency Offset
+
+This command clocks a sink instance, typically a hard macro, the given
+offset later than the latency balancer would (a negative offset clocks it
+earlier). The balancer subtracts the offset from the insertion delay it
+balances the sink with, the `max_clock_tree_path` of its clock pin. The
+offset is stored on the instance as the `cts_latency_offset` double
+property, in seconds, and must be set before `clock_tree_synthesis`. Only
+the latency balancer reads it: STA, the H-tree and `-useful_skew` targets
+are unchanged, and a design without the property is balanced as before.
+Use it for intentional per-block skew in a parent over hardened blocks,
+without editing the blocks' abstracts, which ideal-clock timing also reads.
+
+```tcl
+set_cts_latency_offset
+    -offset offset
+    inst_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-offset` | Offset in the user time unit. Positive clocks the instance later than balanced, negative earlier. |
+| `inst_name` | Name of the sink instance. |
+
 ### Report CTS
 
 This command is used to extract the following metrics after a successful `clock_tree_synthesis` run. 

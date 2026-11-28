@@ -602,6 +602,35 @@ proc clock_tree_synthesis { args } {
   cts::run_triton_cts
 }
 
+sta::define_cmd_args "set_cts_latency_offset" {-offset offset inst_name}
+
+proc set_cts_latency_offset { args } {
+  sta::parse_key_args "set_cts_latency_offset" args \
+    keys {-offset} flags {}
+  sta::check_argc_eq1 "set_cts_latency_offset" $args
+  if { ![info exists keys(-offset)] } {
+    utl::error CTS 607 "set_cts_latency_offset requires -offset."
+  }
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error CTS 608 "No design block found."
+  }
+  set inst_name [lindex $args 0]
+  set inst [$block findInst $inst_name]
+  if { $inst == "NULL" } {
+    utl::error CTS 609 "set_cts_latency_offset: no instance $inst_name."
+  }
+  set offset $keys(-offset)
+  sta::check_float "-offset" $offset
+  set seconds [sta::time_ui_sta $offset]
+  set prop [odb::dbDoubleProperty_find $inst cts_latency_offset]
+  if { $prop == "NULL" } {
+    odb::dbDoubleProperty_create $inst cts_latency_offset $seconds
+  } else {
+    $prop setValue $seconds
+  }
+}
+
 sta::define_cmd_args "report_cts" {[-out_file file] \
                                   }
 proc report_cts { args } {
