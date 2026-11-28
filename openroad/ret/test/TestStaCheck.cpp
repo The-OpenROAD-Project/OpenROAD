@@ -5,7 +5,6 @@
 
 #include <algorithm>
 
-#include "RetimerPlacer.h"
 #include "StaCheck.h"
 #include "gtest/gtest.h"
 
@@ -23,7 +22,7 @@ ret::StaSlack scene(const float setup, const float hold)
   return slack;
 }
 
-// The worst of the scenes on top, as staSlack() returns it.
+// A design of two scenes, with the worst of them on top.
 ret::StaSlack design(const ret::StaSlack& a, const ret::StaSlack& b)
 {
   ret::StaSlack all

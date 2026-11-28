@@ -5,13 +5,12 @@
 
 #include <functional>
 #include <string>
-#include <unordered_set>
 #include <vector>
 
 #include "RetimerPlacer.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "ret/Retimer.h"
 
 namespace sta {
 class dbSta;
@@ -27,10 +26,8 @@ namespace ret {
 
 class Discards;
 
-// The cells created since clear() that still exist, and the number of
-// registers in the block, discarded ones included.  odb calls it for every
-// cell created or deleted, also by an undo, so neither is found by reading
-// the block again.
+// The cells created since clear() that still exist.  odb reports every cell
+// created or deleted, also by an undo, so the block is not read again.
 class NewCells : public odb::dbBlockCallBackObj
 {
  public:
@@ -44,29 +41,34 @@ class NewCells : public odb::dbBlockCallBackObj
   int registerCount() const { return registers_; }
 
  private:
-  std::unordered_set<odb::dbInst*> created_;
+  odb::PtrSet<odb::dbInst> created_;
   int registers_ = 0;
 };
 
-// Whether a trial is kept: no scene worse than at the start of the round or
-// of the command, and the worst or the total setup slack over the scenes
-// above the round's start.  The command's start is a floor of its own, so
-// the tolerance of each round does not add up.
+// Of the worst scene, and of each scene.  Hold: of the violations only, so
+// zero when hold is met.
+struct StaSlack
+{
+  float worst = 0.0f;
+  float total = 0.0f;
+  float hold_worst = 0.0f;
+  float hold_total = 0.0f;
+  std::vector<StaSlack> scenes;
+};
+
+// No scene is worse than at the start of the round or of the command, and
+// the worst or the total setup slack is better than at the round's start.
 bool keepsTrial(const StaSlack& trial,
                 const StaSlack& round_start,
                 const StaSlack& start);
 
-// STA, not the search's delay model, decides what is kept: the slides are
-// applied, the new cells placed, and the design timed.  They are kept when
-// the setup slack improves with neither the worst nor the total negative
-// slack below the start, for setup and for hold; else ever shorter prefixes
-// are tried, each half the last.
+// STA, not the search's delay model, decides what is kept.  When keepsTrial()
+// refuses the slides, ever shorter prefixes are tried, each half the last.
 class StaCheck
 {
  public:
-  // The gates a search with a slide limit (<= 0: none) slides across.
   using Propose = std::function<std::vector<odb::dbInst*>(int max_moves)>;
-  // Applies slides; max_moves caps a search the unmapping repeats.
+  // Returns the number of slides, negative when they were not applied.
   using Apply = std::function<int(const std::vector<odb::dbInst*>& slides,
                                   int max_moves)>;
   using Undone = std::function<void()>;
@@ -81,8 +83,8 @@ class StaCheck
            Apply apply,
            Undone undone);
 
-  // Rounds repeat from what was kept until one keeps nothing.
-  void run(const RetimeOptions& options);
+  // max_moves: slides over all rounds; <= 0: no cap.
+  void run(int max_moves);
 
  private:
   struct Round
@@ -97,27 +99,27 @@ class StaCheck
   {
     int slides = 0;
     bool applied = false;
-    StaSlack slack;  // the slack before when the slides were not applied
+    StaSlack slack;  // the round's start when the slides were not applied
+    PlaceStats placed;
+  };
+  struct Totals
+  {
+    int slides = 0;
+    int rounds = 0;
     PlaceStats placed;
   };
 
   // start: the slack before the first round.
-  Round runRound(int limit, const StaSlack& start);
-  static std::vector<odb::dbInst*> prefix(
-      const std::vector<odb::dbInst*>& slides,
-      int limit);
+  Round runRound(int max_moves, const StaSlack& start);
   // Leaves the edit open.
   Trial runTrial(const std::vector<odb::dbInst*>& slides,
-                 int limit,
-                 const StaSlack& before);
+                 int max_moves,
+                 const StaSlack& round_start);
   void undoTrial();
   void keepTrial(const Trial& trial, Round& round);
-  // Of the design as it is now.
   StaSlack slack() const;
   // Without the discarded ones.
   int registerCount() const;
-  // The search reads the current scene alone: says so when that one meets
-  // timing and another fails.
   void warnOtherScene(const StaSlack& slack) const;
   void reportStart(const StaSlack& slack, int registers) const;
   void reportRound(int number, const Round& round) const;
@@ -127,18 +129,22 @@ class StaCheck
                  const std::string& kept,
                  const StaSlack& slack,
                  int registers) const;
+  void reportRule() const;
+  void reportTotals(const Totals& totals) const;
+  std::string slackText(float slack) const;
 
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   RetimerPlacer* placer_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   est::IncrementalParasiticsGuard* guard_ = nullptr;
-  Discards* discards_ = nullptr;  // what the kept trials replaced
+  Discards* discards_ = nullptr;
   Propose propose_;
   Apply apply_;
   Undone undone_;
   NewCells new_cells_;
-  // A driver of each net with two; they stay through the command.
+  // A driver of each net with two.  STA's incremental delay calculation
+  // times such a net only from the driver it picked.
   std::vector<odb::dbITerm*> shared_drivers_;
 };
 

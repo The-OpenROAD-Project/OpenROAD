@@ -3,18 +3,41 @@
 
 #pragma once
 
+#include <optional>
+
 namespace sta {
 class dbSta;
+class Instance;
 class LibertyCell;
 class LibertyPort;
 class Pin;
+class Pvt;
+class TimingArcSet;
 }  // namespace sta
 
 namespace ret {
 
-// From the liberty tables of a flop: the slowest clock-to-output arc at a
-// load (`to`: one output, or null for all) and the longest setup check.
-// Negative: the cell has none.
+// The instance's PVT, then the SDC operating conditions, then the library
+// default; nullptr is nominal.
+const sta::Pvt* tablePvt(sta::dbSta* sta,
+                         const sta::LibertyCell* cell,
+                         const sta::Instance* inst = nullptr);
+
+struct TableArc
+{
+  float delay;
+  float slew;  // at the arc's output
+};
+// slowest, replaced by each arc of the set with a delay table that is slower,
+// or that comes first when slowest is nullopt.
+std::optional<TableArc> slowestTableArc(sta::dbSta* sta,
+                                        const sta::TimingArcSet* set,
+                                        const sta::Pvt* pvt,
+                                        float in_slew,
+                                        float load,
+                                        std::optional<TableArc> slowest);
+
+// to: one output, or nullptr for the slowest.  Negative: the cell has none.
 float registerClockToQ(sta::dbSta* sta,
                        const sta::LibertyCell* cell,
                        const sta::LibertyPort* to,
@@ -24,9 +47,9 @@ float registerSetupTime(sta::dbSta* sta,
                         const sta::LibertyCell* cell,
                         float clock_slew,
                         float data_slew);
-// The slower of the rise and fall slews STA has at a pin.
+// The slower of the rise and fall slews.
 float pinSlew(sta::dbSta* sta, const sta::Pin* pin);
-// The ideal clock's slew where the clock is ideal, else the pin's.
+// The ideal clock's slew where the clock is ideal.
 float clockPinSlew(sta::dbSta* sta, const sta::Pin* pin);
 
 }  // namespace ret

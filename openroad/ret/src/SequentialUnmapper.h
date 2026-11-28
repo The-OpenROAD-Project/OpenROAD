@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <optional>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -31,16 +32,11 @@ namespace ret {
 class Discards;
 
 // Rewrites synchronous registers as a plain D flip-flop plus logic
-// (inverters, 2-input ANDs and ORs, tie cells) computing the cell's liberty
-// `next_state`.  Registers with an asynchronous control that is not tied
-// inactive, latches, scan cells, multi-bit cells, and cells that cannot be
-// replaced (isReplaceable) are left untouched.
-// Without a plain D flip-flop the base cell has asynchronous controls, tied
-// inactive on each new instance.  New cells go into the register's module.
+// (inverters, 2-input ANDs and ORs, and tie cells) computing the cell's
+// liberty `next_state`.
 class SequentialUnmapper
 {
  public:
-  // Pins held at a constant, as (pin, tied high).
   struct PinTie
   {
     odb::dbMTerm* pin;
@@ -48,39 +44,39 @@ class SequentialUnmapper
   };
   using PinTies = std::vector<PinTie>;
 
-  // resizer: its set_dont_use cells are not used; nullptr: only the liberty
-  // dont_use attribute counts.
+  // resizer: nullptr ignores set_dont_use.
   SequentialUnmapper(odb::dbDatabase* db,
                      sta::dbSta* sta,
                      utl::Logger* logger,
                      rsz::Resizer* resizer = nullptr);
 
+  // False, after a warning, when a cell new instances are made of is missing.
   bool prepare();
 
-  // Returns the number of registers unmapped.  discards: where the registers
-  // it replaces go; nullptr: they are deleted before it returns.
+  // Returns the number of registers unmapped.  candidates: nullptr is every
+  // register.  discards: nullptr deletes the replaced registers at once.
   int run(const std::unordered_set<odb::dbInst*>* candidates = nullptr,
           Discards* discards = nullptr);
 
-  odb::dbMaster* getBaseSequentialMaster() const { return seq_.master; }
-  odb::dbMTerm* getBaseSequentialDMTerm() const { return seq_.data; }
-  odb::dbMTerm* getBaseSequentialQMTerm() const { return seq_.output; }
-  // Empty on a plain flip-flop.
-  const PinTies& getBaseSequentialTies() const { return seq_.ties; }
+  odb::dbMaster* getBaseSequentialMaster() const { return base_.master; }
+  odb::dbMTerm* getBaseSequentialDMTerm() const { return base_.data; }
+  odb::dbMTerm* getBaseSequentialQMTerm() const { return base_.output; }
+  const PinTies& getBaseSequentialTies() const { return base_.ties; }
   odb::dbMaster* getNegedgeSequentialMaster() const
   {
-    return negedge_seq_.master;
+    return negedge_base_.master;
   }
   odb::dbMaster* getTieMaster(const bool one) const
   {
     return tieCell(one).master;
   }
-  odb::dbMTerm* getTieOutputMTerm(const bool one) const
-  {
-    return tieCell(one).output;
-  }
-  // The cells a new instance can be, of those prepare() found.
   std::vector<odb::dbMaster*> newCellMasters() const;
+  // Returns the net the new tie cell drives.
+  odb::dbNet* makeTieNet(sta::Instance* parent,
+                         const char* cell_name,
+                         const char* net_name,
+                         bool one,
+                         odb::dbInst* like) const;
 
  private:
   struct Register
@@ -112,6 +108,12 @@ class SequentialUnmapper
     int other = 0;
   };
 
+  struct LoadedOutput
+  {
+    odb::dbITerm* pin = nullptr;
+    std::optional<bool> inverted;  // nullopt: does not read the state
+  };
+
   struct OutputMove
   {
     odb::dbNet* old_net = nullptr;
@@ -121,31 +123,23 @@ class SequentialUnmapper
     std::vector<odb::dbBTerm*> ports;
   };
 
-  // A tie cell follows only the liberty dont_use: flows ban tie cells with
-  // set_dont_use to keep them out of sizing and still tie nets with them
-  // (ORFS on gt2n, repair_tie_fanout).  A cell whose LEF pins are not its
-  // liberty pins (hasLibertyPins) is not usable either.
-  bool usableCell(const sta::LibertyCell* cell, bool tie = false) const;
-  // The cell as a base register: a D flip-flop of this clock edge with a
-  // state output and no scan pin, whatever its asynchronous controls.  No
-  // master, as from every finder below, when it is not one.
+  // nullptr when no new instance may be of the cell.  A tie cell follows only
+  // the liberty dont_use: flows keep tie cells out of sizing with
+  // set_dont_use and still tie nets with them.
+  odb::dbMaster* usableMaster(const sta::LibertyCell* cell,
+                              bool tie = false) const;
+  // No master when the cell is not a base register.
   BaseRegister baseRegister(const sta::LibertyCell* cell, bool negedge) const;
   BaseRegister findBaseRegister(bool negedge) const;
   BaseRegister plainBaseRegister(bool negedge) const;
-  // The register that costs the least area with tie cells holding its
-  // asynchronous controls inactive, then the one with the smallest data pin
-  // capacitance.
+  // The least area with its tie cells, then the smallest data pin capacitance.
   BaseRegister tiedBaseRegister(bool negedge) const;
-  // Adds the ties that hold the cell's asynchronous controls inactive;
-  // `area`: the cell with those tie cells.  False when it cannot be tied.
+  // False when the controls cannot be tied.  area: with the tie cells.
   bool tieControls(const sta::LibertyCell* cell,
                    BaseRegister& base,
                    float& area) const;
   void reportTiedBase() const;
-  // The smallest cell that is `op` of this many input pins.
   odb::dbMaster* smallestGate(sta::FuncExpr::Op op, int inputs) const;
-  // The smallest cell without inputs whose output always drives the
-  // constant and has a pin in LEF.
   TieCell findTieCell(bool one) const;
   const TieCell& tieCell(const bool one) const { return one ? tie1_ : tie0_; }
 
@@ -156,20 +150,21 @@ class SequentialUnmapper
 
   void decompose(odb::dbInst* inst, const sta::Sequential* seq);
   void skip(odb::dbInst* inst, const char* reason);
-  // Records the nets of the input pins; returns the loaded output pins.
-  std::vector<odb::dbITerm*> collectRegisterNets(odb::dbInst* inst);
-  bool outputsReadState(const sta::Sequential* seq,
-                        const std::vector<odb::dbITerm*>& out_pins) const;
+  void selectRegister(odb::dbInst* inst, const sta::Sequential* seq);
+  std::vector<LoadedOutput> loadedOutputs(odb::dbInst* inst,
+                                          const sta::Sequential* seq) const;
+  // False, after a warning, when the new cell has no clock pin.
+  bool makeBaseRegister(const BaseRegister& base,
+                        odb::dbNet* clock_net,
+                        const sta::FuncExpr* next_state);
   std::vector<OutputMove> collectOutputMoves(
       odb::dbInst* inst,
-      const sta::Sequential* seq,
-      const std::vector<odb::dbITerm*>& out_pins);
+      const std::vector<LoadedOutput>& outputs);
   void applyOutputMoves(const std::vector<OutputMove>& moves);
-  bool canSynth(const sta::FuncExpr* expr) const;
-  odb::dbNet* synth(const sta::FuncExpr* expr);
+  bool canSynthesize(const sta::FuncExpr* expr) const;
+  odb::dbNet* synthesize(const sta::FuncExpr* expr);
 
-  void setParent(odb::dbInst* inst);
-  // A new gate reading `inputs` in pin order; returns its output net.
+  // Reads `inputs` in pin order; returns the output net.
   odb::dbNet* makeGate(const char* base_name,
                        odb::dbMaster* master,
                        const std::vector<odb::dbNet*>& inputs);
@@ -182,22 +177,20 @@ class SequentialUnmapper
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   rsz::Resizer* resizer_ = nullptr;
-  odb::dbBlock* block_ = nullptr;
 
-  BaseRegister seq_;
-  BaseRegister negedge_seq_;
+  BaseRegister base_;
+  BaseRegister negedge_base_;
   odb::dbMaster* inv_master_ = nullptr;
   odb::dbMaster* and2_master_ = nullptr;
   odb::dbMaster* or2_master_ = nullptr;
   TieCell tie1_;
   TieCell tie0_;
 
-  std::unordered_map<const sta::LibertyPort*, odb::dbNet*> in_port_net_;
-  // Module net of each net the register reads; empty in a flat netlist.
-  std::unordered_map<odb::dbNet*, odb::dbModNet*> mod_net_;
+  std::unordered_map<const sta::LibertyPort*, odb::dbNet*> input_nets_;
+  std::unordered_map<odb::dbNet*, odb::dbModNet*> mod_nets_;
   sta::Instance* parent_ = nullptr;
   odb::dbInst* register_ = nullptr;  // the one being unmapped
-  Discards* discards_ = nullptr;     // of the run in progress
+  Discards* discards_ = nullptr;
   const sta::LibertyPort* out_port_ = nullptr;
   const sta::LibertyPort* out_inv_port_ = nullptr;
   odb::dbNet* state_net_ = nullptr;

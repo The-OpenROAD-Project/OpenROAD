@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <optional>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -19,33 +18,15 @@
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
-#include "sta/EquivCells.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Scene.hh"
 
 namespace ret {
 
 namespace {
-
-StaSlack sceneSlack(sta::dbSta* sta, const sta::Scene* scene)
-{
-  const sta::MinMax* setup = sta::MinMax::max();
-  const sta::MinMax* hold = sta::MinMax::min();
-  sta::Slack worst;
-  sta::Slack hold_worst;
-  sta::Vertex* vertex;
-  sta->worstSlack(scene, setup, worst, vertex);
-  sta->worstSlack(scene, hold, hold_worst, vertex);
-  StaSlack slack;
-  slack.worst = sta::delayAsFloat(worst);
-  slack.total = sta::delayAsFloat(sta->totalNegativeSlack(scene, setup));
-  slack.hold_worst = std::min(sta::delayAsFloat(hold_worst), 0.0f);
-  slack.hold_total = sta::delayAsFloat(sta->totalNegativeSlack(scene, hold));
-  return slack;
-}
 
 // What dbInst::swapMaster asks of the two cells.
 bool samePinNames(odb::dbMaster* a, odb::dbMaster* b)
@@ -56,28 +37,15 @@ bool samePinNames(odb::dbMaster* a, odb::dbMaster* b)
             });
 }
 
-}  // namespace
-
-StaSlack staSlack(sta::dbSta* sta,
-                  est::IncrementalParasiticsGuard& guard,
-                  const std::vector<odb::dbITerm*>& shared_drivers)
+// On a net, with neither the pin nor the net a supply.
+bool onSignalNet(odb::dbITerm* pin)
 {
-  guard.update();
-  sta::dbNetwork* network = sta->getDbNetwork();
-  for (odb::dbITerm* driver : shared_drivers) {
-    sta->delaysInvalidFrom(network->dbToSta(driver));
-  }
-  StaSlack all;
-  all.worst = sta::INF;
-  for (const sta::Scene* scene : sta->scenes()) {
-    const StaSlack& slack = all.scenes.emplace_back(sceneSlack(sta, scene));
-    all.worst = std::min(all.worst, slack.worst);
-    all.total = std::min(all.total, slack.total);
-    all.hold_worst = std::min(all.hold_worst, slack.hold_worst);
-    all.hold_total = std::min(all.hold_total, slack.hold_total);
-  }
-  return all;
+  odb::dbNet* net = pin->getNet();
+  return net != nullptr && !net->getSigType().isSupply()
+         && !pin->getSigType().isSupply();
 }
+
+}  // namespace
 
 RetimerPlacer::RetimerPlacer(sta::dbSta* sta,
                              est::EstimateParasitics* estimate_parasitics,
@@ -88,11 +56,13 @@ RetimerPlacer::RetimerPlacer(sta::dbSta* sta,
 
 void RetimerPlacer::prepare()
 {
+  equivalent_masters_.clear();
   // The resizer reads the core it keeps a cell in.
   resizer_->initBlock();
 }
 
-std::vector<odb::dbMaster*> RetimerPlacer::registerCells(odb::dbMaster* master)
+std::vector<odb::dbMaster*> RetimerPlacer::masterAndEquivalents(
+    odb::dbMaster* master)
 {
   std::vector<odb::dbMaster*> masters = {master};
   const std::vector<odb::dbMaster*>& others = equivalentMasters(master);
@@ -106,44 +76,36 @@ std::optional<odb::Rect> RetimerPlacer::neighborBox(odb::dbInst* inst) const
   odb::dbITerm* data = sequential ? registerDataPin(sta_, inst) : nullptr;
   odb::Rect box;
   box.mergeInit();
-  bool any = false;
   for (odb::dbITerm* iterm : inst->getITerms()) {
-    odb::dbNet* net = iterm->getNet();
-    if (net == nullptr || net->getSigType().isSupply()
-        || iterm->getSigType().isSupply()
-        || iterm->getSigType() == odb::dbSigType::CLOCK) {
+    if (!onSignalNet(iterm) || iterm->getSigType() == odb::dbSigType::CLOCK) {
       continue;
     }
     const bool input = iterm->getIoType() == odb::dbIoType::INPUT;
     if (input && data != nullptr && iterm != data) {
       continue;
     }
-    for (odb::dbITerm* other : net->getITerms()) {
+    for (odb::dbITerm* other : iterm->getNet()->getITerms()) {
       odb::dbInst* cell = other->getInst();
       if (cell != inst && cell->isPlaced()) {
         box.merge(cell->getBBox()->getBox());
-        any = true;
       }
     }
   }
-  if (!any) {
+  if (box.isInverted()) {
     return std::nullopt;
   }
   return box;
 }
 
-void RetimerPlacer::moveTo(odb::dbInst* inst, const int x, const int y)
+void RetimerPlacer::centerAt(odb::dbInst* inst, const odb::Point& center)
 {
   odb::dbMaster* master = inst->getMaster();
+  const int half_width = static_cast<int>(master->getWidth()) / 2;
+  const int half_height = static_cast<int>(master->getHeight()) / 2;
   resizer_->setLocation(inst,
-                        {x - static_cast<int>(master->getWidth()) / 2,
-                         y - static_cast<int>(master->getHeight()) / 2});
+                        {center.x() - half_width, center.y() - half_height});
   for (odb::dbITerm* iterm : inst->getITerms()) {
-    odb::dbNet* net = iterm->getNet();
-    if (net != nullptr && !net->getSigType().isSupply()
-        && !iterm->getSigType().isSupply()) {
-      estimate_parasitics_->parasiticsInvalid(net);
-    }
+    estimate_parasitics_->parasiticsInvalid(iterm->getNet());
   }
 }
 
@@ -154,28 +116,33 @@ const std::vector<odb::dbMaster*>& RetimerPlacer::equivalentMasters(
   if (found != equivalent_masters_.end()) {
     return found->second;
   }
-  std::vector<odb::dbMaster*>& masters = equivalent_masters_[master];
+  return equivalent_masters_[master] = findEquivalentMasters(master);
+}
+
+std::vector<odb::dbMaster*> RetimerPlacer::findEquivalentMasters(
+    odb::dbMaster* master) const
+{
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::LibertyCell* cell = libertyCell(sta_, master);
-  if (cell == nullptr) {
-    return masters;
+  const sta::LibertyCellSeq* equivs
+      = cell != nullptr ? resizer_->equivCells(cell) : nullptr;
+  if (equivs == nullptr) {
+    return {};
   }
   std::vector<std::pair<float, odb::dbMaster*>> by_area;
-  std::unordered_set<odb::dbMaster*> seen = {master};
-  for (sta::LibertyCell* other : libertyCells(sta_)) {
-    if (other == cell || !isUsableCell(other, resizer_)
-        || !sta::equivCells(cell, other)) {
+  for (const sta::LibertyCell* other : *equivs) {
+    if (other == cell || !isUsableCell(other, resizer_)) {
       continue;
     }
     odb::dbMaster* other_master = network->staToDb(other);
     if (other_master != nullptr && other_master->getSite() == master->getSite()
-        && samePinNames(master, other_master)
-        && seen.insert(other_master).second) {
+        && samePinNames(master, other_master)) {
       by_area.emplace_back(other->area(), other_master);
     }
   }
   std::ranges::stable_sort(
       by_area, [](const auto& a, const auto& b) { return a.first < b.first; });
+  std::vector<odb::dbMaster*> masters;
   for (const auto& [area, other_master] : by_area) {
     masters.push_back(other_master);
   }
@@ -197,7 +164,6 @@ std::vector<RetimerPlacer::CellChoice> RetimerPlacer::cellChoices(
         .candidates = equivalentMasters(inst->getMaster()),
         .best = base,
         .best_master = inst->getMaster(),
-        .swapped = false,
     });
   }
   return choices;
@@ -207,32 +173,30 @@ void RetimerPlacer::tryRank(std::vector<CellChoice>& choices,
                             const size_t rank,
                             est::IncrementalParasiticsGuard& guard)
 {
+  std::vector<CellChoice*> swapped;
   for (CellChoice& choice : choices) {
-    choice.swapped = rank < choice.candidates.size()
-                     && choice.inst->swapMaster(choice.candidates[rank]);
+    if (rank < choice.candidates.size()
+        && choice.inst->swapMaster(choice.candidates[rank])) {
+      swapped.push_back(&choice);
+    }
   }
   guard.update();
-  for (CellChoice& choice : choices) {
-    if (!choice.swapped) {
-      continue;
-    }
-    const PinSlack slack = pinSlack(choice.inst);
-    if (betterSlack(slack, choice.best)) {
-      choice.best = slack;
-      choice.best_master = choice.candidates[rank];
+  for (CellChoice* choice : swapped) {
+    const PinSlack slack = pinSlack(choice->inst);
+    if (betterSlack(slack, choice->best)) {
+      choice->best = slack;
+      choice->best_master = choice->candidates[rank];
     }
   }
-  for (CellChoice& choice : choices) {
-    if (choice.swapped) {
-      choice.inst->swapMaster(choice.original);
-    }
+  for (const CellChoice* choice : swapped) {
+    choice->inst->swapMaster(choice->original);
   }
 }
 
-int RetimerPlacer::swapToBest(std::vector<CellChoice>& choices)
+int RetimerPlacer::swapToBest(const std::vector<CellChoice>& choices)
 {
   int changed = 0;
-  for (CellChoice& choice : choices) {
+  for (const CellChoice& choice : choices) {
     if (choice.best_master != choice.original
         && choice.inst->swapMaster(choice.best_master)) {
       ++changed;
@@ -262,10 +226,7 @@ RetimerPlacer::PinSlack RetimerPlacer::pinSlack(odb::dbInst* inst) const
   sta::dbNetwork* network = sta_->getDbNetwork();
   PinSlack pin_slack{.worst = sta::INF, .sum = 0.0f};
   for (odb::dbITerm* iterm : inst->getITerms()) {
-    odb::dbNet* net = iterm->getNet();
-    if (net == nullptr || net->getSigType().isSupply()
-        || iterm->getSigType().isSupply()
-        || iterm->getSigType() == odb::dbSigType::CLOCK) {
+    if (!onSignalNet(iterm) || iterm->getSigType() == odb::dbSigType::CLOCK) {
       continue;
     }
     const sta::Pin* pin = network->dbToSta(iterm);
@@ -310,7 +271,7 @@ PlaceStats RetimerPlacer::placeNewCells(const std::vector<odb::dbInst*>& cells,
       if (!box) {
         continue;
       }
-      moveTo(inst, box->xCenter(), box->yCenter());
+      centerAt(inst, box->center());
       if (inst->getMaster()->isSequential()) {
         new_registers.push_back(inst);
       }

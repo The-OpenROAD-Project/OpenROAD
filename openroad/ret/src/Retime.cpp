@@ -6,18 +6,18 @@
 #include "Retime.h"
 
 #include <algorithm>
-#include <climits>
 #include <cstddef>
 #include <functional>
 #include <limits>
+#include <optional>
 #include <queue>
 #include <utility>
 #include <vector>
 
-#include "RegisterUtils.h"
 #include "RetimingGraph.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace ret {
 
@@ -38,14 +38,14 @@ Retime::Retime(const RetimingGraph* graph,
 void Retime::Scratch::init(const int n)
 {
   queue.assign(n, 0);
-  local_indeg.assign(n, 0);
-  in_dirty.assign(n, 0);
-  dirty.clear();
-  dirty.reserve(n);
+  marked.clear();
+  marked.reserve(n);
+  is_marked.assign(n, 0);
+  pending.assign(n, 0);
   saved_arrivals.reserve(n);
 }
 
-void Retime::run(const int max_moves, const double margin)
+void Retime::run(const int max_moves, const double margin_fraction)
 {
   const int n = graph_->size();
   r_.assign(n, 0);
@@ -56,7 +56,7 @@ void Retime::run(const int max_moves, const double margin)
 
   buildModel();
   computeArrivals();
-  search(max_moves, margin);
+  search(max_moves, margin_fraction);
   rankSlides();
 }
 
@@ -83,7 +83,7 @@ void Retime::FailingGates::set(const int gate, const double slack)
 
 void Retime::updateFailing()
 {
-  for (const int v : scratch_.dirty) {
+  for (const int v : scratch_.marked) {
     negative_.set(v, negativeSlackAt(v));
     failing_.set(v, forwardMovable(v) ? slackThrough(v) : 0.0);
   }
@@ -91,7 +91,7 @@ void Retime::updateFailing()
 
 void Retime::search(const int max_moves, const double margin_fraction)
 {
-  const int cap = max_moves <= 0 ? INT_MAX : max_moves;
+  const int cap = max_moves <= 0 ? std::numeric_limits<int>::max() : max_moves;
   const double margin = margin_fraction * graph_->clockPeriod();
   const int n = graph_->size();
   failing_.init(n);
@@ -99,15 +99,15 @@ void Retime::search(const int max_moves, const double margin_fraction)
   computeTails();
   updateFailing();  // computeTails marked every gate
   while (getMoves() < cap) {
-    double gain = 0.0;
-    const int v = pickSlide(margin, gain);
-    if (v < 0) {
+    const std::optional<Slide> slide = pickSlide(margin);
+    if (!slide) {
       break;
     }
+    const int v = slide->gate;
     applySlide(v);
     updateFailing();
     slides_.push_back(v);
-    gains_.push_back(gain);
+    gains_.push_back(slide->gain);
     debugPrint(logger_,
                utl::RET,
                "search",
@@ -120,7 +120,7 @@ void Retime::search(const int max_moves, const double margin_fraction)
   }
 }
 
-int Retime::pickSlide(const double margin, double& gain)
+std::optional<Retime::Slide> Retime::pickSlide(const double margin)
 {
   const double worst
       = negative_.order.empty() ? 0.0 : negative_.order.begin()->slack;
@@ -130,11 +130,10 @@ int Retime::pickSlide(const double margin, double& gain)
     const bool harms = effect.total_change < -margin || after < worst - margin;
     const bool helps = after - before > margin || effect.total_change > margin;
     if (helps && !harms) {
-      gain = effect.total_change;
-      return v;
+      return Slide{.gate = v, .gain = effect.total_change};
     }
   }
-  return -1;
+  return std::nullopt;
 }
 
 std::vector<std::vector<int>> Retime::slideNeeds() const
@@ -142,7 +141,7 @@ std::vector<std::vector<int>> Retime::slideNeeds() const
   const int count = getMoves();
   std::vector<std::vector<int>> needs(count);
   // Per gate, the slides across it so far.
-  std::vector<std::vector<int>> across(graph_->nodes().size());
+  std::vector<std::vector<int>> across(graph_->size());
   for (int i = 0; i < count; ++i) {
     const int v = slides_[i];
     const int nth = static_cast<int>(across[v].size()) + 1;
@@ -257,7 +256,7 @@ std::vector<int> rankPaths(const std::vector<std::vector<int>>& paths,
         changed.insert(changed.end(), paths_of[i].begin(), paths_of[i].end());
       }
     }
-    sortUnique(changed);
+    utl::sort_and_unique(changed);
     for (const int p : changed) {
       ++version[p];
       enqueue(p);
@@ -271,7 +270,7 @@ Retime::SlideEffect Retime::slideEffect(const int v)
   SlideEffect effect;
   applySlide(v);
   effect.into = slackOf(arrivals_[v], endShift(v));
-  const std::vector<int>& changed = scratch_.dirty;
+  const std::vector<int>& changed = scratch_.marked;
   for (const int t : changed) {
     effect.total_change += negativeSlackAt(t);
   }
@@ -285,7 +284,7 @@ Retime::SlideEffect Retime::slideEffect(const int v)
 
 double Retime::negativeSlackAt(const int t) const
 {
-  if (!outputRegistered(t) && fixed_end_shift_[t] == kNegInf) {
+  if (!hasEndpoint(t)) {
     return 0.0;
   }
   return std::min(slackOf(arrivals_[t], endShift(t)), 0.0);
@@ -325,8 +324,7 @@ double Retime::endShift(const int v) const
 bool Retime::forwardMovable(const int v) const
 {
   return !graph_->pinned()[v] && !fanin_[v].empty()
-         && std::ranges::none_of(graph_->adj()[v],
-                                 [](const Edge& e) { return e.weight > 0; })
+         && !outputRegisteredInGraph(v)
          && std::ranges::all_of(fanin_[v], [&](const FaninEdge& fe) {
               return registersOn(v, fe) >= 1;
             });
@@ -336,6 +334,17 @@ bool Retime::outputRegistered(const int v) const
 {
   return std::ranges::any_of(
       graph_->adj()[v], [&](const Edge& e) { return registersOn(v, e) >= 1; });
+}
+
+bool Retime::outputRegisteredInGraph(const int v) const
+{
+  return std::ranges::any_of(graph_->adj()[v],
+                             [](const Edge& e) { return e.weight > 0; });
+}
+
+bool Retime::hasEndpoint(const int v) const
+{
+  return outputRegistered(v) || fixed_end_shift_[v] > kNegInf;
 }
 
 bool Retime::isCombinational(const int u, const Edge& e) const
@@ -351,11 +360,7 @@ bool Retime::isCombinational(const int t, const FaninEdge& fe) const
 void Retime::applySlide(const int v)
 {
   r_[v] -= 1;
-  scratch_.dirty.clear();
-  mark(v);
-  for (const FaninEdge& fe : fanin_[v]) {
-    mark(fe.source);
-  }
+  markWithFanins(v);
   for (const Edge& e : graph_->adj()[v]) {
     mark(e.target);
   }
@@ -367,8 +372,8 @@ void Retime::undoSlide(const int v)
 {
   r_[v] += 1;
   const Scratch& s = scratch_;
-  for (size_t i = 0; i < s.dirty.size(); ++i) {
-    arrivals_[s.dirty[i]] = s.saved_arrivals[i];
+  for (size_t i = 0; i < s.marked.size(); ++i) {
+    arrivals_[s.marked[i]] = s.saved_arrivals[i];
   }
 }
 
@@ -382,14 +387,14 @@ void Retime::propagateArrivals()
 {
   Scratch& s = scratch_;
   s.saved_arrivals.clear();
-  for (const int t : s.dirty) {
+  for (const int t : s.marked) {
     s.saved_arrivals.push_back(arrivals_[t]);
   }
   visitMarked(/*forward=*/true, [this](const int t) { setArrival(t); });
-  for (const int t : s.dirty) {
-    if (s.in_dirty[t]) {  // on a combinational loop
+  for (const int t : s.marked) {
+    if (s.is_marked[t]) {  // on a combinational loop
       arrivals_[t] = 0.0;
-      s.in_dirty[t] = 0;
+      s.is_marked[t] = 0;
     }
   }
 }
@@ -404,7 +409,7 @@ void Retime::setArrival(const int t)
       a = std::max(a, launchArrival(t, fe) + arc);
       continue;
     }
-    const double extra = crossingDelay(fe);
+    const double extra = fe.cross_extra;
     a = std::max(
         a, arrivals_[fe.source] + fe.driver_shift + fe.wire + arc + extra);
   }
@@ -418,11 +423,6 @@ double Retime::launchArrival(const int t, const FaninEdge& fe) const
     return fe.launch;
   }
   return new_launch_[fe.source] + fe.wire;
-}
-
-double Retime::crossingDelay(const FaninEdge& fe) const
-{
-  return fe.weight == 0 ? 0.0 : fe.cross_extra;
 }
 
 void Retime::computeTails()
@@ -440,11 +440,7 @@ void Retime::updateTails(const int v)
     computeTails();
     return;
   }
-  scratch_.dirty.clear();
-  mark(v);
-  for (const FaninEdge& fe : fanin_[v]) {
-    mark(fe.source);
-  }
+  markWithFanins(v);
   markUpstream();
   propagateTails();
 }
@@ -454,32 +450,32 @@ bool Retime::propagateTails()
   Scratch& s = scratch_;
   visitMarked(/*forward=*/false, [this](const int u) { setTail(u); });
   bool all_visited = true;
-  for (const int u : s.dirty) {
-    if (s.in_dirty[u]) {
+  for (const int u : s.marked) {
+    if (s.is_marked[u]) {
       setTail(u);
       all_visited = false;
     }
   }
-  for (const int u : s.dirty) {
-    s.in_dirty[u] = 0;
+  for (const int u : s.marked) {
+    s.is_marked[u] = 0;
   }
   return all_visited;
 }
 
 void Retime::setTail(const int u)
 {
-  const bool endpoint = outputRegistered(u) || fixed_end_shift_[u] > kNegInf;
-  double tail = endpoint ? endShift(u) : kNegInf;
+  double tail = hasEndpoint(u) ? endShift(u) : kNegInf;
   double out_tail = kNegInf;
   for (const auto& [s, k] : fanout_[u]) {
     const FaninEdge& fe = fanin_[s][k];
     // A gate still marked is on a combinational loop: it is not done.
-    if (!isCombinational(s, fe) || scratch_.in_dirty[s]
+    if (!isCombinational(s, fe) || scratch_.is_marked[s]
         || tails_[s] == kNegInf) {
       continue;
     }
     const float arc = outputRegistered(s) ? fe.arc_reg : fe.arc_comb;
-    const double through = fe.wire + arc + crossingDelay(fe) + tails_[s];
+    const double extra = fe.cross_extra;
+    const double through = fe.wire + arc + extra + tails_[s];
     tail = std::max(tail, fe.driver_shift + through);
     out_tail = std::max(out_tail, through);
   }
@@ -490,18 +486,27 @@ void Retime::setTail(const int u)
 void Retime::mark(const int t)
 {
   Scratch& s = scratch_;
-  if (!s.in_dirty[t]) {
-    s.in_dirty[t] = 1;
-    s.dirty.push_back(t);
+  if (!s.is_marked[t]) {
+    s.is_marked[t] = 1;
+    s.marked.push_back(t);
   }
 }
 
 void Retime::markAll()
 {
-  scratch_.dirty.clear();
+  scratch_.marked.clear();
   const int n = graph_->size();
   for (int t = 0; t < n; ++t) {
     mark(t);
+  }
+}
+
+void Retime::markWithFanins(const int v)
+{
+  scratch_.marked.clear();
+  mark(v);
+  for (const FaninEdge& fe : fanin_[v]) {
+    mark(fe.source);
   }
 }
 
@@ -509,8 +514,8 @@ void Retime::markDownstream()
 {
   // mark() appends to the list being read.
   size_t next = 0;
-  while (next < scratch_.dirty.size()) {
-    const int u = scratch_.dirty[next++];
+  while (next < scratch_.marked.size()) {
+    const int u = scratch_.marked[next++];
     for (const Edge& e : graph_->adj()[u]) {
       if (isCombinational(u, e)) {
         mark(e.target);
@@ -522,8 +527,8 @@ void Retime::markDownstream()
 void Retime::markUpstream()
 {
   size_t next = 0;
-  while (next < scratch_.dirty.size()) {
-    const int t = scratch_.dirty[next++];
+  while (next < scratch_.marked.size()) {
+    const int t = scratch_.marked[next++];
     for (const FaninEdge& fe : fanin_[t]) {
       if (isCombinational(t, fe)) {
         mark(fe.source);
@@ -536,38 +541,23 @@ void Retime::visitMarked(const bool forward,
                          const std::function<void(int)>& visit)
 {
   Scratch& s = scratch_;
-  for (const int t : s.dirty) {
-    s.local_indeg[t] = 0;
-    if (forward) {
-      for (const FaninEdge& fe : fanin_[t]) {
-        if (isCombinational(t, fe) && s.in_dirty[fe.source]) {
-          ++s.local_indeg[t];
-        }
-      }
-    } else {
-      for (const Edge& e : graph_->adj()[t]) {
-        if (isCombinational(t, e) && s.in_dirty[e.target]) {
-          ++s.local_indeg[t];
-        }
-      }
-    }
-  }
-  int head = 0;
   int tail = 0;
-  for (const int t : s.dirty) {
-    if (s.local_indeg[t] == 0) {
+  for (const int t : s.marked) {
+    s.pending[t] = markedDependencies(t, forward);
+    if (s.pending[t] == 0) {
       s.queue[tail++] = t;
     }
   }
   const auto release = [&](const int t) {
-    if (s.in_dirty[t] && --s.local_indeg[t] == 0) {
+    if (s.is_marked[t] && --s.pending[t] == 0) {
       s.queue[tail++] = t;
     }
   };
+  int head = 0;
   while (head < tail) {
     const int t = s.queue[head++];
     visit(t);
-    s.in_dirty[t] = 0;
+    s.is_marked[t] = 0;
     if (forward) {
       for (const Edge& e : graph_->adj()[t]) {
         if (isCombinational(t, e)) {
@@ -582,6 +572,21 @@ void Retime::visitMarked(const bool forward,
       }
     }
   }
+}
+
+int Retime::markedDependencies(const int t, const bool forward) const
+{
+  const Scratch& s = scratch_;
+  if (forward) {
+    return static_cast<int>(
+        std::ranges::count_if(fanin_[t], [&](const FaninEdge& fe) {
+          return isCombinational(t, fe) && s.is_marked[fe.source];
+        }));
+  }
+  return static_cast<int>(
+      std::ranges::count_if(graph_->adj()[t], [&](const Edge& e) {
+        return isCombinational(t, e) && s.is_marked[e.target];
+      }));
 }
 
 }  // namespace ret

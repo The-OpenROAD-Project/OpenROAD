@@ -19,12 +19,14 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDelay.hh"
@@ -36,13 +38,8 @@ namespace ret {
 
 const sta::Sequential* singleSequential(const sta::LibertyCell* cell)
 {
-  const sta::Sequential* seq = nullptr;
-  int count = 0;
-  for (const sta::Sequential& s : cell->sequentials()) {
-    seq = &s;
-    ++count;
-  }
-  return count == 1 ? seq : nullptr;
+  const sta::SequentialSeq& sequentials = cell->sequentials();
+  return sequentials.size() == 1 ? &sequentials.front() : nullptr;
 }
 
 const sta::Sequential* singleSequential(sta::dbSta* sta, odb::dbInst* inst)
@@ -65,6 +62,16 @@ std::vector<sta::LibertyCell*> libertyCells(sta::dbSta* sta)
   return cells;
 }
 
+std::vector<const sta::LibertyPort*> libertyPorts(const sta::LibertyCell* cell)
+{
+  std::vector<const sta::LibertyPort*> ports;
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    ports.push_back(port_iter.next());
+  }
+  return ports;
+}
+
 sta::LibertyCell* libertyCell(sta::dbSta* sta, odb::dbMaster* master)
 {
   sta::dbNetwork* network = sta->getDbNetwork();
@@ -79,6 +86,30 @@ bool isSpecialCell(const sta::LibertyCell* cell)
 {
   return cell->isIsolationCell() || cell->isLevelShifter() || cell->isPad()
          || cell->isMacro();
+}
+
+// A pin read as it is or through one inverter.
+struct Literal
+{
+  const sta::LibertyPort* port;
+  bool inverted;
+};
+
+// nullopt for any other expression, nullptr included.
+std::optional<Literal> literal(const sta::FuncExpr* expr)
+{
+  const bool inverted
+      = expr != nullptr && expr->op() == sta::FuncExpr::Op::not_;
+  const sta::FuncExpr* pin = inverted ? expr->left() : expr;
+  if (pin == nullptr || pin->op() != sta::FuncExpr::Op::port) {
+    return std::nullopt;
+  }
+  return Literal{.port = pin->port(), .inverted = inverted};
+}
+
+bool pinNameLess(odb::dbMTerm* a, odb::dbMTerm* b)
+{
+  return strcmp(a->getConstName(), b->getConstName()) < 0;
 }
 
 }  // namespace
@@ -101,16 +132,18 @@ bool isNegedge(const sta::Sequential* seq)
          && seq->clock()->op() == sta::FuncExpr::Op::not_;
 }
 
+bool hasAsyncControl(const sta::Sequential* seq)
+{
+  return seq->clear() != nullptr || seq->preset() != nullptr;
+}
+
 odb::dbMTerm* clockMTerm(const sta::Sequential* seq, odb::dbMaster* master)
 {
-  const sta::FuncExpr* clock = seq->clock();
-  if (clock != nullptr && clock->op() == sta::FuncExpr::Op::not_) {
-    clock = clock->left();
-  }
-  if (clock == nullptr || clock->op() != sta::FuncExpr::Op::port) {
+  const std::optional<Literal> clock = literal(seq->clock());
+  if (!clock.has_value()) {
     return nullptr;
   }
-  odb::dbMTerm* pin = master->findMTerm(clock->port()->name().c_str());
+  odb::dbMTerm* pin = master->findMTerm(clock->port->name().c_str());
   const auto marked = [](odb::dbMTerm* mterm) {
     return mterm->getSigType() == odb::dbSigType::CLOCK;
   };
@@ -123,22 +156,38 @@ odb::dbMTerm* clockMTerm(const sta::Sequential* seq, odb::dbMaster* master)
 std::optional<bool> outputInverted(const sta::FuncExpr* func,
                                    const sta::Sequential* seq)
 {
-  if (func == nullptr) {
+  const std::optional<Literal> read = literal(func);
+  if (!read.has_value()) {
     return std::nullopt;
   }
-  bool inverted = false;
-  if (func->op() == sta::FuncExpr::Op::not_) {
-    inverted = true;
-    func = func->left();
+  if (read->port == seq->output()) {
+    return read->inverted;
   }
-  if (func == nullptr || func->op() != sta::FuncExpr::Op::port) {
+  if (seq->outputInv() != nullptr && read->port == seq->outputInv()) {
+    return !read->inverted;
+  }
+  return std::nullopt;
+}
+
+std::optional<bool> outputInverted(sta::dbSta* sta,
+                                   odb::dbITerm* pin,
+                                   const sta::Sequential* seq)
+{
+  const sta::LibertyPort* port = libertyPort(sta, pin);
+  return port != nullptr ? outputInverted(port->function(), seq) : std::nullopt;
+}
+
+std::optional<bool> constantOutput(const sta::LibertyPort* port)
+{
+  const sta::FuncExpr* func = port->function();
+  if (func == nullptr || port->tristateEnable() != nullptr) {
     return std::nullopt;
   }
-  if (func->port() == seq->output()) {
-    return inverted;
+  if (func->op() == sta::FuncExpr::Op::one) {
+    return true;
   }
-  if (seq->outputInv() != nullptr && func->port() == seq->outputInv()) {
-    return !inverted;
+  if (func->op() == sta::FuncExpr::Op::zero) {
+    return false;
   }
   return std::nullopt;
 }
@@ -150,9 +199,14 @@ bool isSignalInput(odb::dbITerm* pin)
          && !net->getSigType().isSupply();
 }
 
+bool drivesNet(odb::dbITerm* pin)
+{
+  return pin->getIoType() == odb::dbIoType::OUTPUT && pin->getNet() != nullptr;
+}
+
 bool isRead(odb::dbNet* net)
 {
-  return net->getITerms().size() > 1 || !net->getBTerms().empty();
+  return net->getITerms().hasMoreThan(1) || !net->getBTerms().empty();
 }
 
 bool hasSecondDriver(odb::dbNet* net)
@@ -171,6 +225,15 @@ bool hasSecondDriver(odb::dbNet* net)
   return false;
 }
 
+odb::dbITerm* NetDrivers::driverOf(odb::dbNet* net)
+{
+  const auto [entry, is_new] = drivers_.try_emplace(net);
+  if (is_new) {
+    entry->second = net->getFirstOutput();
+  }
+  return entry->second;
+}
+
 void movePin(odb::dbITerm* pin, odb::dbNet* net, odb::dbModNet* mod_net)
 {
   pin->disconnect();
@@ -180,39 +243,42 @@ void movePin(odb::dbITerm* pin, odb::dbNet* net, odb::dbModNet* mod_net)
   }
 }
 
-void sortUnique(std::vector<int>& values)
+void connectPin(odb::dbITerm* pin,
+                odb::dbNet* net,
+                const std::unordered_map<odb::dbNet*, odb::dbModNet*>& mod_nets)
 {
-  std::ranges::sort(values);
-  const auto repeats = std::ranges::unique(values);
-  values.erase(repeats.begin(), repeats.end());
+  pin->connect(net);
+  const auto it = mod_nets.find(net);
+  if (it != mod_nets.end()) {
+    pin->connect(it->second);
+  }
 }
 
 std::vector<odb::dbInst*> inIdOrder(
     const std::unordered_set<odb::dbInst*>& cells)
 {
   std::vector<odb::dbInst*> ordered(cells.begin(), cells.end());
-  std::ranges::sort(ordered, [](odb::dbInst* a, odb::dbInst* b) {
-    return a->getId() < b->getId();
-  });
+  std::ranges::sort(ordered, odb::compare_by_id);
   return ordered;
 }
 
-std::optional<SupplyNets> supplyNets(odb::dbInst* inst)
+bool hasOneSupplyNetPerKind(odb::dbInst* inst)
 {
-  SupplyNets nets;
+  odb::dbNet* power = nullptr;
+  odb::dbNet* ground = nullptr;
   for (odb::dbITerm* pin : inst->getITerms()) {
     odb::dbNet* net = pin->getNet();
     if (!pin->getSigType().isSupply() || net == nullptr) {
       continue;
     }
     odb::dbNet*& of_kind
-        = pin->getSigType() == odb::dbSigType::POWER ? nets.power : nets.ground;
+        = pin->getSigType() == odb::dbSigType::POWER ? power : ground;
     if (of_kind != nullptr && of_kind != net) {
-      return std::nullopt;
+      return false;
     }
     of_kind = net;
   }
-  return nets;
+  return true;
 }
 
 SupplyPins supplyPins(odb::dbInst* inst)
@@ -223,9 +289,7 @@ SupplyPins supplyPins(odb::dbInst* inst)
       pins.push_back({.pin = pin->getMTerm(), .net = pin->getNet()});
     }
   }
-  std::ranges::sort(pins, [](const SupplyPin& a, const SupplyPin& b) {
-    return strcmp(a.pin->getConstName(), b.pin->getConstName()) < 0;
-  });
+  std::ranges::sort(pins, pinNameLess, &SupplyPin::pin);
   return pins;
 }
 
@@ -272,7 +336,7 @@ odb::dbITerm* supplySource(odb::dbITerm* pin,
 
 void connectSupplyLike(odb::dbInst* inst, odb::dbInst* like)
 {
-  const bool one_net_per_kind = supplyNets(like).has_value();
+  const bool one_net_per_kind = hasOneSupplyNetPerKind(like);
   for (odb::dbITerm* pin : inst->getITerms()) {
     if (!pin->getSigType().isSupply()) {
       continue;
@@ -295,6 +359,12 @@ void connectSupplyLike(odb::dbInst* inst, odb::dbInst* like)
 }
 
 }  // namespace
+
+sta::Instance* parentInstance(sta::dbSta* sta, odb::dbInst* inst)
+{
+  const sta::dbNetwork* network = sta->getDbNetwork();
+  return network->parent(network->dbToSta(inst));
+}
 
 odb::dbInst* makeCell(sta::dbSta* sta,
                       sta::Instance* parent,
@@ -379,17 +449,6 @@ void Discards::clear()
   keep();
 }
 
-void connectPin(odb::dbITerm* pin,
-                odb::dbNet* net,
-                const std::unordered_map<odb::dbNet*, odb::dbModNet*>& mod_nets)
-{
-  pin->connect(net);
-  const auto it = mod_nets.find(net);
-  if (it != mod_nets.end()) {
-    pin->connect(it->second);
-  }
-}
-
 namespace {
 
 constexpr size_t kMaxTruthTableInputs = 6;
@@ -431,18 +490,7 @@ std::optional<bool> constNetValue(sta::dbSta* sta, odb::dbNet* net)
   odb::dbITerm* driver = onlyDriver(net);
   const sta::LibertyPort* port
       = driver != nullptr ? libertyPort(sta, driver) : nullptr;
-  if (port == nullptr || port->tristateEnable() != nullptr
-      || port->function() == nullptr) {
-    return std::nullopt;
-  }
-  const sta::FuncExpr::Op op = port->function()->op();
-  if (op == sta::FuncExpr::Op::one) {
-    return true;
-  }
-  if (op == sta::FuncExpr::Op::zero) {
-    return false;
-  }
-  return std::nullopt;
+  return port != nullptr ? constantOutput(port) : std::nullopt;
 }
 
 odb::dbITerm* findITerm(odb::dbInst* inst, const sta::LibertyPort* port)
@@ -450,25 +498,25 @@ odb::dbITerm* findITerm(odb::dbInst* inst, const sta::LibertyPort* port)
   return port != nullptr ? inst->findITerm(port->name().c_str()) : nullptr;
 }
 
-// The value of an expression where `value` gives each pin's, nullopt for a
-// pin that is not known; nullopt when such pins decide it.
+// A pin's value; nullopt when it is not known.
 using PinValue = std::function<std::optional<bool>(const sta::LibertyPort*)>;
 
-std::optional<bool> evalExpr(const sta::FuncExpr* e, const PinValue& value)
+// nullopt when pins without a value decide the expression.
+std::optional<bool> evalExpr(const sta::FuncExpr* expr, const PinValue& value)
 {
-  if (e == nullptr) {
+  if (expr == nullptr) {
     return std::nullopt;
   }
-  switch (e->op()) {
+  switch (expr->op()) {
     case sta::FuncExpr::Op::port:
-      return value(e->port());
+      return value(expr->port());
     case sta::FuncExpr::Op::not_: {
-      const std::optional<bool> v = evalExpr(e->left(), value);
+      const std::optional<bool> v = evalExpr(expr->left(), value);
       return v.has_value() ? std::optional<bool>(!*v) : std::nullopt;
     }
     case sta::FuncExpr::Op::and_: {
-      const std::optional<bool> a = evalExpr(e->left(), value);
-      const std::optional<bool> b = evalExpr(e->right(), value);
+      const std::optional<bool> a = evalExpr(expr->left(), value);
+      const std::optional<bool> b = evalExpr(expr->right(), value);
       if (a == false || b == false) {
         return false;
       }
@@ -476,8 +524,8 @@ std::optional<bool> evalExpr(const sta::FuncExpr* e, const PinValue& value)
                                       : std::nullopt;
     }
     case sta::FuncExpr::Op::or_: {
-      const std::optional<bool> a = evalExpr(e->left(), value);
-      const std::optional<bool> b = evalExpr(e->right(), value);
+      const std::optional<bool> a = evalExpr(expr->left(), value);
+      const std::optional<bool> b = evalExpr(expr->right(), value);
       if (a == true || b == true) {
         return true;
       }
@@ -485,8 +533,8 @@ std::optional<bool> evalExpr(const sta::FuncExpr* e, const PinValue& value)
                                         : std::nullopt;
     }
     case sta::FuncExpr::Op::xor_: {
-      const std::optional<bool> a = evalExpr(e->left(), value);
-      const std::optional<bool> b = evalExpr(e->right(), value);
+      const std::optional<bool> a = evalExpr(expr->left(), value);
+      const std::optional<bool> b = evalExpr(expr->right(), value);
       if (!a.has_value() || !b.has_value()) {
         return std::nullopt;
       }
@@ -500,23 +548,45 @@ std::optional<bool> evalExpr(const sta::FuncExpr* e, const PinValue& value)
   return std::nullopt;
 }
 
-void collectPorts(const sta::FuncExpr* e,
+void collectPorts(const sta::FuncExpr* expr,
                   std::vector<const sta::LibertyPort*>& ports)
 {
-  if (e == nullptr) {
+  if (expr == nullptr) {
     return;
   }
-  if (e->op() == sta::FuncExpr::Op::port) {
-    if (std::ranges::find(ports, e->port()) == ports.end()) {
-      ports.push_back(e->port());
+  if (expr->op() == sta::FuncExpr::Op::port) {
+    if (std::ranges::find(ports, expr->port()) == ports.end()) {
+      ports.push_back(expr->port());
     }
     return;
   }
-  collectPorts(e->left(), ports);
-  collectPorts(e->right(), ports);
+  collectPorts(expr->left(), ports);
+  collectPorts(expr->right(), ports);
+}
+
+// In order of first appearance, which fixes the truth-table rows and the
+// order tie cells are made in; sta::FuncExpr::ports() orders by address.
+std::vector<const sta::LibertyPort*> exprPorts(
+    std::initializer_list<const sta::FuncExpr*> exprs)
+{
+  std::vector<const sta::LibertyPort*> ports;
+  for (const sta::FuncExpr* expr : exprs) {
+    collectPorts(expr, ports);
+  }
+  return ports;
+}
+
+bool reads(const sta::FuncExpr* expr, const sta::LibertyPort* port)
+{
+  return expr != nullptr && expr->hasPort(port);
 }
 
 using Assignment = std::unordered_map<const sta::LibertyPort*, bool>;
+
+bool rowBit(const uint32_t row, const size_t i)
+{
+  return ((row >> i) & 1u) != 0;
+}
 
 // The pins set from the bits of `row`, the first pin from the lowest bit.
 Assignment assignment(const std::vector<const sta::LibertyPort*>& pins,
@@ -524,14 +594,14 @@ Assignment assignment(const std::vector<const sta::LibertyPort*>& pins,
 {
   Assignment values;
   for (size_t i = 0; i < pins.size(); ++i) {
-    values[pins[i]] = ((row >> i) & 1u) != 0;
+    values[pins[i]] = rowBit(row, i);
   }
   return values;
 }
 
 // `values` has every pin of the expression; state_inv reads the complement
 // of state.
-bool evalExpr(const sta::FuncExpr* e,
+bool evalExpr(const sta::FuncExpr* expr,
               const Assignment& values,
               const sta::LibertyPort* state = nullptr,
               const sta::LibertyPort* state_inv = nullptr)
@@ -540,7 +610,7 @@ bool evalExpr(const sta::FuncExpr* e,
     const bool inverted = state_inv != nullptr && port == state_inv;
     return std::optional<bool>(inverted ? !values.at(state) : values.at(port));
   };
-  return evalExpr(e, value).value_or(false);
+  return evalExpr(expr, value).value_or(false);
 }
 
 struct NextStateShape
@@ -551,119 +621,112 @@ struct NextStateShape
   PinConstants enables_inactive_at;
 };
 
+// The next state for every value of the inputs and of the state.
 class NextStateTable
 {
  public:
   NextStateTable(const sta::FuncExpr* next,
                  const sta::LibertyPort* state,
                  const sta::LibertyPort* state_inv,
-                 std::vector<const sta::LibertyPort*> inputs)
-      : next_(next),
-        state_(state),
-        state_inv_(state_inv),
-        inputs_(std::move(inputs)),
-        rows_(1u << (inputs_.size() + 1))
-  {
-  }
+                 std::vector<const sta::LibertyPort*> inputs);
 
-  bool holdsStateWhen(const size_t i, const bool v) const
-  {
-    for (uint32_t row = 0; row < rows_; ++row) {
-      if (bit(row, i) == v && value(row) != stateBit(row)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  bool passesWhenEnabled(const size_t d, const PinConstants& enables) const
-  {
-    for (uint32_t row = 0; row < rows_; ++row) {
-      if (enablesActive(row, enables) && value(row) != bit(row, d)) {
-        return false;
-      }
-    }
-    return true;
-  }
+  // Whenever input i is v, the next state is the state.
+  bool holdsStateWhen(size_t i, bool v) const;
+  // Whenever no enable is at its inactive value, the next state is input d.
+  bool passesWhenEnabled(size_t d, const PinConstants& enables) const;
 
  private:
-  static bool bit(const uint32_t row, const size_t i)
+  bool stateBit(const uint32_t row) const
   {
-    return ((row >> i) & 1u) != 0;
+    return rowBit(row, inputs_.size());
   }
-  bool stateBit(const uint32_t row) const { return bit(row, inputs_.size()); }
+  bool enablesActive(uint32_t row, const PinConstants& enables) const;
 
-  bool enablesActive(const uint32_t row, const PinConstants& enables) const
-  {
-    for (size_t i = 0; i < inputs_.size(); ++i) {
-      for (const auto& [port, inactive] : enables) {
-        if (port == inputs_[i] && bit(row, i) == inactive) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  bool value(const uint32_t row) const
-  {
-    Assignment values = assignment(inputs_, row);
-    values[state_] = stateBit(row);
-    return evalExpr(next_, values, state_, state_inv_);
-  }
-
-  const sta::FuncExpr* next_;
-  const sta::LibertyPort* state_;
-  const sta::LibertyPort* state_inv_;
   std::vector<const sta::LibertyPort*> inputs_;
-  uint32_t rows_;
+  // By row: bit i of a row is input i, and the bit after the inputs is the
+  // state.
+  std::vector<bool> next_;
 };
 
-bool nextStateInputs(const sta::FuncExpr* next,
-                     const sta::LibertyPort* state,
-                     const sta::LibertyPort* state_inv,
-                     std::vector<const sta::LibertyPort*>& inputs)
+NextStateTable::NextStateTable(const sta::FuncExpr* next,
+                               const sta::LibertyPort* state,
+                               const sta::LibertyPort* state_inv,
+                               std::vector<const sta::LibertyPort*> inputs)
+    : inputs_(std::move(inputs))
 {
-  std::vector<const sta::LibertyPort*> support;
-  collectPorts(next, support);
-  for (const sta::LibertyPort* port : support) {
+  const uint32_t rows = 1u << (inputs_.size() + 1);
+  next_.reserve(rows);
+  for (uint32_t row = 0; row < rows; ++row) {
+    Assignment values = assignment(inputs_, row);
+    values[state] = stateBit(row);
+    next_.push_back(evalExpr(next, values, state, state_inv));
+  }
+}
+
+bool NextStateTable::holdsStateWhen(const size_t i, const bool v) const
+{
+  for (uint32_t row = 0; row < next_.size(); ++row) {
+    if (rowBit(row, i) == v && next_[row] != stateBit(row)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool NextStateTable::passesWhenEnabled(const size_t d,
+                                       const PinConstants& enables) const
+{
+  for (uint32_t row = 0; row < next_.size(); ++row) {
+    if (enablesActive(row, enables) && next_[row] != rowBit(row, d)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool NextStateTable::enablesActive(const uint32_t row,
+                                   const PinConstants& enables) const
+{
+  for (size_t i = 0; i < inputs_.size(); ++i) {
+    for (const auto& [port, inactive] : enables) {
+      if (port == inputs_[i] && rowBit(row, i) == inactive) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+// The inputs the next state reads besides the state.  Empty when it reads a
+// pin that is not an input, no input, or more inputs than a truth table
+// takes.
+std::vector<const sta::LibertyPort*> nextStateInputs(
+    const sta::FuncExpr* next,
+    const sta::LibertyPort* state,
+    const sta::LibertyPort* state_inv)
+{
+  std::vector<const sta::LibertyPort*> inputs;
+  for (const sta::LibertyPort* port : exprPorts({next})) {
     if (port != state && port != state_inv) {
       if (!port->direction()->isInput()) {
-        return false;
+        return {};
       }
       inputs.push_back(port);
     }
   }
-  return !inputs.empty() && inputs.size() <= kMaxTruthTableInputs;
+  if (inputs.size() > kMaxTruthTableInputs) {
+    return {};
+  }
+  return inputs;
 }
 
-NextStateShape nextStateShape(const sta::Sequential* seq)
+// Inputs that hold the state at one value are enables; the one other input
+// is the data, passed while no enable is inactive.  kOther without an enable
+// or without such a data input.
+NextStateShape enableShape(const NextStateTable& table,
+                           const std::vector<const sta::LibertyPort*>& inputs)
 {
   NextStateShape shape;
-  const sta::FuncExpr* next = seq->data();
-  if (next == nullptr) {
-    return shape;
-  }
-  if (next->op() == sta::FuncExpr::Op::port) {
-    shape.kind = RegisterKind::kPlain;
-    shape.data = next->port();
-    return shape;
-  }
-  if (next->op() == sta::FuncExpr::Op::not_ && next->left() != nullptr
-      && next->left()->op() == sta::FuncExpr::Op::port) {
-    shape.kind = RegisterKind::kPlain;
-    shape.data = next->left()->port();
-    shape.data_inverted = true;
-    return shape;
-  }
-  const sta::LibertyPort* state = seq->output();
-  const sta::LibertyPort* state_inv = seq->outputInv();
-  std::vector<const sta::LibertyPort*> inputs;
-  if (state == nullptr || !nextStateInputs(next, state, state_inv, inputs)) {
-    return shape;
-  }
-
-  const NextStateTable table(next, state, state_inv, inputs);
   std::vector<bool> is_enable(inputs.size(), false);
   for (size_t i = 0; i < inputs.size(); ++i) {
     for (const bool v : {false, true}) {
@@ -674,71 +737,96 @@ NextStateShape nextStateShape(const sta::Sequential* seq)
     }
   }
   if (shape.enables_inactive_at.empty()) {
-    return shape;
+    return {};
   }
   for (size_t i = 0; i < inputs.size(); ++i) {
     if (!is_enable[i]) {
       if (shape.data != nullptr
           || !table.passesWhenEnabled(i, shape.enables_inactive_at)) {
-        return NextStateShape();
+        return {};
       }
       shape.data = inputs[i];
     }
   }
   if (shape.data == nullptr) {
-    return NextStateShape();
+    return {};
   }
   shape.kind = RegisterKind::kEnable;
   return shape;
 }
 
-bool loadedOutput(sta::dbSta* sta,
-                  odb::dbInst* inst,
-                  const sta::Sequential* seq,
-                  odb::dbITerm*& pin,
-                  bool& inverted)
+NextStateShape nextStateShape(const sta::Sequential* seq)
 {
-  pin = nullptr;
-  inverted = false;
+  const sta::FuncExpr* next = seq->data();
+  const std::optional<Literal> data = literal(next);
+  if (data.has_value()) {
+    NextStateShape shape;
+    shape.kind = RegisterKind::kPlain;
+    shape.data = data->port;
+    shape.data_inverted = data->inverted;
+    return shape;
+  }
+  const sta::LibertyPort* state = seq->output();
+  const sta::LibertyPort* state_inv = seq->outputInv();
+  if (next == nullptr || state == nullptr) {
+    return {};
+  }
+  const std::vector<const sta::LibertyPort*> inputs
+      = nextStateInputs(next, state, state_inv);
+  if (inputs.empty()) {
+    return {};
+  }
+  return enableShape(NextStateTable(next, state, state_inv, inputs), inputs);
+}
+
+struct LoadedOutput
+{
+  odb::dbITerm* pin = nullptr;
+  bool inverted = false;  // reads the state inverted
+};
+
+// The one output with loads; without loads, the first output that reads the
+// state as it is (pin: nullptr without one).  nullopt when two outputs have
+// loads or the loaded one does not read the state.
+std::optional<LoadedOutput> loadedOutput(sta::dbSta* sta,
+                                         odb::dbInst* inst,
+                                         const sta::Sequential* seq)
+{
+  LoadedOutput loaded;
+  int loaded_count = 0;
   odb::dbITerm* state_pin = nullptr;
-  int loaded = 0;
   for (odb::dbITerm* iterm : inst->getITerms()) {
     if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
       continue;
     }
-    const sta::LibertyPort* port = libertyPort(sta, iterm);
-    const std::optional<bool> pin_inverted
-        = port != nullptr ? outputInverted(port->function(), seq)
-                          : std::nullopt;
-    if (pin_inverted == false && state_pin == nullptr) {
+    const std::optional<bool> inverted = outputInverted(sta, iterm, seq);
+    if (inverted == false && state_pin == nullptr) {
       state_pin = iterm;
     }
     odb::dbNet* net = iterm->getNet();
     if (net == nullptr || !isRead(net)) {
       continue;
     }
-    ++loaded;
-    if (!pin_inverted.has_value()) {
-      return false;
+    ++loaded_count;
+    if (!inverted.has_value()) {
+      return std::nullopt;
     }
-    pin = iterm;
-    inverted = *pin_inverted;
+    loaded = {.pin = iterm, .inverted = *inverted};
   }
-  if (loaded > 1) {
-    return false;
+  if (loaded_count > 1) {
+    return std::nullopt;
   }
-  if (loaded == 0) {
-    pin = state_pin;
-    inverted = false;
+  if (loaded_count == 0) {
+    return LoadedOutput{.pin = state_pin, .inverted = false};
   }
-  return true;
+  return loaded;
 }
 
 // The output pin of a tie cell that nothing reads anymore.
 odb::dbITerm* idleTieOutput(sta::dbSta* sta, odb::dbNet* net)
 {
-  if (net->getSigType().isSupply() || !net->getBTerms().empty()
-      || net->getITerms().size() != 1 || !constNetValue(sta, net).has_value()) {
+  if (net->getSigType().isSupply() || isRead(net)
+      || !constNetValue(sta, net).has_value()) {
     return nullptr;
   }
   // The net has a constant value, so a cell drives it.
@@ -804,7 +892,7 @@ bool isGrouped(odb::dbInst* inst)
 bool drivesKeptNet(odb::dbITerm* pin)
 {
   odb::dbNet* net = pin->getNet();
-  return pin->getIoType() == odb::dbIoType::OUTPUT && net != nullptr
+  return drivesNet(pin)
          && (net->isDoNotTouch() || net->getNonDefaultRule() != nullptr);
 }
 
@@ -814,13 +902,10 @@ bool isHeld(odb::dbInst* inst)
       || inst->getScanInst() != nullptr) {
     return true;
   }
-  for (odb::dbITerm* pin : inst->getITerms()) {
+  return std::ranges::any_of(inst->getITerms(), [](odb::dbITerm* pin) {
     odb::dbNet* net = pin->getNet();
-    if ((net != nullptr && net->isDoNotTouch()) || drivesKeptNet(pin)) {
-      return true;
-    }
-  }
-  return false;
+    return (net != nullptr && net->isDoNotTouch()) || drivesKeptNet(pin);
+  });
 }
 
 bool hasPinConstraint(sta::dbSta* sta, odb::dbInst* inst)
@@ -830,8 +915,7 @@ bool hasPinConstraint(sta::dbSta* sta, odb::dbInst* inst)
     for (odb::dbITerm* iterm : inst->getITerms()) {
       odb::dbNet* net = iterm->getNet();
       if (sdc->isConstrained(network->dbToSta(iterm))
-          || (iterm->getIoType() == odb::dbIoType::OUTPUT && net != nullptr
-              && sdc->isConstrained(network->dbToSta(net)))) {
+          || (drivesNet(iterm) && sdc->isConstrained(network->dbToSta(net)))) {
         return true;
       }
     }
@@ -856,6 +940,14 @@ bool hasDisabledEdge(sta::dbSta* sta, odb::dbInst* inst)
       return sta->isDisabledConstraint(edge, mode->sdc());
     });
   };
+  const auto any_disabled = [&](sta::VertexEdgeIterator& edges) {
+    while (edges.hasNext()) {
+      if (disabled(edges.next())) {
+        return true;
+      }
+    }
+    return false;
+  };
   for (odb::dbITerm* iterm : inst->getITerms()) {
     sta::Vertex* vertex;
     sta::Vertex* bidirect_driver;
@@ -864,17 +956,10 @@ bool hasDisabledEdge(sta::dbSta* sta, odb::dbInst* inst)
       if (end == nullptr) {
         continue;
       }
-      sta::VertexInEdgeIterator in_iter(end, graph);
-      while (in_iter.hasNext()) {
-        if (disabled(in_iter.next())) {
-          return true;
-        }
-      }
-      sta::VertexOutEdgeIterator out_iter(end, graph);
-      while (out_iter.hasNext()) {
-        if (disabled(out_iter.next())) {
-          return true;
-        }
+      sta::VertexInEdgeIterator in_edges(end, graph);
+      sta::VertexOutEdgeIterator out_edges(end, graph);
+      if (any_disabled(in_edges) || any_disabled(out_edges)) {
+        return true;
       }
     }
   }
@@ -900,44 +985,43 @@ std::vector<odb::dbInst*> portDelayReferenceCells(sta::dbSta* sta)
   return cells;
 }
 
+bool hasScanPin(odb::dbMaster* master)
+{
+  return std::ranges::any_of(master->getMTerms(), [](odb::dbMTerm* mterm) {
+    return mterm->getSigType() == odb::dbSigType::SCAN;
+  });
+}
+
 bool isScanCell(sta::dbSta* sta, odb::dbInst* inst)
 {
-  for (odb::dbITerm* iterm : inst->getITerms()) {
-    if (iterm->getSigType() == odb::dbSigType::SCAN) {
-      return true;
-    }
-  }
-  return sta->getDbNetwork()->isScanCell(inst);
+  return hasScanPin(inst->getMaster()) || sta->getDbNetwork()->isScanCell(inst);
 }
 
 namespace {
 
 bool hasOpenInput(odb::dbInst* inst)
 {
-  for (odb::dbITerm* iterm : inst->getITerms()) {
-    if (iterm->getIoType() == odb::dbIoType::INPUT
-        && !iterm->getSigType().isSupply() && iterm->getNet() == nullptr) {
-      return true;
-    }
-  }
-  return false;
+  return std::ranges::any_of(inst->getITerms(), [](odb::dbITerm* iterm) {
+    return iterm->isInputSignal(/*io=*/false) && iterm->getNet() == nullptr;
+  });
 }
 
-}  // namespace
+// An input pin that is neither a supply nor marked as a clock.
+bool isLogicInput(odb::dbITerm* pin)
+{
+  return pin->isInputSignal(/*io=*/false)
+         && pin->getSigType() != odb::dbSigType::CLOCK;
+}
 
+// An output of the cell does not always drive (three_state).
 bool hasTristateOutput(const sta::LibertyCell* cell)
 {
-  sta::LibertyCellPortIterator port_iter(cell);
-  while (port_iter.hasNext()) {
-    const sta::LibertyPort* port = port_iter.next();
-    if (port->direction()->isAnyOutput() && port->tristateEnable() != nullptr) {
-      return true;
-    }
-  }
-  return false;
+  return std::ranges::any_of(libertyPorts(cell),
+                             [](const sta::LibertyPort* port) {
+                               return port->direction()->isAnyOutput()
+                                      && port->tristateEnable() != nullptr;
+                             });
 }
-
-namespace {
 
 bool sameDirection(odb::dbMTerm* pin, const sta::LibertyPort* port)
 {
@@ -973,14 +1057,11 @@ bool hasLibertyPins(const sta::LibertyCell* cell, odb::dbMaster* master)
     }
     ++pins;
   }
-  int ports = 0;
-  sta::LibertyCellPortIterator port_iter(cell);
-  while (port_iter.hasNext()) {
-    const sta::PortDirection* direction = port_iter.next()->direction();
-    if (!direction->isPowerGround() && !direction->isInternal()) {
-      ++ports;
-    }
-  }
+  const std::ptrdiff_t ports = std::ranges::count_if(
+      libertyPorts(cell), [](const sta::LibertyPort* port) {
+        const sta::PortDirection* direction = port->direction();
+        return !direction->isPowerGround() && !direction->isInternal();
+      });
   return pins == ports;
 }
 
@@ -992,57 +1073,57 @@ bool isReplaceable(const sta::LibertyCell* cell,
          && hasLibertyPins(cell, master);
 }
 
+UntouchedKind untouchedKind(sta::dbSta* sta, odb::dbInst* inst)
+{
+  const sta::Sequential* seq = singleSequential(sta, inst);
+  if (seq == nullptr) {
+    return UntouchedKind::kOther;
+  }
+  if (!seq->isRegister()) {
+    return UntouchedKind::kLatch;
+  }
+  const sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
+  if (!isReplaceable(cell, seq, inst->getMaster())) {
+    return UntouchedKind::kOther;
+  }
+  if (hasLiveAsyncControl(sta, inst, seq)) {
+    return UntouchedKind::kAsync;
+  }
+  return isScanCell(sta, inst) ? UntouchedKind::kScan : UntouchedKind::kNone;
+}
+
 bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst)
 {
-  if (isScanCell(sta, inst) || hasOpenInput(inst)) {
-    return true;
-  }
-  const sta::Sequential* seq = singleSequential(sta, inst);
-  if (seq == nullptr || !seq->isRegister()
-      || !isReplaceable(
-          sta->getDbNetwork()->libertyCell(inst), seq, inst->getMaster())) {
-    return true;
-  }
-  return hasLiveAsyncControl(sta, inst, seq);
+  // The cheap tests first: untouchedKind reads the asynchronous control nets.
+  return isScanCell(sta, inst) || hasOpenInput(inst)
+         || untouchedKind(sta, inst) != UntouchedKind::kNone;
 }
 
 bool hasUnreadInput(const sta::LibertyCell* cell, const sta::Sequential* seq)
 {
   std::vector<const sta::LibertyPort*> read;
   if (seq != nullptr) {
-    for (const sta::FuncExpr* expr :
-         {seq->data(), seq->clock(), seq->clear(), seq->preset()}) {
-      collectPorts(expr, read);
-    }
+    read = exprPorts({seq->data(), seq->clock(), seq->clear(), seq->preset()});
   }
-  sta::LibertyCellPortIterator port_iter(cell);
-  while (port_iter.hasNext()) {
-    const sta::LibertyPort* port = port_iter.next();
-    if (port->direction()->isInput()
-        && std::ranges::find(read, port) == read.end()) {
-      return true;
-    }
-  }
-  return false;
+  return std::ranges::any_of(
+      libertyPorts(cell), [&](const sta::LibertyPort* port) {
+        return port->direction()->isInput()
+               && std::ranges::find(read, port) == read.end();
+      });
 }
 
-bool inactiveAsyncControls(const sta::LibertyCell* cell,
-                           const sta::Sequential* seq,
-                           PinConstants& constants)
+std::optional<PinConstants> inactiveAsyncControls(const sta::LibertyCell* cell,
+                                                  const sta::Sequential* seq)
 {
-  std::vector<const sta::LibertyPort*> controls;
-  collectPorts(seq->clear(), controls);
-  collectPorts(seq->preset(), controls);
-  std::vector<const sta::LibertyPort*> live;
-  collectPorts(seq->data(), live);
-  collectPorts(seq->clock(), live);
+  const std::vector<const sta::LibertyPort*> controls
+      = exprPorts({seq->clear(), seq->preset()});
   const bool ties_live_pin
       = std::ranges::any_of(controls, [&](const sta::LibertyPort* port) {
-          return std::ranges::find(live, port) != live.end();
+          return reads(seq->data(), port) || reads(seq->clock(), port);
         });
   if (controls.empty() || controls.size() > kMaxTruthTableInputs
       || ties_live_pin || hasUnreadInput(cell, seq)) {
-    return false;
+    return std::nullopt;
   }
 
   const uint32_t rows = 1u << controls.size();
@@ -1053,14 +1134,14 @@ bool inactiveAsyncControls(const sta::LibertyCell* cell,
       active = active || (control != nullptr && evalExpr(control, values));
     }
     if (!active) {
-      constants.clear();
+      PinConstants constants;
       for (const sta::LibertyPort* port : controls) {
         constants.push_back({.port = port, .high = values.at(port)});
       }
-      return true;
+      return constants;
     }
   }
-  return false;
+  return std::nullopt;
 }
 
 namespace {
@@ -1072,39 +1153,42 @@ std::vector<std::pair<odb::dbNet*, odb::dbModNet*>> unloadedOutputNets(
   std::vector<std::pair<odb::dbNet*, odb::dbModNet*>> nets;
   for (odb::dbITerm* iterm : inst->getITerms()) {
     odb::dbNet* net = iterm->getNet();
-    if (iterm->getIoType() == odb::dbIoType::OUTPUT && net != nullptr
-        && !isRead(net) && !net->isDoNotTouch()) {
+    if (drivesNet(iterm) && !isRead(net) && !net->isDoNotTouch()) {
       nets.emplace_back(net, iterm->getModNet());
     }
   }
   return nets;
 }
 
-}  // namespace
-
-void discardRegister(sta::dbSta* sta, odb::dbInst* inst, Discards& discards)
+// The nets on the register's asynchronous control pins, in control order.
+// seq: nullptr gives none.
+std::vector<odb::dbNet*> asyncControlNets(odb::dbInst* inst,
+                                          const sta::Sequential* seq)
 {
-  sta::dbNetwork* network = sta->getDbNetwork();
-  const sta::Sequential* seq = singleSequential(sta, inst);
-  std::vector<const sta::LibertyPort*> controls;
-  if (seq != nullptr) {
-    collectPorts(seq->clear(), controls);
-    collectPorts(seq->preset(), controls);
+  std::vector<odb::dbNet*> nets;
+  if (seq == nullptr) {
+    return nets;
   }
-  std::vector<odb::dbNet*> control_nets;
+  const std::vector<const sta::LibertyPort*> controls
+      = exprPorts({seq->clear(), seq->preset()});
   for (const sta::LibertyPort* port : controls) {
     odb::dbITerm* iterm = findITerm(inst, port);
     odb::dbNet* net = iterm != nullptr ? iterm->getNet() : nullptr;
-    if (net != nullptr
-        && std::ranges::find(control_nets, net) == control_nets.end()) {
-      control_nets.push_back(net);
+    if (net != nullptr && std::ranges::find(nets, net) == nets.end()) {
+      nets.push_back(net);
     }
   }
-  odb::dbModule* module = network->hasHierarchy() ? inst->getModule() : nullptr;
-  const std::vector<std::pair<odb::dbNet*, odb::dbModNet*>> unloaded
-      = unloadedOutputNets(inst);
-  discards.add(inst);
-  for (odb::dbNet* net : control_nets) {
+  return nets;
+}
+
+// Discards the tie cells on these nets that nothing reads anymore, each with
+// its net.  module: the one a tie cell must be in; nullptr: any.
+void discardIdleTies(sta::dbSta* sta,
+                     const std::vector<odb::dbNet*>& nets,
+                     odb::dbModule* module,
+                     Discards& discards)
+{
+  for (odb::dbNet* net : nets) {
     odb::dbITerm* tie_output = idleTieOutput(sta, net);
     if (tie_output == nullptr
         || (module != nullptr
@@ -1115,6 +1199,21 @@ void discardRegister(sta::dbSta* sta, odb::dbInst* inst, Discards& discards)
     discards.add(tie_output->getInst());
     discards.add(net, mod_net);
   }
+}
+
+}  // namespace
+
+void discardRegister(sta::dbSta* sta, odb::dbInst* inst, Discards& discards)
+{
+  // Read before discards.add() disconnects the register's pins.
+  const std::vector<odb::dbNet*> control_nets
+      = asyncControlNets(inst, singleSequential(sta, inst));
+  const std::vector<std::pair<odb::dbNet*, odb::dbModNet*>> unloaded
+      = unloadedOutputNets(inst);
+  odb::dbModule* module
+      = sta->getDbNetwork()->hasHierarchy() ? inst->getModule() : nullptr;
+  discards.add(inst);
+  discardIdleTies(sta, control_nets, module, discards);
   for (const auto& [net, mod_net] : unloaded) {
     discards.add(net, mod_net);
   }
@@ -1129,29 +1228,21 @@ bool isRegisterDataPin(sta::dbSta* sta, odb::dbITerm* pin)
   if (seq == nullptr) {
     return true;
   }
-  std::vector<const sta::LibertyPort*> ports;
-  collectPorts(seq->data(), ports);
-  return std::ranges::any_of(ports, [pin](const sta::LibertyPort* port) {
-    return port->name() == pin->getMTerm()->getConstName();
-  });
+  const sta::LibertyPort* port = libertyPort(sta, pin);
+  return port != nullptr && reads(seq->data(), port);
 }
 
 odb::dbITerm* registerDataPin(sta::dbSta* sta, odb::dbInst* inst)
 {
-  const RegisterClass cls = registerClass(sta, inst);
-  if (cls.data != nullptr) {
-    return inst->getITerm(cls.data);
+  const sta::Sequential* seq = singleSequential(sta, inst);
+  if (seq != nullptr && seq->isRegister()) {
+    odb::dbITerm* data = findITerm(inst, nextStateShape(seq).data);
+    if (data != nullptr) {
+      return data;
+    }
   }
   for (odb::dbITerm* iterm : inst->getITerms()) {
-    if (iterm->getIoType() != odb::dbIoType::INPUT) {
-      continue;
-    }
-    const odb::dbSigType sig = iterm->getSigType();
-    if (sig == odb::dbSigType::CLOCK || sig == odb::dbSigType::POWER
-        || sig == odb::dbSigType::GROUND) {
-      continue;
-    }
-    if (isRegisterDataPin(sta, iterm)) {
+    if (isLogicInput(iterm) && isRegisterDataPin(sta, iterm)) {
       return iterm;
     }
   }
@@ -1180,41 +1271,49 @@ odb::dbNet* registerClockNet(sta::dbSta* sta, odb::dbInst* inst)
 
 namespace {
 
+// The enable pins with their nets, by pin name; nullopt when the cell lacks
+// one of them.
+std::optional<std::vector<EnablePin>> enablePins(
+    odb::dbInst* inst,
+    const PinConstants& enables_inactive_at)
+{
+  std::vector<EnablePin> enables;
+  for (const auto& [port, inactive] : enables_inactive_at) {
+    odb::dbITerm* iterm = findITerm(inst, port);
+    if (iterm == nullptr) {
+      return std::nullopt;
+    }
+    enables.push_back({.pin = iterm->getMTerm(), .net = iterm->getNet()});
+  }
+  std::ranges::sort(enables, pinNameLess, &EnablePin::pin);
+  return enables;
+}
+
+// Every input besides the clock and the data pin is an enable.
+bool hasOnlyEnableInputs(odb::dbInst* inst,
+                         odb::dbMTerm* data,
+                         const std::vector<EnablePin>& enables)
+{
+  return std::ranges::all_of(inst->getITerms(), [&](odb::dbITerm* iterm) {
+    return !isLogicInput(iterm) || iterm->getMTerm() == data
+           || std::ranges::find(enables, iterm->getMTerm(), &EnablePin::pin)
+                  != enables.end();
+  });
+}
+
 void classifyEnableRegister(odb::dbInst* inst,
                             const NextStateShape& shape,
                             RegisterClass& cls)
 {
-  for (const auto& [port, inactive] : shape.enables_inactive_at) {
-    odb::dbITerm* iterm = findITerm(inst, port);
-    if (iterm == nullptr) {
-      return;
-    }
-    cls.enables.push_back({.pin = iterm->getMTerm(), .net = iterm->getNet()});
-  }
-  std::ranges::sort(cls.enables, [](const auto& a, const auto& b) {
-    return strcmp(a.pin->getConstName(), b.pin->getConstName()) < 0;
-  });
-  for (odb::dbITerm* iterm : inst->getITerms()) {
-    const odb::dbSigType sig = iterm->getSigType();
-    if (sig == odb::dbSigType::CLOCK || sig == odb::dbSigType::POWER
-        || sig == odb::dbSigType::GROUND
-        || iterm->getIoType() != odb::dbIoType::INPUT
-        || iterm->getMTerm() == cls.data) {
-      continue;
-    }
-    const bool is_control
-        = std::ranges::any_of(cls.enables, [&](const EnablePin& enable) {
-            return enable.pin == iterm->getMTerm();
-          });
-    if (!is_control) {
-      return;
-    }
-  }
-  if (cls.output == nullptr || cls.clock == nullptr) {
+  std::optional<std::vector<EnablePin>> enables
+      = enablePins(inst, shape.enables_inactive_at);
+  if (!enables.has_value() || !hasOnlyEnableInputs(inst, cls.data, *enables)
+      || cls.output == nullptr || cls.clock == nullptr) {
     return;
   }
   cls.kind = RegisterKind::kEnable;
   cls.master = inst->getMaster();
+  cls.enables = std::move(*enables);
 }
 
 }  // namespace
@@ -1239,21 +1338,19 @@ RegisterClass registerClass(sta::dbSta* sta,
   }
   cls.data = data->getMTerm();
 
-  odb::dbITerm* out_pin = nullptr;
-  bool out_inverted = false;
-  if (!loadedOutput(sta, inst, seq, out_pin, out_inverted)) {
+  const std::optional<LoadedOutput> output = loadedOutput(sta, inst, seq);
+  if (!output.has_value()) {
     return cls;
   }
-  cls.output = out_pin != nullptr ? out_pin->getMTerm() : nullptr;
-  // A cell with asynchronous controls, one that is not usable or one with an
-  // input its sequential does not read is never the cell of a new register,
-  // so it does not keep its class.
+  cls.output = output->pin != nullptr ? output->pin->getMTerm() : nullptr;
+  // A cell with asynchronous controls, one that is not usable, or one with
+  // an input its sequential does not read is never the cell of a new
+  // register, so it does not keep its class.
   const sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
-  const bool keeps_cell = seq->clear() == nullptr && seq->preset() == nullptr
-                          && isUsableCell(cell, resizer)
+  const bool keeps_cell = !hasAsyncControl(seq) && isUsableCell(cell, resizer)
                           && !hasUnreadInput(cell, seq);
   if (shape.kind == RegisterKind::kPlain) {
-    const bool loads_see_complement = shape.data_inverted != out_inverted;
+    const bool loads_see_complement = shape.data_inverted != output->inverted;
     if (!loads_see_complement) {
       cls.kind = RegisterKind::kPlain;
     } else if (keeps_cell && cls.output != nullptr && cls.clock != nullptr) {
@@ -1262,7 +1359,7 @@ RegisterClass registerClass(sta::dbSta* sta,
     }
     return cls;
   }
-  if (!out_inverted && keeps_cell) {
+  if (!output->inverted && keeps_cell) {
     classifyEnableRegister(inst, shape, cls);
   }
   return cls;
@@ -1305,14 +1402,10 @@ bool isCombinationalGate(sta::dbSta* sta, odb::dbInst* inst)
       || hasTristateOutput(cell)) {
     return false;
   }
-  sta::LibertyCellPortIterator port_iter(cell);
-  while (port_iter.hasNext()) {
-    const sta::LibertyPort* port = port_iter.next();
-    if (port->direction()->isAnyOutput() && port->function() == nullptr) {
-      return false;
-    }
-  }
-  return true;
+  return std::ranges::none_of(
+      libertyPorts(cell), [](const sta::LibertyPort* port) {
+        return port->direction()->isAnyOutput() && port->function() == nullptr;
+      });
 }
 
 bool isSelfDualGate(sta::dbSta* sta, odb::dbInst* inst)
@@ -1322,9 +1415,7 @@ bool isSelfDualGate(sta::dbSta* sta, odb::dbInst* inst)
     return false;
   }
   int outputs = 0;
-  sta::LibertyCellPortIterator port_iter(cell);
-  while (port_iter.hasNext()) {
-    const sta::LibertyPort* port = port_iter.next();
+  for (const sta::LibertyPort* port : libertyPorts(cell)) {
     if (!port->direction()->isOutput()) {
       continue;
     }
@@ -1332,8 +1423,7 @@ bool isSelfDualGate(sta::dbSta* sta, odb::dbInst* inst)
     if (func == nullptr) {
       return false;
     }
-    std::vector<const sta::LibertyPort*> inputs;
-    collectPorts(func, inputs);
+    const std::vector<const sta::LibertyPort*> inputs = exprPorts({func});
     if (inputs.empty() || inputs.size() > kMaxTruthTableInputs) {
       return false;
     }

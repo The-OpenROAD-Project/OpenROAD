@@ -12,11 +12,13 @@
 
 #include "RegisterUtils.h"
 #include "RetimerPlacer.h"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
-#include "ret/Retimer.h"
 #include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/MinMax.hh"
 #include "sta/Scene.hh"
 #include "utl/Logger.h"
 
@@ -26,8 +28,6 @@ namespace {
 
 constexpr int kSlackDigits = 4;
 
-// Neither the worst nor the total negative slack below the start, for setup
-// and for hold.
 bool notWorse(const StaSlack& a, const StaSlack& start)
 {
   return a.worst >= start.worst - kStaSlackEps
@@ -40,14 +40,39 @@ std::vector<odb::dbITerm*> sharedNetDrivers(odb::dbBlock* block)
 {
   std::vector<odb::dbITerm*> drivers;
   for (odb::dbNet* net : block->getNets()) {
-    odb::dbITerm* driver = !net->getSigType().isSupply() && hasSecondDriver(net)
-                               ? net->getFirstOutput()
-                               : nullptr;
+    if (net->getSigType().isSupply() || !hasSecondDriver(net)) {
+      continue;
+    }
+    odb::dbITerm* driver = net->getFirstOutput();
     if (driver != nullptr) {
       drivers.push_back(driver);
     }
   }
   return drivers;
+}
+
+StaSlack sceneSlack(sta::dbSta* sta, const sta::Scene* scene)
+{
+  const sta::MinMax* setup = sta::MinMax::max();
+  const sta::MinMax* hold = sta::MinMax::min();
+  sta::Slack worst;
+  sta::Slack hold_worst;
+  sta::Vertex* vertex;
+  sta->worstSlack(scene, setup, worst, vertex);
+  sta->worstSlack(scene, hold, hold_worst, vertex);
+  StaSlack slack;
+  slack.worst = sta::delayAsFloat(worst);
+  slack.total = sta::delayAsFloat(sta->totalNegativeSlack(scene, setup));
+  slack.hold_worst = std::min(sta::delayAsFloat(hold_worst), 0.0f);
+  slack.hold_total = sta::delayAsFloat(sta->totalNegativeSlack(scene, hold));
+  return slack;
+}
+
+std::vector<odb::dbInst*> prefix(const std::vector<odb::dbInst*>& slides,
+                                 const int count)
+{
+  const size_t length = std::min(slides.size(), static_cast<size_t>(count));
+  return {slides.begin(), slides.begin() + length};
 }
 
 }  // namespace
@@ -68,11 +93,10 @@ bool keepsTrial(const StaSlack& trial,
 
 NewCells::NewCells(odb::dbBlock* block)
 {
-  for (odb::dbInst* inst : block->getInsts()) {
-    if (inst->getMaster()->isSequential()) {
-      ++registers_;
-    }
-  }
+  registers_ = static_cast<int>(
+      std::ranges::count_if(block->getInsts(), [](odb::dbInst* inst) {
+        return inst->getMaster()->isSequential();
+      }));
   addOwner(block);
 }
 
@@ -94,7 +118,7 @@ void NewCells::inDbInstDestroy(odb::dbInst* inst)
 
 std::vector<odb::dbInst*> NewCells::inBlockOrder() const
 {
-  return inIdOrder(created_);
+  return {created_.begin(), created_.end()};
 }
 
 StaCheck::StaCheck(sta::dbSta* sta,
@@ -149,7 +173,7 @@ void StaCheck::reportStart(const StaSlack& slack, const int registers) const
   logger_->report(
       " Round | Proposed | Trials | Kept |         WNS |           TNS | "
       "Registers");
-  logger_->report("{:->75}", "");
+  reportRule();
   reportRow("start", "", "", "", slack, registers);
 }
 
@@ -175,28 +199,52 @@ void StaCheck::reportRow(const std::string& round,
                   proposed,
                   trials,
                   kept,
-                  sta::delayAsString(slack.worst, kSlackDigits, sta_),
-                  sta::delayAsString(slack.total, kSlackDigits, sta_),
+                  slackText(slack.worst),
+                  slackText(slack.total),
                   registers);
 }
 
-void StaCheck::run(const RetimeOptions& options)
+void StaCheck::reportRule() const
+{
+  logger_->report("{:->75}", "");
+}
+
+void StaCheck::reportTotals(const Totals& totals) const
+{
+  const StaSlack final_slack = slack();
+  logger_->info(utl::RET,
+                53,
+                "Retime: slides {}, rounds {}, WNS {}, TNS {}, registers {}, "
+                "placed {}, resized {}.",
+                totals.slides,
+                totals.rounds,
+                slackText(final_slack.worst),
+                slackText(final_slack.total),
+                registerCount(),
+                totals.placed.placed,
+                totals.placed.resized);
+}
+
+std::string StaCheck::slackText(const float slack) const
+{
+  return sta::delayAsString(slack, kSlackDigits, sta_);
+}
+
+void StaCheck::run(const int max_moves)
 {
   placer_->prepare();
   shared_drivers_ = sharedNetDrivers(block_);
-  const StaSlack before = slack();
-  warnOtherScene(before);
-  const int registers_before = registerCount();
-  int total = 0;
-  int left = options.max_moves;  // <= 0: no cap
-  int rounds_kept = 0;
-  PlaceStats placed;
+  const StaSlack start = slack();
+  warnOtherScene(start);
+  const int registers_at_start = registerCount();
+  Totals totals;
+  int moves_left = max_moves;
   bool table = false;
   for (int number = 1;; ++number) {
-    const Round round = runRound(left, before);
+    const Round round = runRound(moves_left, start);
     if (round.proposed > 0) {
       if (!table) {
-        reportStart(before, registers_before);
+        reportStart(start, registers_at_start);
         table = true;
       }
       reportRound(number, round);
@@ -204,43 +252,57 @@ void StaCheck::run(const RetimeOptions& options)
     if (round.kept == 0) {
       break;
     }
-    ++rounds_kept;
-    total += round.kept;
-    placed.placed += round.placed.placed;
-    placed.resized += round.placed.resized;
-    if (options.max_moves > 0) {
-      left -= round.kept;
-      if (left <= 0) {
+    ++totals.rounds;
+    totals.slides += round.kept;
+    totals.placed.placed += round.placed.placed;
+    totals.placed.resized += round.placed.resized;
+    if (max_moves > 0) {
+      moves_left -= round.kept;
+      if (moves_left <= 0) {
         break;
       }
     }
   }
   if (table) {
-    logger_->report("{:->75}", "");
+    reportRule();
   }
-  const StaSlack after = slack();
-  logger_->info(utl::RET,
-                53,
-                "Retime: slides {}, rounds {}, WNS {}, TNS {}, registers {}, "
-                "placed {}, resized {}.",
-                total,
-                rounds_kept,
-                sta::delayAsString(after.worst, kSlackDigits, sta_),
-                sta::delayAsString(after.total, kSlackDigits, sta_),
-                registerCount(),
-                placed.placed,
-                placed.resized);
+  reportTotals(totals);
+}
+
+StaCheck::Round StaCheck::runRound(const int max_moves, const StaSlack& start)
+{
+  Round round;
+  round.slack = slack();
+  const StaSlack round_start = round.slack;
+  const std::vector<odb::dbInst*> slides = propose_(max_moves);
+  int length = static_cast<int>(slides.size());
+  // The first trial keeps the caller's cap, which may be none; a shorter
+  // one is capped at its own length.
+  int cap = max_moves;
+  while (length > 0) {
+    const Trial trial = runTrial(prefix(slides, length), cap, round_start);
+    round.proposed = std::max(round.proposed, trial.slides);
+    round.trials += trial.applied ? 1 : 0;
+    if (keepsTrial(trial.slack, round_start, start)) {
+      keepTrial(trial, round);
+      break;
+    }
+    undoTrial();
+    length = cap = length / 2;
+  }
+  return round;
 }
 
 StaCheck::Trial StaCheck::runTrial(const std::vector<odb::dbInst*>& slides,
-                                   const int limit,
-                                   const StaSlack& before)
+                                   const int max_moves,
+                                   const StaSlack& round_start)
 {
-  Trial trial{.slides = 0, .applied = false, .slack = before, .placed = {}};
+  Trial trial;
+  trial.slack = round_start;
   odb::dbDatabase::beginEco(block_);
   new_cells_.clear();
   try {
-    const int applied = apply_(slides, limit);
+    const int applied = apply_(slides, max_moves);
     trial.slides = std::abs(applied);
     trial.applied = applied > 0;
     if (trial.applied) {
@@ -274,43 +336,27 @@ void StaCheck::keepTrial(const Trial& trial, Round& round)
 
 StaSlack StaCheck::slack() const
 {
-  return staSlack(sta_, *guard_, shared_drivers_);
+  guard_->update();
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  for (odb::dbITerm* driver : shared_drivers_) {
+    sta_->delaysInvalidFrom(network->dbToSta(driver));
+  }
+  StaSlack all;
+  all.worst = sta::INF;
+  for (const sta::Scene* scene : sta_->scenes()) {
+    const StaSlack of_scene = sceneSlack(sta_, scene);
+    all.worst = std::min(all.worst, of_scene.worst);
+    all.total = std::min(all.total, of_scene.total);
+    all.hold_worst = std::min(all.hold_worst, of_scene.hold_worst);
+    all.hold_total = std::min(all.hold_total, of_scene.hold_total);
+    all.scenes.push_back(of_scene);
+  }
+  return all;
 }
 
 int StaCheck::registerCount() const
 {
   return new_cells_.registerCount() - discards_->registerCount();
-}
-
-std::vector<odb::dbInst*> StaCheck::prefix(
-    const std::vector<odb::dbInst*>& slides,
-    const int limit)
-{
-  const size_t count = std::min(slides.size(), static_cast<size_t>(limit));
-  return {slides.begin(), slides.begin() + count};
-}
-
-StaCheck::Round StaCheck::runRound(const int limit, const StaSlack& start)
-{
-  Round round;
-  round.slack = slack();
-  const StaSlack before = round.slack;
-  const std::vector<odb::dbInst*> slides = propose_(limit);
-  // All the slides, then ever shorter prefixes until STA accepts one.
-  int j = static_cast<int>(slides.size());
-  int cap = limit;
-  while (j > 0) {
-    const Trial trial = runTrial(prefix(slides, j), cap, before);
-    round.proposed = std::max(round.proposed, trial.slides);
-    round.trials += trial.applied ? 1 : 0;
-    if (keepsTrial(trial.slack, before, start)) {
-      keepTrial(trial, round);
-      break;
-    }
-    undoTrial();
-    j = cap = j / 2;
-  }
-  return round;
 }
 
 }  // namespace ret

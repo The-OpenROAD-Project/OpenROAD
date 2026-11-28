@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 
 namespace sta {
@@ -40,15 +41,13 @@ struct RetimeOptions
 {
   int max_moves = 0;      // slides over the whole run; 0: unlimited
   double margin = 0.002;  // the gain a slide must make, x the clock period
-  // Registers move although a path delay, a path group or a constraint on
-  // the cell names them; what names a register that moves is dropped.
+  // Registers named by a path delay, a path group, or a constraint on the
+  // cell move too; what names a register that moves is dropped.
   bool move_named_registers = false;
 };
 
 // Forward register retiming: Retime proposes slides on a delay model read
-// from STA and StaCheck keeps what STA confirms.  Only the register groups
-// whose counts changed are rebuilt; a register that cannot keep its class
-// is first unmapped.
+// from STA and StaCheck keeps what STA confirms.
 class Retimer
 {
  public:
@@ -70,27 +69,25 @@ class Retimer
     int edge = 0;  // index in the source's list
   };
 
-  // The edges whose registers start on one net with one class of first
-  // register: rebuilt as one shared chain.
+  // The edges whose registers start on one net: rebuilt as one chain.
   struct Group
   {
     odb::dbNet* driver_net = nullptr;
     std::vector<Sink> sinks;
     std::vector<const std::vector<odb::dbInst*>*> chains;
-    std::unordered_set<odb::dbInst*> flops;
+    // In id order: the removal order decides how the nets list the rewired
+    // pins.
+    odb::PtrSet<odb::dbInst> flops;
     bool changed = false;
     bool dont_touch = false;
   };
 
-  // Flat net to its module net in the group's module; empty when flat.
+  // Flat net to its module net; empty in a flat netlist.
   using ModNets = std::unordered_map<odb::dbNet*, odb::dbModNet*>;
 
-  // The original registers behind the crossings traced so far, by gate and
-  // crossing.  A nullptr among them: an input of the gate has none to give.
+  // By (gate, crossing); a nullptr: an input of the gate has none to give.
   using Origins = std::map<std::pair<int, int>, std::vector<odb::dbInst*>>;
 
-  // The original registers that become one register behind a slid gate.
-  // Not filled: an input of the gate has none to give.
   struct Crossing
   {
     int gate = 0;
@@ -104,39 +101,44 @@ class Retimer
     std::vector<Crossing> crossings;
   };
 
-  // A class per depth of the rebuilt chain; nullptr: the base cell.
   struct Chain
   {
+    // Per depth of the rebuilt chain; nullptr: the base cell.
     std::vector<const RegisterClass*> classes;
     odb::dbNet* clock_net = nullptr;
-    // One of the registers the chain replaces; nullptr for an empty chain.
-    odb::dbInst* origin = nullptr;
+    odb::dbInst* origin = nullptr;  // a register the chain replaces
   };
 
   odb::dbBlock* getBlock() const;
   odb::dbNet* findClockNet(odb::dbBlock* block) const;
-  void checkRegisters(odb::dbBlock* block) const;
+  bool canRetime(odb::dbBlock* block) const;
+  void warnNegedgeRegisters(odb::dbBlock* block) const;
+  void runRounds(odb::dbBlock* block, est::IncrementalParasiticsGuard& guard);
+  void reportUnplaced(odb::dbBlock* block, int unplaced_before) const;
 
-  // Built once, then updated around what the last trial changed.
-  const RetimingGraph& graph();
+  const RetimingGraph& syncGraph();
   // False when none was unmapped.
   bool unmap(const std::unordered_set<odb::dbInst*>& registers,
              est::IncrementalParasiticsGuard& guard);
-  // A trial deletes none of the gates it started with, so the pointers
-  // survive its undo.
   std::vector<odb::dbInst*> proposeSlides(odb::dbBlock* block, int max_moves);
   // Returns the number of slides; negative when they were not applied.
   int applySlides(const std::vector<odb::dbInst*>& slides,
                   int max_moves,
                   est::IncrementalParasiticsGuard& guard);
   Retime runSearch(const RetimingGraph& graph, int max_moves) const;
+  int applyAfterUnmapping(const std::vector<int>& r,
+                          int slides,
+                          const std::unordered_set<odb::dbInst*>& movers,
+                          int max_moves,
+                          est::IncrementalParasiticsGuard& guard);
 
   Plan planRebuild(const RetimingGraph& graph, const std::vector<int>& r) const;
-  // Registers that start on one net at one depth hold the same value only
-  // when they are one class, so each class of first register is a group.
   std::vector<Group> changedGroups(const RetimingGraph& graph,
                                    const std::vector<int>& r,
                                    const std::vector<int>& slid) const;
+  static void addSink(const RetimingGraph& graph,
+                      const Sink& sink,
+                      Group& group);
   // Applies the retiming, or returns the registers to unmap first.
   std::unordered_set<odb::dbInst*> applyOrMovers(const RetimingGraph& graph,
                                                  const std::vector<int>& r);
@@ -146,11 +148,14 @@ class Retimer
                       const Group& group,
                       std::unordered_set<odb::dbInst*>& movers) const;
 
-  // The original registers standing for the j-th register upstream of a
-  // gate under retiming r; nullptr marks a position never filled.  An edge
-  // that held registers only loses them from the sink end, so the j-th
-  // register upstream of the sink is the j-th from the end of its chain.
-  // known: what was traced before under r, added to.
+  // The original registers standing for the j-th register upstream of gate v
+  // under retiming r; a nullptr marks a position never filled.
+  static const std::vector<odb::dbInst*>& originRegisters(
+      const RetimingGraph& graph,
+      const std::vector<int>& r,
+      int v,
+      int j,
+      Origins& known);
   static std::vector<odb::dbInst*> originRegistersOnEdge(
       const RetimingGraph& graph,
       const std::vector<int>& r,
@@ -158,44 +163,34 @@ class Retimer
       int k,
       int j,
       Origins& known);
-  static const std::vector<odb::dbInst*>& originRegisters(
-      const RetimingGraph& graph,
-      const std::vector<int>& r,
-      int v,
-      int j,
-      Origins& known);
+  static std::vector<odb::dbInst*> faninOrigins(const RetimingGraph& graph,
+                                                const std::vector<int>& r,
+                                                int gate,
+                                                int j,
+                                                Origins& known);
 
-  int applyAfterUnmapping(const std::vector<int>& r,
-                          int slides,
-                          const std::unordered_set<odb::dbInst*>& movers,
-                          int max_moves,
-                          est::IncrementalParasiticsGuard& guard);
-  // Every check and every lookup of an original register runs before the
-  // first edit: rebuilding one group discards registers another came from.
   void applyRetiming(const RetimingGraph& graph,
                      const std::vector<int>& r,
                      const Plan& plan);
-  // The original registers standing for the p-th register of a sink's
-  // rebuilt chain, counted from the driver net.
   static std::vector<odb::dbInst*> chainOrigins(const RetimingGraph& graph,
                                                 const std::vector<int>& r,
                                                 const Sink& sink,
                                                 int p,
                                                 Origins& known);
-  // The registers a group is rebuilt from share one clock net: the graph
-  // pins the gates that registers on different clock nets could reach.
   Chain planChain(const RetimingGraph& graph,
                   const std::vector<int>& r,
                   const Group& group,
                   Origins& known) const;
+  void checkRebuildable(const RetimingGraph& graph, const Group& group) const;
+  // False when cls cannot be one class with those taken at the depth before.
+  static bool takeAtDepth(const RegisterClass& cls,
+                          int depth,
+                          Chain& chain,
+                          std::vector<bool>& plain_at);
   void checkCrossings(const RetimingGraph& graph, const Plan& plan) const;
   void rebuildGroup(const Group& group, const Chain& chain);
   void removeRegister(odb::dbInst* inst);
-  // Looked up before the old registers go: they may hold the module's only
-  // pin on one of the nets.
-  ModNets groupModNets(const Group& group,
-                       const std::vector<const RegisterClass*>& classes,
-                       odb::dbNet* clock_net) const;
+  ModNets groupModNets(const Group& group, const Chain& chain) const;
   void connectRegister(odb::dbInst* ff,
                        const RegisterClass* cls,
                        odb::dbNet* in,
@@ -203,7 +198,6 @@ class Retimer
                        odb::dbNet* clock_net,
                        const ModNets& mod_nets);
   void tieBaseControls(odb::dbInst* ff, sta::Instance* parent);
-  // The new registers are left unplaced; the STA check places them.
   std::vector<odb::dbNet*> buildChain(odb::dbNet* driver_net,
                                       const Chain& chain,
                                       const ModNets& mod_nets);
@@ -215,7 +209,7 @@ class Retimer
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<SequentialUnmapper> unmapper_;
   std::unique_ptr<RetimerPlacer> placer_;
-  std::unique_ptr<Discards> discards_;  // of the retime call in progress
+  std::unique_ptr<Discards> discards_;
 
   RetimeOptions options_;
   std::unique_ptr<RetimingGraph> graph_;
@@ -224,7 +218,7 @@ class Retimer
   int gates_before_ = 0;
   bool trial_undone_ = false;
   odb::dbNet* clock_net_ = nullptr;
-  bool report_graph_ = false;  // by the first search of a retime call
+  bool report_graph_ = false;
 };
 
 }  // namespace ret

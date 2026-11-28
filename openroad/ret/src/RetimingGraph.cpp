@@ -22,8 +22,81 @@
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace ret {
+
+namespace {
+
+// Whether the register and every cell that reads it are in the module, and no
+// net it drives reaches a top-level port: its loads are rewired with it, also
+// one that no edge of the graph ends on.
+bool readInModule(odb::dbInst* flop, odb::dbModule* module)
+{
+  return flop->getModule() == module
+         && std::ranges::all_of(flop->getITerms(), [module](odb::dbITerm* pin) {
+              return !drivesNet(pin) || pin->getNet()->isInternalTo(module);
+            });
+}
+
+// The domains (sameDomain: clock net and supply pins) of the registers that
+// reach a gate through its inputs, counted up to the second.
+struct ReachingDomains
+{
+  const RegisterClass* first = nullptr;
+  int count = 0;
+
+  // True when it grew.
+  bool add(const RegisterClass* reg)
+  {
+    if (count > 1 || (count == 1 && sameDomain(*reg, *first))) {
+      return false;
+    }
+    first = count == 0 ? reg : first;
+    ++count;
+    return true;
+  }
+  bool add(const ReachingDomains& other)
+  {
+    const bool grew = other.count > 0 && add(other.first);
+    if (other.count > 1 && count < 2) {
+      count = 2;
+      return true;
+    }
+    return grew;
+  }
+};
+
+// A gate passes its domains on over its edges without registers each time
+// they grow, twice at most.
+void passOnDomains(const std::vector<std::vector<Edge>>& adj,
+                   std::vector<ReachingDomains>& domains)
+{
+  std::vector<int> open;
+  const int n = static_cast<int>(domains.size());
+  for (int u = 0; u < n; ++u) {
+    if (domains[u].count > 0) {
+      open.push_back(u);
+    }
+  }
+  while (!open.empty()) {
+    const int u = open.back();
+    open.pop_back();
+    for (const Edge& e : adj[u]) {
+      if (e.weight == 0 && domains[e.target].add(domains[u])) {
+        open.push_back(e.target);
+      }
+    }
+  }
+}
+
+}  // namespace
+
+odb::dbNet* chainNet(const EdgePhys& phys)
+{
+  return phys.entries.empty() ? phys.driver->getNet()
+                              : phys.entries.front()->getNet();
+}
 
 RetimingGraph::RetimingGraph(odb::dbDatabase* db,
                              sta::dbSta* sta,
@@ -33,9 +106,25 @@ RetimingGraph::RetimingGraph(odb::dbDatabase* db,
 {
 }
 
+void RetimingGraph::build(const bool move_named_registers,
+                          std::vector<odb::dbMaster*> new_cells)
+{
+  findClockPeriod();
+  new_cells_ = std::move(new_cells);
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  findSharedNets(block);
+  findSdcCells(block, move_named_registers);
+  addGates();
+  const int n = size();
+  for (int v = 0; v < n; ++v) {
+    walkFrom(v);
+  }
+  pinGates();
+  fence();
+}
+
 void RetimingGraph::findClockPeriod()
 {
-  clock_period_ = 0.0f;
   int clocks = 0;
   for (sta::Clock* clock : sta_->cmdScene()->sdc()->clocks()) {
     if (clock->isVirtual()) {
@@ -56,256 +145,79 @@ void RetimingGraph::findClockPeriod()
   }
 }
 
-void RetimingGraph::markBoundary(odb::dbInst* inst, const int id)
+void RetimingGraph::findSharedNets(odb::dbBlock* block)
 {
-  for (odb::dbITerm* pin : inst->getITerms()) {
-    odb::dbNet* net = pin->getNet();
-    if (net == nullptr) {
-      continue;
-    }
-    const odb::dbIoType io = pin->getIoType();
-    for (odb::dbBTerm* bterm : net->getBTerms()) {
-      if ((io == odb::dbIoType::INPUT || io == odb::dbIoType::OUTPUT)
-          && bterm->getIoType() == io) {
-        pinned_[id] = true;
-      }
+  for (odb::dbNet* net : block->getNets()) {
+    if (hasSecondDriver(net)) {
+      shared_nets_.insert(net);
     }
   }
 }
 
-bool RetimingGraph::continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const
+void RetimingGraph::findSdcCells(odb::dbBlock* block,
+                                 const bool move_named_registers)
 {
-  const RegisterClass& cls = regClass(reg);
-  if (cls.negedge || cls.scan) {
-    return false;
+  for (odb::dbInst* inst : block->getInsts()) {
+    // A gate keeps what names it as a cell; a register would lose it, which
+    // the caller can allow.
+    const bool named_register = inst->getMaster()->isSequential()
+                                && !move_named_registers
+                                && hasCellConstraint(sta_, inst);
+    if (named_register || hasPinConstraint(sta_, inst)
+        || hasDisabledEdge(sta_, inst)) {
+      sdc_cells_.insert(inst);
+    }
   }
-  if (cls.kind != RegisterKind::kOther) {
-    return pin->getMTerm() == cls.data;
+  for (odb::dbInst* inst : portDelayReferenceCells(sta_)) {
+    sdc_cells_.insert(inst);
   }
-  return isRegisterDataPin(sta_, pin);
+  for (const sta::Mode* mode : sta_->modes()) {
+    for (const sta::ExceptionPath* exception : mode->sdc()->exceptions()) {
+      addExceptionCells(exception, move_named_registers);
+    }
+  }
 }
 
-bool RetimingGraph::readsSharedNet(odb::dbInst* reg) const
+void RetimingGraph::addExceptionCells(const sta::ExceptionPath* exception,
+                                      const bool move_named_registers)
 {
-  return std::ranges::any_of(reg->getITerms(), [&](odb::dbITerm* pin) {
-    return isSignalInput(pin) && shared_nets_.contains(pin->getNet());
-  });
-}
-
-bool RetimingGraph::hasConstantData(odb::dbInst* reg) const
-{
-  odb::dbMTerm* data = regClass(reg).data;
-  if (data == nullptr) {
-    return false;
-  }
-  const sta::Pin* pin = sta_->getDbNetwork()->dbToSta(reg->getITerm(data));
-  return std::ranges::any_of(sta_->modes(), [&](const sta::Mode* mode) {
-    return sta_->isConstant(pin, mode);
-  });
-}
-
-void RetimingGraph::findReached(odb::dbInst* source,
-                                std::unordered_set<odb::dbInst*>& reached) const
-{
-  std::vector<odb::dbInst*> open = {source};
-  while (!open.empty()) {
-    odb::dbInst* current = open.back();
-    open.pop_back();
-    for (odb::dbITerm* out_pin : current->getITerms()) {
-      odb::dbNet* net = out_pin->getNet();
-      if (out_pin->getIoType() != odb::dbIoType::OUTPUT || net == nullptr) {
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  const bool releases
+      = move_named_registers
+        && (exception->isPathDelay() || exception->isGroupPath());
+  sta::ExceptionPtIterator pt_iter(exception);
+  while (pt_iter.hasNext()) {
+    sta::ExceptionPt* point = pt_iter.next();
+    const sta::PinSet* pins = point->pins();
+    for (const sta::Pin* pin : point->allPins(network)) {
+      odb::dbInst* inst = network->staToDb(network->instance(pin));
+      if (inst == nullptr) {
         continue;
       }
-      for (odb::dbITerm* sink : net->getITerms()) {
-        odb::dbInst* load = sink->getInst();
-        if (sink->getIoType() == odb::dbIoType::INPUT
-            && load->getMaster()->isSequential() && continuesThrough(load, sink)
-            && reached.insert(load).second) {
-          open.push_back(load);
-        }
+      // Listed as a cell: a -from or -to that does not name this pin.
+      const bool listed
+          = !point->isThru() && (pins == nullptr || !pins->contains(pin));
+      if (!(releases && listed && inst->getMaster()->isSequential())) {
+        sdc_cells_.insert(inst);
       }
     }
   }
 }
 
-bool RetimingGraph::reconverges(
-    odb::dbInst* reg,
-    const std::unordered_set<odb::dbInst*>& reached) const
+void RetimingGraph::addGates()
 {
-  odb::dbNet* entry = nullptr;
-  for (odb::dbITerm* pin : reg->getITerms()) {
-    odb::dbNet* net = pin->getNet();
-    if (pin->getIoType() != odb::dbIoType::INPUT || net == nullptr
-        || !continuesThrough(reg, pin)) {
-      continue;
-    }
-    odb::dbITerm* driver = net->getFirstOutput();
-    if (driver == nullptr || !reached.contains(driver->getInst())) {
-      continue;
-    }
-    if (entry != nullptr && net != entry) {
-      return true;
-    }
-    entry = net;
-  }
-  return false;
-}
-
-void RetimingGraph::walkFanout(const int source,
-                               odb::dbInst* current,
-                               const int weight,
-                               EdgePhys& chain,
-                               const std::unordered_set<odb::dbInst*>& reached)
-{
-  for (odb::dbITerm* out_pin : current->getITerms()) {
-    if (out_pin->getIoType() != odb::dbIoType::OUTPUT) {
-      continue;
-    }
-    odb::dbNet* net = out_pin->getNet();
-    if (net == nullptr) {
-      continue;
-    }
-    if (fencesChain(net)) {
-      fenceChain(source, chain);
-    }
-    // The walk ends at a net with two drivers: what follows would be walked
-    // from each of them, twice as often at every such net.
-    if (shared_nets_.contains(net)) {
-      continue;
-    }
-    // The registers entered from this net: one with two pins on it (data and
-    // scan-in) is entered once.
-    std::unordered_set<odb::dbInst*> entered;
-    for (odb::dbITerm* sink : net->getITerms()) {
-      if (sink->getIoType() != odb::dbIoType::INPUT) {
-        continue;
-      }
-      odb::dbInst* load = sink->getInst();
-      if (load->getMaster()->isSequential()) {
-        if (!continuesThrough(load, sink) || !entered.insert(load).second) {
-          continue;
-        }
-        // An edge holds one chain of registers: where two meet, or one
-        // loops, each ends.  One edge per path would also double the edges
-        // at every such stage.
-        if (reconverges(load, reached) || chain.flops.size() >= kMaxChainLength
-            || std::ranges::find(chain.flops, load) != chain.flops.end()) {
-          fenceChain(source, chain);
-          continue;
-        }
-        chain.flops.push_back(load);
-        chain.entries.push_back(sink);
-        walkFanout(source, load, weight + 1, chain, reached);
-        chain.flops.pop_back();
-        chain.entries.pop_back();
-      } else {
-        const auto it = index_.find(load);
-        if (it == index_.end()) {
-          continue;
-        }
-        adj_[source].push_back({.target = it->second, .weight = weight});
-        phys_[source].push_back({
-            .driver = out_pin,
-            .sink = sink,
-            .flops = chain.flops,
-            .entries = chain.entries,
-        });
-      }
+  for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
+    if (!index_.contains(inst) && isGate(inst)) {
+      index_[inst] = size();
+      nodes_.push_back(inst);
+      adj_.emplace_back();
+      phys_.emplace_back();
+      fanin_.emplace_back();
+      walk_fence_.push_back(false);
+      fenced_from_.emplace_back();
+      self_dual_.push_back(selfDual(inst));
     }
   }
-}
-
-void RetimingGraph::fenceChain(const int source, const EdgePhys& chain)
-{
-  walk_fence_[source] = true;
-  fenced_.insert(chain.flops.begin(), chain.flops.end());
-  fenced_from_[source].insert(
-      fenced_from_[source].end(), chain.flops.begin(), chain.flops.end());
-}
-
-bool RetimingGraph::fencesChain(odb::dbNet* net) const
-{
-  if (!net->getBTerms().empty() || shared_nets_.contains(net)) {
-    return true;
-  }
-  for (odb::dbITerm* sink : net->getITerms()) {
-    if (sink->getIoType() != odb::dbIoType::INPUT) {
-      continue;
-    }
-    odb::dbInst* load = sink->getInst();
-    if (load->isDoNotTouch()) {
-      return true;
-    }
-    if (load->getMaster()->isSequential()) {
-      if (!continuesThrough(load, sink)) {
-        return true;
-      }
-    } else if (!index_.contains(load)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
-{
-  return fenced_.contains(reg) || sdc_cells_.contains(reg) || isHeld(reg)
-         || isDontTouchRegister(sta_, reg) || readsSharedNet(reg)
-         || hasConstantData(reg) || !suppliesFit(reg);
-}
-
-bool RetimingGraph::suppliesFit(odb::dbInst* reg) const
-{
-  odb::dbMaster* master = reg->getMaster();
-  auto it = has_new_supply_pins_.find(master);
-  if (it == has_new_supply_pins_.end()) {
-    const bool has_all
-        = std::ranges::all_of(new_cells_, [master](odb::dbMaster* cell) {
-            return hasSupplyPinsOf(master, cell);
-          });
-    it = has_new_supply_pins_.emplace(master, has_all).first;
-  }
-  return it->second || supplyNets(reg).has_value();
-}
-
-const RegisterClass& RetimingGraph::regClass(odb::dbInst* reg) const
-{
-  auto it = reg_class_.find(reg);
-  if (it == reg_class_.end()) {
-    it = reg_class_.emplace(reg, registerClass(sta_, reg, resizer_)).first;
-  }
-  return it->second;
-}
-
-bool RetimingGraph::oneClass(const std::vector<odb::dbInst*>& registers) const
-{
-  for (size_t i = 1; i < registers.size(); ++i) {
-    if (!sameRegisterClass(regClass(registers[0]), regClass(registers[i]))) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool RetimingGraph::moveKeepsClass(const std::vector<odb::dbInst*>& registers,
-                                   const int v) const
-{
-  return oneClass(registers)
-         && (registers.empty()
-             || regClass(registers[0]).kind != RegisterKind::kInverting
-             || self_dual_[v]);
-}
-
-odb::dbNet* RetimingGraph::chainNet(const EdgePhys& phys) const
-{
-  return phys.entries.empty() ? phys.driver->getNet()
-                              : phys.entries.front()->getNet();
-}
-
-int RetimingGraph::indexOf(odb::dbInst* gate) const
-{
-  const auto it = index_.find(gate);
-  return it != index_.end() ? it->second : -1;
 }
 
 bool RetimingGraph::isGate(odb::dbInst* inst) const
@@ -334,58 +246,37 @@ bool RetimingGraph::isGate(odb::dbInst* inst) const
   return false;
 }
 
-void RetimingGraph::addGates()
+bool RetimingGraph::selfDual(odb::dbInst* gate)
 {
-  for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
-    if (!index_.contains(inst) && isGate(inst)) {
-      index_[inst] = size();
-      nodes_.push_back(inst);
-      adj_.emplace_back();
-      phys_.emplace_back();
-      fanin_.emplace_back();
-      walk_fence_.push_back(false);
-      fenced_from_.emplace_back();
-      self_dual_.push_back(selfDual(inst));
+  odb::dbMaster* master = gate->getMaster();
+  auto it = self_dual_master_.find(master);
+  if (it == self_dual_master_.end()) {
+    it = self_dual_master_.emplace(master, isSelfDualGate(sta_, gate)).first;
+  }
+  if (!it->second) {
+    return false;
+  }
+  for (odb::dbITerm* pin : gate->getITerms()) {
+    odb::dbNet* net = pin->getNet();
+    if (pin->isInputSignal(/*io=*/false)
+        && (net == nullptr || net->getSigType().isSupply())) {
+      return false;
     }
   }
-}
-
-void RetimingGraph::build(const bool move_named_registers,
-                          std::vector<odb::dbMaster*> new_cells)
-{
-  findClockPeriod();
-  new_cells_ = std::move(new_cells);
-  has_new_supply_pins_.clear();
-
-  nodes_.clear();
-  index_.clear();
-  adj_.clear();
-  phys_.clear();
-  fanin_.clear();
-  walk_fence_.clear();
-  fenced_from_.clear();
-  self_dual_.clear();
-  self_dual_master_.clear();
-  reg_class_.clear();
-  fenced_.clear();
-  odb::dbBlock* block = db_->getChip()->getBlock();
-  shared_nets_.clear();
-  for (odb::dbNet* net : block->getNets()) {
-    if (hasSecondDriver(net)) {
-      shared_nets_.insert(net);
-    }
-  }
-  findSdcCells(block, move_named_registers);
-  addGates();
-  const int n = size();
-  for (int i = 0; i < n; ++i) {
-    walkFrom(i);
-  }
-  pinGates();
-  fence();
+  return true;
 }
 
 void RetimingGraph::walkFrom(const int source)
+{
+  clearEdges(source);
+  EdgePhys chain{};
+  std::unordered_set<odb::dbInst*> reached = {nodes_[source]};
+  findReached(nodes_[source], reached);
+  walkFanout(source, nodes_[source], chain, reached);
+  linkEdges(source);
+}
+
+void RetimingGraph::clearEdges(const int source)
 {
   for (odb::dbInst* flop : fenced_from_[source]) {
     fenced_.erase(flop);
@@ -395,11 +286,177 @@ void RetimingGraph::walkFrom(const int source)
   phys_[source].clear();
   fenced_from_[source].clear();
   walk_fence_[source] = false;
-  EdgePhys chain{};
-  std::unordered_set<odb::dbInst*> reached = {nodes_[source]};
-  findReached(nodes_[source], reached);
-  walkFanout(source, nodes_[source], 0, chain, reached);
-  linkEdges(source);
+}
+
+void RetimingGraph::findReached(odb::dbInst* source,
+                                std::unordered_set<odb::dbInst*>& reached) const
+{
+  std::vector<odb::dbInst*> open = {source};
+  while (!open.empty()) {
+    odb::dbInst* current = open.back();
+    open.pop_back();
+    for (odb::dbITerm* out_pin : current->getITerms()) {
+      if (!drivesNet(out_pin)) {
+        continue;
+      }
+      for (odb::dbITerm* sink : out_pin->getNet()->getITerms()) {
+        odb::dbInst* load = sink->getInst();
+        if (sink->getIoType() == odb::dbIoType::INPUT
+            && load->getMaster()->isSequential() && continuesThrough(load, sink)
+            && reached.insert(load).second) {
+          open.push_back(load);
+        }
+      }
+    }
+  }
+}
+
+void RetimingGraph::walkFanout(const int source,
+                               odb::dbInst* current,
+                               EdgePhys& chain,
+                               const std::unordered_set<odb::dbInst*>& reached)
+{
+  for (odb::dbITerm* out_pin : current->getITerms()) {
+    if (drivesNet(out_pin)) {
+      walkNet(source, out_pin, chain, reached);
+    }
+  }
+}
+
+void RetimingGraph::walkNet(const int source,
+                            odb::dbITerm* driver,
+                            EdgePhys& chain,
+                            const std::unordered_set<odb::dbInst*>& reached)
+{
+  odb::dbNet* net = driver->getNet();
+  if (isFencingNet(net)) {
+    fenceChain(source, chain);
+  }
+  // The walk ends at a net with two drivers: what follows would be walked
+  // from each of them, twice as often at every such net.
+  if (shared_nets_.contains(net)) {
+    return;
+  }
+  // The registers entered from this net: one with two pins on it (data and
+  // scan-in) is entered once.
+  std::unordered_set<odb::dbInst*> entered;
+  for (odb::dbITerm* sink : net->getITerms()) {
+    if (sink->getIoType() != odb::dbIoType::INPUT) {
+      continue;
+    }
+    odb::dbInst* load = sink->getInst();
+    if (!load->getMaster()->isSequential()) {
+      addEdge(source, driver, sink, chain);
+    } else if (continuesThrough(load, sink) && entered.insert(load).second) {
+      walkThrough(source, sink, chain, reached);
+    }
+  }
+}
+
+void RetimingGraph::walkThrough(const int source,
+                                odb::dbITerm* entry,
+                                EdgePhys& chain,
+                                const std::unordered_set<odb::dbInst*>& reached)
+{
+  odb::dbInst* reg = entry->getInst();
+  // An edge holds one chain of registers: where two meet, or one loops, each
+  // ends.  One edge per path would also double the edges at every such stage.
+  if (reconverges(reg, reached) || chain.flops.size() >= kMaxChainLength
+      || std::ranges::find(chain.flops, reg) != chain.flops.end()) {
+    fenceChain(source, chain);
+    return;
+  }
+  chain.flops.push_back(reg);
+  chain.entries.push_back(entry);
+  walkFanout(source, reg, chain, reached);
+  chain.flops.pop_back();
+  chain.entries.pop_back();
+}
+
+void RetimingGraph::addEdge(const int source,
+                            odb::dbITerm* driver,
+                            odb::dbITerm* sink,
+                            const EdgePhys& chain)
+{
+  const int target = indexOf(sink->getInst());
+  if (target < 0) {
+    return;
+  }
+  const int weight = static_cast<int>(chain.flops.size());
+  adj_[source].push_back({.target = target, .weight = weight});
+  phys_[source].push_back({
+      .driver = driver,
+      .sink = sink,
+      .flops = chain.flops,
+      .entries = chain.entries,
+  });
+}
+
+void RetimingGraph::fenceChain(const int source, const EdgePhys& chain)
+{
+  walk_fence_[source] = true;
+  fenced_.insert(chain.flops.begin(), chain.flops.end());
+  fenced_from_[source].insert(
+      fenced_from_[source].end(), chain.flops.begin(), chain.flops.end());
+}
+
+bool RetimingGraph::isFencingNet(odb::dbNet* net) const
+{
+  if (!net->getBTerms().empty() || shared_nets_.contains(net)) {
+    return true;
+  }
+  for (odb::dbITerm* sink : net->getITerms()) {
+    if (sink->getIoType() != odb::dbIoType::INPUT) {
+      continue;
+    }
+    odb::dbInst* load = sink->getInst();
+    if (load->isDoNotTouch()) {
+      return true;
+    }
+    if (load->getMaster()->isSequential()) {
+      if (!continuesThrough(load, sink)) {
+        return true;
+      }
+    } else if (!index_.contains(load)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool RetimingGraph::continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const
+{
+  const RegisterClass& cls = regClass(reg);
+  if (cls.negedge || cls.scan) {
+    return false;
+  }
+  if (cls.kind != RegisterKind::kOther) {
+    return pin->getMTerm() == cls.data;
+  }
+  return isRegisterDataPin(sta_, pin);
+}
+
+bool RetimingGraph::reconverges(
+    odb::dbInst* reg,
+    const std::unordered_set<odb::dbInst*>& reached) const
+{
+  odb::dbNet* entry = nullptr;
+  for (odb::dbITerm* pin : reg->getITerms()) {
+    odb::dbNet* net = pin->getNet();
+    if (pin->getIoType() != odb::dbIoType::INPUT || net == nullptr
+        || !continuesThrough(reg, pin)) {
+      continue;
+    }
+    odb::dbITerm* driver = drivers_.driverOf(net);
+    if (driver == nullptr || !reached.contains(driver->getInst())) {
+      continue;
+    }
+    if (entry != nullptr && net != entry) {
+      return true;
+    }
+    entry = net;
+  }
+  return false;
 }
 
 void RetimingGraph::unlinkEdges(const int source)
@@ -427,37 +484,231 @@ void RetimingGraph::pinGates()
 {
   const int n = size();
   pinned_.assign(n, false);
-  for (int i = 0; i < n; ++i) {
+  for (int v = 0; v < n; ++v) {
     // Only ever set: an earlier gate may have pinned this one already.
-    if (sdc_cells_.contains(nodes_[i]) || isGrouped(nodes_[i])
-        || !isCombinationalGate(sta_, nodes_[i])) {
-      pinned_[i] = true;
+    if (sdc_cells_.contains(nodes_[v]) || isGrouped(nodes_[v])
+        || !isCombinationalGate(sta_, nodes_[v])) {
+      pinned_[v] = true;
     }
-    markBoundary(nodes_[i], i);
-    markDontTouch(nodes_[i], i);
+    pinAtPorts(v);
+    pinDontTouch(v);
   }
   pinUnmodeledInputs();
   fixed_pinned_ = pinned_;
+}
+
+void RetimingGraph::pinAtPorts(const int v)
+{
+  for (odb::dbITerm* pin : nodes_[v]->getITerms()) {
+    odb::dbNet* net = pin->getNet();
+    const odb::dbIoType io = pin->getIoType();
+    if (net == nullptr
+        || (io != odb::dbIoType::INPUT && io != odb::dbIoType::OUTPUT)) {
+      continue;
+    }
+    for (odb::dbBTerm* port : net->getBTerms()) {
+      if (port->getIoType() == io) {
+        pinned_[v] = true;
+      }
+    }
+  }
+}
+
+void RetimingGraph::pinDontTouch(const int v)
+{
+  odb::dbInst* gate = nodes_[v];
+  if (!gate->isDoNotTouch()
+      && std::ranges::none_of(gate->getITerms(), drivesKeptNet)) {
+    return;
+  }
+  pinned_[v] = true;
+  for (odb::dbITerm* pin : gate->getITerms()) {
+    odb::dbNet* net = pin->getNet();
+    if (pin->getIoType() != odb::dbIoType::INPUT || net == nullptr) {
+      continue;
+    }
+    for (odb::dbITerm* driver : net->getITerms()) {
+      const int u = indexOf(driver->getInst());
+      if (driver->getIoType() == odb::dbIoType::OUTPUT && u >= 0) {
+        pinned_[u] = true;
+      }
+    }
+  }
+}
+
+void RetimingGraph::pinUnmodeledInputs()
+{
+  const int n = size();
+  for (int v = 0; v < n; ++v) {
+    if (!unmodeledInputs(v).empty()) {
+      pinned_[v] = true;
+    }
+  }
+}
+
+std::vector<odb::dbITerm*> RetimingGraph::unmodeledInputs(const int v) const
+{
+  std::vector<odb::dbITerm*> pins;
+  for (odb::dbITerm* pin : nodes_[v]->getITerms()) {
+    if (isSignalInput(pin)
+        && std::ranges::none_of(fanin_[v], [&](const EdgeRef& in) {
+             return phys_[in.gate][in.index].sink == pin;
+           })) {
+      pins.push_back(pin);
+    }
+  }
+  return pins;
 }
 
 void RetimingGraph::fence()
 {
   pinned_ = fixed_pinned_;
   const int n = size();
-  for (int i = 0; i < n; ++i) {
-    if (walk_fence_[i]) {
-      pinned_[i] = true;
+  for (int v = 0; v < n; ++v) {
+    if (walk_fence_[v]) {
+      pinned_[v] = true;
     }
   }
   fenceDontTouch();
   fenceModules();
 }
 
+void RetimingGraph::fenceDontTouch()
+{
+  const std::unordered_set<odb::dbNet*> fixed_nets = fixedChainNets();
+  const int n = size();
+  std::vector<ReachingDomains> fanin_domains(nodes_.size());
+  for (int u = 0; u < n; ++u) {
+    const int edge_count = static_cast<int>(adj_[u].size());
+    for (int k = 0; k < edge_count; ++k) {
+      const int target = adj_[u][k].target;
+      if (pinned_[target]) {
+        continue;
+      }
+      const EdgePhys& phys = phys_[u][k];
+      for (odb::dbInst* flop : phys.flops) {
+        fanin_domains[target].add(&regClass(flop));
+      }
+      if (!phys.flops.empty() && fixed_nets.contains(chainNet(phys))) {
+        pinned_[target] = true;
+      }
+    }
+  }
+  passOnDomains(adj_, fanin_domains);
+  for (int v = 0; v < n; ++v) {
+    if (fanin_domains[v].count > 1) {
+      pinned_[v] = true;
+    }
+  }
+}
+
+std::unordered_set<odb::dbNet*> RetimingGraph::fixedChainNets() const
+{
+  std::unordered_set<odb::dbNet*> fixed_nets;
+  std::unordered_map<odb::dbNet*, const RegisterClass*> net_domain;
+  for (const std::vector<EdgePhys>& edges : phys_) {
+    for (const EdgePhys& phys : edges) {
+      odb::dbNet* net = chainNet(phys);
+      for (odb::dbInst* flop : phys.flops) {
+        const RegisterClass* reg = &regClass(flop);
+        if (neverMoves(flop)
+            || !sameDomain(*net_domain.emplace(net, reg).first->second, *reg)) {
+          fixed_nets.insert(net);
+        }
+      }
+    }
+  }
+  return fixed_nets;
+}
+
+void RetimingGraph::fenceModules()
+{
+  if (!sta_->getDbNetwork()->hasHierarchy()) {
+    return;
+  }
+  const std::unordered_set<odb::dbNet*> crossing_nets = moduleCrossingNets();
+  const int n = size();
+  for (int u = 0; u < n; ++u) {
+    const int edge_count = static_cast<int>(adj_[u].size());
+    for (int k = 0; k < edge_count; ++k) {
+      const EdgePhys& phys = phys_[u][k];
+      if (crossing_nets.contains(chainNet(phys))) {
+        pinned_[u] = true;
+        if (!phys.flops.empty()) {
+          pinned_[adj_[u][k].target] = true;
+        }
+      }
+    }
+  }
+}
+
+std::unordered_set<odb::dbNet*> RetimingGraph::moduleCrossingNets() const
+{
+  std::unordered_set<odb::dbNet*> crossing_nets;
+  const int n = size();
+  for (int u = 0; u < n; ++u) {
+    odb::dbModule* module = nodes_[u]->getModule();
+    const int edge_count = static_cast<int>(adj_[u].size());
+    for (int k = 0; k < edge_count; ++k) {
+      const EdgePhys& phys = phys_[u][k];
+      const bool one_module
+          = nodes_[adj_[u][k].target]->getModule() == module
+            && std::ranges::all_of(phys.flops, [module](odb::dbInst* flop) {
+                 return readInModule(flop, module);
+               });
+      odb::dbNet* net = chainNet(phys);
+      if (!one_module && net != nullptr) {
+        crossing_nets.insert(net);
+      }
+    }
+  }
+  return crossing_nets;
+}
+
+std::vector<int> RetimingGraph::update(std::vector<int> sources,
+                                       const bool gates_changed)
+{
+  // A new register or net can take the address of a deleted one.
+  reg_class_.clear();
+  drivers_.clear();
+  if (gates_changed) {
+    addNewGates(sources);
+  }
+  utl::sort_and_unique(sources);
+  for (const int u : sources) {
+    walkFrom(u);
+  }
+  if (gates_changed) {
+    pinGates();
+  }
+  fence();
+  return sources;
+}
+
+void RetimingGraph::addNewGates(std::vector<int>& sources)
+{
+  const int old_size = size();
+  addGates();
+  const int n = size();
+  for (int v = old_size; v < n; ++v) {
+    sources.push_back(v);
+    for (odb::dbITerm* pin : nodes_[v]->getITerms()) {
+      if (pin->getIoType() != odb::dbIoType::INPUT) {
+        continue;
+      }
+      const int source = sourceOfNet(pin->getNet());
+      if (source >= 0) {
+        sources.push_back(source);
+      }
+    }
+  }
+}
+
 int RetimingGraph::sourceOfNet(odb::dbNet* net) const
 {
   std::unordered_set<odb::dbNet*> seen;
   while (net != nullptr && seen.insert(net).second) {
-    odb::dbITerm* driver = net->getFirstOutput();
+    odb::dbITerm* driver = drivers_.driverOf(net);
     if (driver == nullptr) {
       return -1;
     }
@@ -489,46 +740,12 @@ std::vector<int> RetimingGraph::sourcesOf(
   return sources;
 }
 
-std::vector<int> RetimingGraph::update(std::vector<int> sources,
-                                       const bool gates_changed)
-{
-  // A new register can take the address of a deleted one.
-  reg_class_.clear();
-  if (gates_changed) {
-    const int old_size = size();
-    addGates();
-    const int n = size();
-    for (int v = old_size; v < n; ++v) {
-      sources.push_back(v);
-      for (odb::dbITerm* pin : nodes_[v]->getITerms()) {
-        if (pin->getIoType() == odb::dbIoType::INPUT) {
-          const int source = sourceOfNet(pin->getNet());
-          if (source >= 0) {
-            sources.push_back(source);
-          }
-        }
-      }
-    }
-  }
-  sortUnique(sources);
-  for (const int u : sources) {
-    walkFrom(u);
-  }
-  if (gates_changed) {
-    pinGates();
-  }
-  fence();
-  return sources;
-}
-
 void RetimingGraph::truncate(const int gates)
 {
-  for (int v = gates; v < size(); ++v) {
-    unlinkEdges(v);
+  const int n = size();
+  for (int v = gates; v < n; ++v) {
+    clearEdges(v);
     index_.erase(nodes_[v]);
-    for (odb::dbInst* flop : fenced_from_[v]) {
-      fenced_.erase(flop);
-    }
   }
   nodes_.resize(gates);
   adj_.resize(gates);
@@ -539,271 +756,78 @@ void RetimingGraph::truncate(const int gates)
   self_dual_.resize(gates);
 }
 
-bool RetimingGraph::selfDual(odb::dbInst* gate)
+int RetimingGraph::indexOf(odb::dbInst* gate) const
 {
-  odb::dbMaster* master = gate->getMaster();
-  auto it = self_dual_master_.find(master);
-  if (it == self_dual_master_.end()) {
-    it = self_dual_master_.emplace(master, isSelfDualGate(sta_, gate)).first;
+  const auto it = index_.find(gate);
+  return it != index_.end() ? it->second : -1;
+}
+
+const RegisterClass& RetimingGraph::regClass(odb::dbInst* reg) const
+{
+  auto it = reg_class_.find(reg);
+  if (it == reg_class_.end()) {
+    it = reg_class_.emplace(reg, registerClass(sta_, reg, resizer_)).first;
   }
-  if (!it->second) {
-    return false;
-  }
-  for (odb::dbITerm* pin : gate->getITerms()) {
-    odb::dbNet* net = pin->getNet();
-    if (pin->getIoType() == odb::dbIoType::INPUT
-        && !pin->getSigType().isSupply()
-        && (net == nullptr || net->getSigType().isSupply())) {
+  return it->second;
+}
+
+bool RetimingGraph::oneClass(const std::vector<odb::dbInst*>& registers) const
+{
+  for (size_t i = 1; i < registers.size(); ++i) {
+    if (!sameRegisterClass(regClass(registers[0]), regClass(registers[i]))) {
       return false;
     }
   }
   return true;
 }
 
-void RetimingGraph::findSdcCells(odb::dbBlock* block,
-                                 const bool move_named_registers)
+bool RetimingGraph::moveKeepsClass(const std::vector<odb::dbInst*>& registers,
+                                   const int v) const
 {
-  sdc_cells_.clear();
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  for (odb::dbInst* inst : block->getInsts()) {
-    // A gate keeps what names it as a cell; a register would lose it, which
-    // the caller can allow.
-    const bool named_register = inst->getMaster()->isSequential()
-                                && !move_named_registers
-                                && hasCellConstraint(sta_, inst);
-    if (named_register || hasPinConstraint(sta_, inst)
-        || hasDisabledEdge(sta_, inst)) {
-      sdc_cells_.insert(inst);
-    }
-  }
-  for (odb::dbInst* inst : portDelayReferenceCells(sta_)) {
-    sdc_cells_.insert(inst);
-  }
-  for (const sta::Mode* mode : sta_->modes()) {
-    for (const sta::ExceptionPath* exception : mode->sdc()->exceptions()) {
-      // A move across a cell that an exception names would change which
-      // paths it covers.  The caller can release the registers that a path
-      // delay or a path group lists as cells in its -from or -to.
-      const bool releases
-          = move_named_registers
-            && (exception->isPathDelay() || exception->isGroupPath());
-      sta::ExceptionPtIterator pt_iter(exception);
-      while (pt_iter.hasNext()) {
-        sta::ExceptionPt* point = pt_iter.next();
-        const sta::PinSet* pins = point->pins();
-        for (const sta::Pin* pin : point->allPins(network)) {
-          odb::dbInst* inst = network->staToDb(network->instance(pin));
-          if (inst == nullptr) {
-            continue;
-          }
-          // Listed as a cell: a -from or -to that does not name this pin.
-          const bool listed
-              = !point->isThru() && (pins == nullptr || !pins->contains(pin));
-          if (!(releases && listed && inst->getMaster()->isSequential())) {
-            sdc_cells_.insert(inst);
-          }
-        }
-      }
-    }
-  }
+  return oneClass(registers)
+         && (registers.empty()
+             || regClass(registers[0]).kind != RegisterKind::kInverting
+             || self_dual_[v]);
 }
 
-std::vector<odb::dbITerm*> RetimingGraph::unmodeledInputs(const int v) const
+bool RetimingGraph::neverMoves(odb::dbInst* reg) const
 {
-  std::vector<odb::dbITerm*> pins;
-  for (odb::dbITerm* pin : nodes_[v]->getITerms()) {
-    if (isSignalInput(pin)
-        && std::ranges::none_of(fanin_[v], [&](const EdgeRef& in) {
-             return phys_[in.gate][in.index].sink == pin;
-           })) {
-      pins.push_back(pin);
-    }
-  }
-  return pins;
+  return fenced_.contains(reg) || sdc_cells_.contains(reg) || isHeld(reg)
+         || isDontTouchRegister(sta_, reg) || readsSharedNet(reg)
+         || hasConstantData(reg) || !suppliesFit(reg);
 }
 
-void RetimingGraph::pinUnmodeledInputs()
+bool RetimingGraph::readsSharedNet(odb::dbInst* reg) const
 {
-  const int n = size();
-  for (int v = 0; v < n; ++v) {
-    if (!unmodeledInputs(v).empty()) {
-      pinned_[v] = true;
-    }
-  }
+  return std::ranges::any_of(reg->getITerms(), [&](odb::dbITerm* pin) {
+    return isSignalInput(pin) && shared_nets_.contains(pin->getNet());
+  });
 }
 
-namespace {
-
-// Whether the register and every cell that reads it are in the module: its
-// loads are rewired with it, also one that no edge of the graph ends on.
-bool readInModule(odb::dbInst* flop, odb::dbModule* module)
+bool RetimingGraph::hasConstantData(odb::dbInst* reg) const
 {
-  for (odb::dbITerm* pin : flop->getITerms()) {
-    odb::dbNet* net = pin->getNet();
-    if (pin->getIoType() != odb::dbIoType::OUTPUT || net == nullptr) {
-      continue;
-    }
-    for (odb::dbITerm* load : net->getITerms()) {
-      if (load->getInst()->getModule() != module) {
-        return false;
-      }
-    }
+  odb::dbMTerm* data = regClass(reg).data;
+  if (data == nullptr) {
+    return false;
   }
-  return flop->getModule() == module;
+  const sta::Pin* pin = sta_->getDbNetwork()->dbToSta(reg->getITerm(data));
+  return std::ranges::any_of(sta_->modes(), [&](const sta::Mode* mode) {
+    return sta_->isConstant(pin, mode);
+  });
 }
 
-}  // namespace
-
-void RetimingGraph::fenceModules()
+bool RetimingGraph::suppliesFit(odb::dbInst* reg) const
 {
-  if (!sta_->getDbNetwork()->hasHierarchy()) {
-    return;
+  odb::dbMaster* master = reg->getMaster();
+  auto it = has_new_supply_pins_.find(master);
+  if (it == has_new_supply_pins_.end()) {
+    const bool has_all
+        = std::ranges::all_of(new_cells_, [master](odb::dbMaster* cell) {
+            return hasSupplyPinsOf(master, cell);
+          });
+    it = has_new_supply_pins_.emplace(master, has_all).first;
   }
-  const int n = size();
-  std::unordered_set<odb::dbNet*> crossing_nets;
-  for (int u = 0; u < n; ++u) {
-    odb::dbModule* module = nodes_[u]->getModule();
-    const int edge_count = static_cast<int>(adj_[u].size());
-    for (int k = 0; k < edge_count; ++k) {
-      const EdgePhys& phys = phys_[u][k];
-      const bool one_module
-          = nodes_[adj_[u][k].target]->getModule() == module
-            && std::ranges::all_of(phys.flops, [module](odb::dbInst* flop) {
-                 return readInModule(flop, module);
-               });
-      odb::dbNet* net = chainNet(phys);
-      if (!one_module && net != nullptr) {
-        crossing_nets.insert(net);
-      }
-    }
-  }
-  for (int u = 0; u < n; ++u) {
-    const int edge_count = static_cast<int>(adj_[u].size());
-    for (int k = 0; k < edge_count; ++k) {
-      const EdgePhys& phys = phys_[u][k];
-      if (crossing_nets.contains(chainNet(phys))) {
-        pinned_[u] = true;
-        if (!phys.flops.empty()) {
-          pinned_[adj_[u][k].target] = true;
-        }
-      }
-    }
-  }
-}
-
-void RetimingGraph::markDontTouch(odb::dbInst* inst, const int id)
-{
-  bool dont_touch = inst->isDoNotTouch();
-  for (odb::dbITerm* pin : inst->getITerms()) {
-    dont_touch = dont_touch || drivesKeptNet(pin);
-  }
-  if (dont_touch) {
-    pinned_[id] = true;
-    for (odb::dbITerm* pin : inst->getITerms()) {
-      odb::dbNet* net = pin->getNet();
-      if (pin->getIoType() == odb::dbIoType::INPUT && net != nullptr) {
-        for (odb::dbITerm* driver : net->getITerms()) {
-          const auto it = index_.find(driver->getInst());
-          if (driver->getIoType() == odb::dbIoType::OUTPUT
-              && it != index_.end()) {
-            pinned_[it->second] = true;
-          }
-        }
-      }
-    }
-  }
-}
-
-namespace {
-
-// The domains (sameDomain: clock net and supply pins) of the registers that
-// reach a gate through its inputs, counted up to the second.
-struct ReachingDomains
-{
-  const RegisterClass* first = nullptr;
-  int count = 0;
-
-  // True when it grew.
-  bool add(const RegisterClass* reg)
-  {
-    if (count > 1 || (count == 1 && sameDomain(*reg, *first))) {
-      return false;
-    }
-    first = count == 0 ? reg : first;
-    ++count;
-    return true;
-  }
-  bool add(const ReachingDomains& other)
-  {
-    const bool grew = other.count > 0 && add(other.first);
-    if (other.count > 1 && count < 2) {
-      count = 2;
-      return true;
-    }
-    return grew;
-  }
-};
-
-}  // namespace
-
-void RetimingGraph::fenceDontTouch()
-{
-  const int n = size();
-  // A don't-touch register or a second domain keeps every register that
-  // starts on the same net in place.
-  std::unordered_set<odb::dbNet*> fixed_nets;
-  std::unordered_map<odb::dbNet*, const RegisterClass*> net_domain;
-  for (int u = 0; u < n; ++u) {
-    for (const EdgePhys& phys : phys_[u]) {
-      odb::dbNet* net = chainNet(phys);
-      for (odb::dbInst* flop : phys.flops) {
-        const RegisterClass* reg = &regClass(flop);
-        if (isDontTouch(flop)
-            || !sameDomain(*net_domain.emplace(net, reg).first->second, *reg)) {
-          fixed_nets.insert(net);
-        }
-      }
-    }
-  }
-
-  std::vector<ReachingDomains> fanin_domains(nodes_.size());
-  for (int u = 0; u < n; ++u) {
-    const int edge_count = static_cast<int>(adj_[u].size());
-    for (int k = 0; k < edge_count; ++k) {
-      const int target = adj_[u][k].target;
-      if (pinned_[target]) {
-        continue;
-      }
-      const EdgePhys& phys = phys_[u][k];
-      for (odb::dbInst* flop : phys.flops) {
-        fanin_domains[target].add(&regClass(flop));
-      }
-      if (!phys.flops.empty() && fixed_nets.contains(chainNet(phys))) {
-        pinned_[target] = true;
-      }
-    }
-  }
-  // A gate passes its domains on each time they grow, twice at most.
-  std::vector<int> open;
-  for (int u = 0; u < n; ++u) {
-    if (fanin_domains[u].count > 0) {
-      open.push_back(u);
-    }
-  }
-  while (!open.empty()) {
-    const int u = open.back();
-    open.pop_back();
-    for (const Edge& e : adj_[u]) {
-      if (e.weight == 0 && fanin_domains[e.target].add(fanin_domains[u])) {
-        open.push_back(e.target);
-      }
-    }
-  }
-  for (int v = 0; v < n; ++v) {
-    if (fanin_domains[v].count > 1) {
-      pinned_[v] = true;
-    }
-  }
+  return it->second || hasOneSupplyNetPerKind(reg);
 }
 
 void RetimingGraph::report() const

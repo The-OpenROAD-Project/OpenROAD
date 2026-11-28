@@ -4,6 +4,7 @@
 #include "RegisterTiming.h"
 
 #include <algorithm>
+#include <optional>
 
 #include "db_sta/dbSta.hh"
 #include "sta/ClkNetwork.hh"
@@ -23,18 +24,43 @@
 
 namespace ret {
 
-namespace {
-
-// nullptr is nominal, as in the delay calculator.
-const sta::Pvt* tablePvt(sta::dbSta* sta, const sta::LibertyCell* cell)
+const sta::Pvt* tablePvt(sta::dbSta* sta,
+                         const sta::LibertyCell* cell,
+                         const sta::Instance* inst)
 {
-  const sta::Pvt* pvt
-      = sta->cmdScene()->sdc()->operatingConditions(sta::MinMax::max());
+  const sta::Sdc* sdc = sta->cmdScene()->sdc();
+  const sta::MinMax* max = sta::MinMax::max();
+  const sta::Pvt* pvt = inst != nullptr ? sdc->pvt(inst, max) : nullptr;
+  if (pvt == nullptr) {
+    pvt = sdc->operatingConditions(max);
+  }
   return pvt != nullptr ? pvt
                         : cell->libertyLibrary()->defaultOperatingConditions();
 }
 
-}  // namespace
+std::optional<TableArc> slowestTableArc(sta::dbSta* sta,
+                                        const sta::TimingArcSet* set,
+                                        const sta::Pvt* pvt,
+                                        const float in_slew,
+                                        const float load,
+                                        std::optional<TableArc> slowest)
+{
+  const sta::Scene* scene = sta->cmdScene();
+  for (const sta::TimingArc* arc : set->arcs()) {
+    const sta::GateTableModel* model
+        = arc->gateTableModel(scene, sta::MinMax::max());
+    if (model == nullptr) {
+      continue;
+    }
+    float delay = 0.0f;
+    float slew = 0.0f;
+    model->gateDelay(pvt, in_slew, load, delay, slew);
+    if (!slowest || delay > slowest->delay) {
+      slowest = TableArc{.delay = delay, .slew = slew};
+    }
+  }
+  return slowest;
+}
 
 float registerClockToQ(sta::dbSta* sta,
                        const sta::LibertyCell* cell,
@@ -46,25 +72,16 @@ float registerClockToQ(sta::dbSta* sta,
     return -1.0f;
   }
   const sta::Pvt* pvt = tablePvt(sta, cell);
-  float worst = -1.0f;
+  const TableArc none{.delay = -1.0f, .slew = 0.0f};
+  std::optional<TableArc> worst = none;
   for (const sta::TimingArcSet* set : cell->timingArcSets()) {
     if (set->role() != sta::TimingRole::regClkToQ()
         || (to != nullptr && set->to() != to)) {
       continue;
     }
-    for (const sta::TimingArc* arc : set->arcs()) {
-      const sta::GateTableModel* model
-          = arc->gateTableModel(sta->cmdScene(), sta::MinMax::max());
-      if (model == nullptr) {
-        continue;
-      }
-      float delay = 0.0f;
-      float slew = 0.0f;
-      model->gateDelay(pvt, clock_slew, load, delay, slew);
-      worst = std::max(worst, delay);
-    }
+    worst = slowestTableArc(sta, set, pvt, clock_slew, load, worst);
   }
-  return worst;
+  return worst.value_or(none).delay;
 }
 
 float registerSetupTime(sta::dbSta* sta,
@@ -116,19 +133,15 @@ float clockPinSlew(sta::dbSta* sta, const sta::Pin* pin)
 
 float pinSlew(sta::dbSta* sta, const sta::Pin* pin)
 {
-  sta::Graph* graph = sta->ensureGraph();
-  const int ap = sta->cmdScene()->dcalcAnalysisPtIndex(sta::MinMax::max());
-  sta::Vertex* vertex = nullptr;
-  sta::Vertex* bidirect_drvr = nullptr;
-  graph->pinVertices(pin, vertex, bidirect_drvr);
+  const sta::Graph* graph = sta->ensureGraph();
+  sta::Vertex* vertex = graph->pinLoadVertex(pin);
   if (vertex == nullptr) {
     return 0.0f;
   }
-  const float rise
-      = sta::delayAsFloat(graph->slew(vertex, sta::RiseFall::rise(), ap));
-  const float fall
-      = sta::delayAsFloat(graph->slew(vertex, sta::RiseFall::fall(), ap));
-  return std::max(rise, fall);
+  return sta::delayAsFloat(sta->slew(vertex,
+                                     sta::RiseFallBoth::riseFall(),
+                                     {sta->cmdScene()},
+                                     sta::MinMax::max()));
 }
 
 }  // namespace ret
