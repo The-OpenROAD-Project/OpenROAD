@@ -11,6 +11,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <queue>
 #include <random>
 #include <set>
@@ -1700,28 +1701,33 @@ void FlexDRWorker::writeGCPatchesToDRWorker(
     tmp_pwire->setLayerNum(pwire->getLayerNum());
     tmp_pwire->setOrigin(pwire->getOrigin());
     tmp_pwire->setOffsetBox(pwire->getOffsetBox());
-    if (!valid_indices.empty()) {
-      // Find closest path point
-      odb::Point closest;
-      frSquaredDistance closest_dist
-          = std::numeric_limits<frSquaredDistance>::max();
-      auto origin = pwire->getOrigin();
-      auto box = pwire->getOffsetBox();
-      for (auto p : valid_indices) {
-        odb::Point pp;
-        gridGraph_.getPoint(pp, p.x(), p.y());
-        frSquaredDistance path_length = odb::Point::squaredDistance(origin, pp);
-        if (path_length < closest_dist) {
-          closest_dist = path_length;
-          closest = pp;
-        }
+    // Anchor the patch at the closest path point on the patch layer; the
+    // connectivity checker drops a patch whose origin isn't on the net's
+    // shapes of that layer.
+    const odb::Point origin = pwire->getOrigin();
+    std::optional<odb::Point> closest;
+    frSquaredDistance closest_dist
+        = std::numeric_limits<frSquaredDistance>::max();
+    for (const auto& p : valid_indices) {
+      if (gridGraph_.getLayerNum(p.z()) != pwire->getLayerNum()) {
+        continue;
       }
-      tmp_pwire->setOrigin(closest);
+      odb::Point pp;
+      gridGraph_.getPoint(pp, p.x(), p.y());
+      const frSquaredDistance dist = odb::Point::squaredDistance(origin, pp);
+      if (dist < closest_dist) {
+        closest_dist = dist;
+        closest = pp;
+      }
+    }
+    if (closest) {
+      const odb::Rect box = pwire->getOffsetBox();
+      tmp_pwire->setOrigin(*closest);
       tmp_pwire->setOffsetBox(
-          odb::Rect(origin.getX() - closest.getX() + box.xMin(),
-                    origin.getY() - closest.getY() + box.yMin(),
-                    origin.getX() - closest.getX() + box.xMax(),
-                    origin.getY() - closest.getY() + box.yMax()));
+          odb::Rect(origin.getX() - closest->getX() + box.xMin(),
+                    origin.getY() - closest->getY() + box.yMin(),
+                    origin.getX() - closest->getX() + box.xMax(),
+                    origin.getY() - closest->getY() + box.yMax()));
     }
     tmp_pwire->addToNet(net);
     std::unique_ptr<drConnFig> tmp(std::move(tmp_pwire));
@@ -3289,8 +3295,19 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
       routeNet_postAstarPatchMinAreaVio(net, path, areaMap);
       routeNet_AddCutSpcCost(path);
       isFirstConn = false;
-      // Add current pin path point to drNet paths
-      paths.insert(paths.end(), path.begin(), path.end());
+      // Add current pin path points to drNet paths. A via stack is only two
+      // points, so add the layers it passes through as well.
+      for (size_t i = 0; i < path.size(); ++i) {
+        if (i > 0 && path[i].x() == path[i - 1].x()
+            && path[i].y() == path[i - 1].y()) {
+          const frMIdx z_lo = std::min(path[i - 1].z(), path[i].z());
+          const frMIdx z_hi = std::max(path[i - 1].z(), path[i].z());
+          for (frMIdx z = z_lo + 1; z < z_hi; ++z) {
+            paths.emplace_back(path[i].x(), path[i].y(), z);
+          }
+        }
+        paths.push_back(path[i]);
+      }
     } else {
       searchSuccess = false;
       logger_->report("Failed to find a path between pin " + nextPin->getName()
