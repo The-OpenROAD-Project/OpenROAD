@@ -2,6 +2,7 @@
 # count.  The result is proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
+source "ret_report.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog retime_dsec_loop.v
@@ -15,6 +16,4 @@ report_worst_slack -max -digits 4
 run_dsec_test retime_dsec_loop -liberty_files Nangate45/Nangate45_typ.lib \
   -clock clk -resetn rst_n
 
-set v_file [make_result_file retime_dsec_loop.v]
-write_verilog $v_file
-diff_files retime_dsec_loop.vok $v_file
+report_new_cells

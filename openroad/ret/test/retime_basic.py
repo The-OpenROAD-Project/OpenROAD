@@ -15,6 +15,5 @@ design.evalTclString("report_worst_slack -max -digits 4")
 design.getRetimer().retime(ret.RetimeOptions())
 design.evalTclString("report_worst_slack -max -digits 4")
 
-v_file = helpers.make_result_file("retime_basic.v")
-design.evalTclString(f"write_verilog {v_file}")
-helpers.diff_files("retime_basic.vok", v_file)
+design.evalTclString("source ret_report.tcl")
+design.evalTclString("report_new_cells")

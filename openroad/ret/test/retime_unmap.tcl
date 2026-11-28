@@ -2,6 +2,7 @@
 # (sky130hd): it slides as an enable register and keeps its cell and enable
 # net, with nothing unmapped.
 source "helpers.tcl"
+source "ret_report.tcl"
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef
 read_liberty sky130hd/sky130hd_tt.lib
@@ -13,6 +14,4 @@ report_worst_slack -max -digits 4
 retime
 report_worst_slack -max -digits 4
 
-set v_file [make_result_file retime_unmap.v]
-write_verilog $v_file
-diff_files retime_unmap.vok $v_file
+report_new_cells

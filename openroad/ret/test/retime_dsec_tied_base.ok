@@ -21,4 +21,6 @@ unplaced instances: 0
 ret_ff_1 at 51.98 3.78
 ret_tie_2 at 57.26 3.78
 Retime output passed/skipped sequential equivalence test
-No differences found.
+ret_ff_1 sg13g2_dfrbp_1 top: CLK=clk RESET_B=ret_net_2 D=n5 Q=ret_net_1 (g7/A)
+ret_tie_2 sg13g2_tiehi top: L_HI=ret_net_2 (ret_ff_1/RESET_B)
+instances 14, nets 18

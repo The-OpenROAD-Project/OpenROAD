@@ -11,4 +11,5 @@ worst slack min 0.0109
 [INFO RET-0053] Retime: slides 1, rounds 1, WNS -0.0163, TNS -0.0163, registers 2, placed 0, resized 0.
 worst slack max -0.0163
 worst slack min 0.0005
-No differences found.
+ret_ff_2 DFF_X1 top: D=n1 CK=clk Q=ret_net_2 (g2/A)
+instances 8, nets 11

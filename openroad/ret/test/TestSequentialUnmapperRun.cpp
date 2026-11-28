@@ -6,14 +6,11 @@
 
 #include <string>
 #include <unordered_set>
-#include <utility>
-#include <vector>
 
 #include "SequentialUnmapper.h"
 #include "SequentialUnmapperFixture.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
-#include "sta/Sequential.hh"
 #include "tst/fixture.h"
 
 namespace {
@@ -34,31 +31,16 @@ TEST_F(SequentialUnmapperRunTest, MixedEdgesOneRun)
 {
   ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic, kNegedge}));
   makeInputPorts({"d1", "e1", "d2", "e2", "clk"});
-
-  tst::InstOptions op1;
-  op1.iterms = {{"d1", "D"}, {"e1", "EN"}, {"clk", "CK"}, {"q1", "Q"}};
-  makeInst(block_, getDb()->findMaster("DFFE_PP"), "ff1", op1);
+  makeCell("DFFE_PP",
+           "ff1",
+           {{"d1", "D"}, {"e1", "EN"}, {"clk", "CK"}, {"q1", "Q"}});
   makeOutputPort("q1");
-
-  tst::InstOptions op2;
-  op2.iterms = {{"d2", "D"}, {"e2", "EN"}, {"clk", "CK"}, {"q2", "Q"}};
-  makeInst(block_, getDb()->findMaster("DFFE_NP"), "ff2", op2);
+  makeCell("DFFE_NP",
+           "ff2",
+           {{"d2", "D"}, {"e2", "EN"}, {"clk", "CK"}, {"q2", "Q"}});
   makeOutputPort("q2");
 
-  const sta::Sequential* seq_pp = sequentialOf("DFFE_PP");
-  const sta::Sequential* seq_np = sequentialOf("DFFE_NP");
-  ASSERT_NE(seq_pp, nullptr);
-  ASSERT_NE(seq_np, nullptr);
-  const LeafNets leaf_pp
-      = {{"D", block_->findNet("d1")}, {"EN", block_->findNet("e1")}};
-  const LeafNets leaf_np
-      = {{"D", block_->findNet("d2")}, {"EN", block_->findNet("e2")}};
-
-  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
-  ASSERT_TRUE(unmapper.prepare());
-  unmapper.run();
-  expectSane();
-
+  ASSERT_NO_FATAL_FAILURE(unmapAll(2));
   EXPECT_EQ(countMaster("DFF_P"), 1);
   EXPECT_EQ(countMaster("DFF_N"), 1);
   EXPECT_EQ(countMaster("AND2"), 4);
@@ -69,20 +51,15 @@ TEST_F(SequentialUnmapperRunTest, MixedEdgesOneRun)
   odb::dbInst* base_np = getInstByMasterName("DFF_N");
   ASSERT_NE(base_pp, nullptr);
   ASSERT_NE(base_np, nullptr);
-
-  odb::dbNet* state_pp = base_pp->findITerm("Q")->getNet();
-  odb::dbNet* state_np = base_np->findITerm("Q")->getNet();
-  expectSameFunction(
-      base_pp->findITerm("D")->getNet(), seq_pp, leaf_pp, state_pp);
-  expectSameFunction(
-      base_np->findITerm("D")->getNet(), seq_np, leaf_np, state_np);
+  expectSameFunction(base_pp, "DFFE_PP", {{"D", "d1"}, {"EN", "e1"}});
+  expectSameFunction(base_np, "DFFE_NP", {{"D", "d2"}, {"EN", "e2"}});
 
   odb::dbBTerm* port1 = block_->findBTerm("q1");
   odb::dbBTerm* port2 = block_->findBTerm("q2");
   ASSERT_NE(port1, nullptr);
   ASSERT_NE(port2, nullptr);
-  EXPECT_EQ(port1->getNet(), state_pp);
-  EXPECT_EQ(port2->getNet(), state_np);
+  EXPECT_EQ(port1->getNet(), base_pp->findITerm("Q")->getNet());
+  EXPECT_EQ(port2->getNet(), base_np->findITerm("Q")->getNet());
 }
 
 // run(&candidates) must touch only the listed registers.
@@ -90,17 +67,11 @@ TEST_F(SequentialUnmapperRunTest, CandidateFilter)
 {
   ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic}));
   makeInputPorts({"d1", "d2", "clk"});
-
-  tst::InstOptions op1;
-  op1.iterms = {{"d1", "D"}, {"clk", "CK"}, {"qn1", "QN"}};
-  odb::dbInst* ff1
-      = makeInst(block_, getDb()->findMaster("DFF_P_QN"), "ff1", op1);
+  odb::dbInst* ff1 = makeCell(
+      "DFF_P_QN", "ff1", {{"d1", "D"}, {"clk", "CK"}, {"qn1", "QN"}});
   makeOutputPort("qn1");
-
-  tst::InstOptions op2;
-  op2.iterms = {{"d2", "D"}, {"clk", "CK"}, {"qn2", "QN"}};
-  odb::dbInst* ff2
-      = makeInst(block_, getDb()->findMaster("DFF_P_QN"), "ff2", op2);
+  odb::dbInst* ff2 = makeCell(
+      "DFF_P_QN", "ff2", {{"d2", "D"}, {"clk", "CK"}, {"qn2", "QN"}});
   makeOutputPort("qn2");
   ASSERT_NE(ff1, nullptr);
   ASSERT_NE(ff2, nullptr);
@@ -131,29 +102,16 @@ TEST_F(SequentialUnmapperRunTest, SharedEnableTwoFlops)
 {
   ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic}));
   makeInputPorts({"d1", "d2", "e1", "clk"});
-
-  tst::InstOptions op1;
-  op1.iterms = {{"d1", "D"}, {"e1", "EN"}, {"clk", "CK"}, {"q1", "Q"}};
-  makeInst(block_, getDb()->findMaster("DFFE_PP"), "ff1", op1);
+  makeCell("DFFE_PP",
+           "ff1",
+           {{"d1", "D"}, {"e1", "EN"}, {"clk", "CK"}, {"q1", "Q"}});
   makeOutputPort("q1");
-
-  tst::InstOptions op2;
-  op2.iterms = {{"d2", "D"}, {"e1", "EN"}, {"clk", "CK"}, {"q2", "Q"}};
-  makeInst(block_, getDb()->findMaster("DFFE_PP"), "ff2", op2);
+  makeCell("DFFE_PP",
+           "ff2",
+           {{"d2", "D"}, {"e1", "EN"}, {"clk", "CK"}, {"q2", "Q"}});
   makeOutputPort("q2");
 
-  const sta::Sequential* seq = sequentialOf("DFFE_PP");
-  ASSERT_NE(seq, nullptr);
-  const LeafNets leaf1
-      = {{"D", block_->findNet("d1")}, {"EN", block_->findNet("e1")}};
-  const LeafNets leaf2
-      = {{"D", block_->findNet("d2")}, {"EN", block_->findNet("e1")}};
-
-  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
-  ASSERT_TRUE(unmapper.prepare());
-  unmapper.run();
-  expectSane();
-
+  ASSERT_NO_FATAL_FAILURE(unmapAll(2));
   EXPECT_EQ(countMaster("DFF_P"), 2);
   EXPECT_EQ(countMaster("AND2"), 4);
   EXPECT_EQ(countMaster("OR2"), 2);
@@ -174,10 +132,8 @@ TEST_F(SequentialUnmapperRunTest, SharedEnableTwoFlops)
   ASSERT_TRUE(isMaster(base1, "DFF_P"));
   ASSERT_TRUE(isMaster(base2, "DFF_P"));
   EXPECT_NE(base1, base2);
-  expectSameFunction(
-      base1->findITerm("D")->getNet(), seq, leaf1, port1->getNet());
-  expectSameFunction(
-      base2->findITerm("D")->getNet(), seq, leaf2, port2->getNet());
+  expectSameFunction(base1, "DFFE_PP", {{"D", "d1"}, {"EN", "e1"}});
+  expectSameFunction(base2, "DFFE_PP", {{"D", "d2"}, {"EN", "e1"}});
 }
 
 // One flop whose output fans out to two gates and a port: every load moves
@@ -186,30 +142,18 @@ TEST_F(SequentialUnmapperRunTest, FanoutPreserved)
 {
   ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic}));
   makeInputPorts({"d1", "x1", "clk"});
-
-  tst::InstOptions op;
-  op.iterms = {{"d1", "D"}, {"clk", "CK"}, {"qn1", "QN"}};
-  makeInst(block_, getDb()->findMaster("DFF_P_QN"), "ff1", op);
-
-  tst::InstOptions oi;
-  oi.iterms = {{"qn1", "A"}, {"o_inv", "Y"}};
+  makeCell("DFF_P_QN", "ff1", {{"d1", "D"}, {"clk", "CK"}, {"qn1", "QN"}});
   odb::dbInst* load_inv
-      = makeInst(block_, getDb()->findMaster("INV"), "load_inv", oi);
-  tst::InstOptions oa;
-  oa.iterms = {{"qn1", "A"}, {"x1", "B"}, {"o_and", "Y"}};
-  odb::dbInst* load_and
-      = makeInst(block_, getDb()->findMaster("AND2"), "load_and", oa);
+      = makeCell("INV", "load_inv", {{"qn1", "A"}, {"o_inv", "Y"}});
+  odb::dbInst* load_and = makeCell(
+      "AND2", "load_and", {{"qn1", "A"}, {"x1", "B"}, {"o_and", "Y"}});
   makeOutputPort("qn1");
   makeOutputPort("o_inv");
   makeOutputPort("o_and");
   ASSERT_NE(load_inv, nullptr);
   ASSERT_NE(load_and, nullptr);
 
-  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
-  ASSERT_TRUE(unmapper.prepare());
-  unmapper.run();
-  expectSane();
-
+  ASSERT_NO_FATAL_FAILURE(unmapAll(1));
   EXPECT_EQ(countMaster("DFF_P"), 1);
   EXPECT_EQ(countMaster("INV"), 2);
   EXPECT_EQ(block_->findNet("qn1"), nullptr)
@@ -242,17 +186,15 @@ TEST_F(SequentialUnmapperRunTest, UnconnectedInputIsSkipped)
 {
   ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic}));
   makeInputPorts({"d1", "clk"});
-
-  tst::InstOptions op;
-  op.iterms = {{"d1", "D"}, {"clk", "CK"}, {"q1", "Q"}};
-  odb::dbInst* ff = makeInst(block_, getDb()->findMaster("DFFE_PP"), "ff1", op);
+  odb::dbInst* ff
+      = makeCell("DFFE_PP", "ff1", {{"d1", "D"}, {"clk", "CK"}, {"q1", "Q"}});
   makeOutputPort("q1");
   ASSERT_NE(ff, nullptr);
 
+  // Not unmapAll: the netlist checks reject the open input.
   ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
   ASSERT_TRUE(unmapper.prepare());
-  unmapper.run();
-
+  EXPECT_EQ(unmapper.run(), 0);
   EXPECT_EQ(block_->findInst("ff1"), ff);
   EXPECT_EQ(countMaster("DFFE_PP"), 1);
   EXPECT_EQ(countMaster("DFF_P"), 0);
@@ -278,16 +220,12 @@ TEST_F(SequentialUnmapperRunTest, CellsStayInTheRegistersModule)
   makeInst(block_, getDb()->findMaster("DFFE_PP"), "u1/ff1", in_child);
   makeOutputPort("q1");
 
-  tst::InstOptions in_top;
-  in_top.iterms = {{"d2", "D"}, {"e2", "EN"}, {"clk", "CK"}, {"q2", "Q"}};
-  makeInst(block_, getDb()->findMaster("DFFE_PP"), "ff2", in_top);
+  makeCell("DFFE_PP",
+           "ff2",
+           {{"d2", "D"}, {"e2", "EN"}, {"clk", "CK"}, {"q2", "Q"}});
   makeOutputPort("q2");
 
-  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
-  ASSERT_TRUE(unmapper.prepare());
-  unmapper.run();
-  expectSane();
-
+  ASSERT_NO_FATAL_FAILURE(unmapAll(2));
   EXPECT_EQ(countMaster("DFFE_PP"), 0);
   EXPECT_EQ(countMaster("DFF_P"), 2);
   int in_child_count = 0;
@@ -318,28 +256,18 @@ TEST_F(SequentialUnmapperRunTest, CellsStayInTheRegistersModule)
 // loads an inverter of it, and both old nets are deleted.
 TEST_F(SequentialUnmapperRunTest, BothOutputsLoaded)
 {
-  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kTwoOutputs}));
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic, kTwoOutputs}));
   makeInputPorts({"d1", "clk"});
-
-  tst::InstOptions op;
-  op.iterms = {{"d1", "D"}, {"clk", "CK"}, {"q1", "Q"}, {"qn1", "QN"}};
-  makeInst(block_, getDb()->findMaster("DFF_P_QQN"), "ff1", op);
-  tst::InstOptions oq;
-  oq.iterms = {{"q1", "A"}, {"o_q", "Y"}};
-  odb::dbInst* load_q
-      = makeInst(block_, getDb()->findMaster("INV"), "load_q", oq);
-  tst::InstOptions oqn;
-  oqn.iterms = {{"qn1", "A"}, {"o_qn", "Y"}};
+  makeCell("DFF_P_QQN",
+           "ff1",
+           {{"d1", "D"}, {"clk", "CK"}, {"q1", "Q"}, {"qn1", "QN"}});
+  odb::dbInst* load_q = makeCell("INV", "load_q", {{"q1", "A"}, {"o_q", "Y"}});
   odb::dbInst* load_qn
-      = makeInst(block_, getDb()->findMaster("INV"), "load_qn", oqn);
+      = makeCell("INV", "load_qn", {{"qn1", "A"}, {"o_qn", "Y"}});
   makeOutputPort("o_q");
   makeOutputPort("o_qn");
 
-  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
-  ASSERT_TRUE(unmapper.prepare());
-  EXPECT_EQ(unmapper.run(), 1);
-  expectSane();
-
+  ASSERT_NO_FATAL_FAILURE(unmapAll(1));
   EXPECT_EQ(countMaster("DFF_P_QQN"), 0);
   EXPECT_EQ(countMaster("DFF_P"), 1);
   EXPECT_EQ(countMaster("INV"), 3);
@@ -357,22 +285,15 @@ TEST_F(SequentialUnmapperRunTest, BothOutputsLoaded)
 // the register.
 TEST_F(SequentialUnmapperRunTest, UnloadedOutputGetsNoInverter)
 {
-  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kTwoOutputs}));
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic, kTwoOutputs}));
   makeInputPorts({"d1", "clk"});
-
-  tst::InstOptions op;
-  op.iterms = {{"d1", "D"}, {"clk", "CK"}, {"q1", "Q"}, {"qn1", "QN"}};
-  makeInst(block_, getDb()->findMaster("DFF_P_QQN"), "ff1", op);
-  tst::InstOptions oq;
-  oq.iterms = {{"q1", "A"}, {"o_q", "Y"}};
-  makeInst(block_, getDb()->findMaster("INV"), "load_q", oq);
+  makeCell("DFF_P_QQN",
+           "ff1",
+           {{"d1", "D"}, {"clk", "CK"}, {"q1", "Q"}, {"qn1", "QN"}});
+  makeCell("INV", "load_q", {{"q1", "A"}, {"o_q", "Y"}});
   makeOutputPort("o_q");
 
-  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
-  ASSERT_TRUE(unmapper.prepare());
-  EXPECT_EQ(unmapper.run(), 1);
-  expectSane();
-
+  ASSERT_NO_FATAL_FAILURE(unmapAll(1));
   EXPECT_EQ(countMaster("DFF_P"), 1);
   EXPECT_EQ(countMaster("INV"), 1);
   EXPECT_EQ(block_->findNet("qn1"), nullptr);
@@ -381,20 +302,16 @@ TEST_F(SequentialUnmapperRunTest, UnloadedOutputGetsNoInverter)
 // A register with an output that does not read the state is left alone.
 TEST_F(SequentialUnmapperRunTest, OutputNotReadingStateIsSkipped)
 {
-  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kTwoOutputs}));
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic, kTwoOutputs}));
   makeInputPorts({"d1", "clk"});
-
-  tst::InstOptions op;
-  op.iterms = {{"d1", "D"}, {"clk", "CK"}, {"q1", "Q"}, {"y1", "Y"}};
   odb::dbInst* ff
-      = makeInst(block_, getDb()->findMaster("DFF_P_ODD"), "ff1", op);
+      = makeCell("DFF_P_ODD",
+                 "ff1",
+                 {{"d1", "D"}, {"clk", "CK"}, {"q1", "Q"}, {"y1", "Y"}});
   makeOutputPort("q1");
   makeOutputPort("y1");
 
-  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
-  ASSERT_TRUE(unmapper.prepare());
-  EXPECT_EQ(unmapper.run(), 0);
-
+  ASSERT_NO_FATAL_FAILURE(unmapAll(0));
   EXPECT_EQ(block_->findInst("ff1"), ff);
   EXPECT_EQ(countMaster("DFF_P"), 0);
   EXPECT_EQ(block_->findNet("y1"), ff->findITerm("Y")->getNet());

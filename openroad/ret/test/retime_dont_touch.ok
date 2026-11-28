@@ -1,30 +1,43 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+block order: g0 g2 g3 g4 g5 h1 r1 r2
 [INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
 [INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
+don't-touch r1: r1 stays
 [INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 4 pinned gates, 0 fenced registers.
 [INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
+don't-touch n2: r1 stays
 [INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 1 fenced registers.
 [INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
+don't-touch h1: r1 stays
+[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 4 pinned gates, 0 fenced registers.
+[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
+don't-touch g2: r1 stays
 [INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
 [INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
+r1 fixed: r1 stays
 [INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
 [INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
-[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
-[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0542, TNS -0.0542, registers 2, placed 0, resized 0.
-[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
-[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
+r1 in a group: r1 stays
 [INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
 [INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
+r1 in a region: r1 stays
 [INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
 [INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
+h1 in a group: r1 stays
+[INFO RET-0014] Retiming graph: 6 gates, 3 edges, 0 registers, 4 pinned gates, 0 fenced registers.
+[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
+scan pin on DFF_X1: r1 stays
+[INFO RET-0014] Retiming graph: 6 gates, 4 edges, 1 registers, 3 pinned gates, 0 fenced registers.
+[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
+r1 in a scan chain: r1 stays
 [INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
 [INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
-[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
+rule on q1: r1 stays
+nets with the rule: q1
+[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 4 pinned gates, 0 fenced registers.
 [INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
-[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
-[INFO RET-0053] Retime: slides 0, rounds 0, WNS 0.0497, TNS 0.0000, registers 2, placed 0, resized 0.
-[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
-[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.
+rule on n2: r1 stays
+nets with the rule: n2
 [INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 2 pinned gates, 0 fenced registers.
  Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
 ---------------------------------------------------------------------------
@@ -32,3 +45,5 @@
      1 |        3 |      1 |    3 |     -0.0297 |       -0.0297 |         2
 ---------------------------------------------------------------------------
 [INFO RET-0053] Retime: slides 3, rounds 1, WNS -0.0297, TNS -0.0297, registers 2, placed 0, resized 0.
+rule on clk: r1 moved
+nets with the rule: clk

@@ -24,10 +24,7 @@ library (retime_supply_rails) {
 
   cell (DFFP_X1) {
     area : 6.00;
-    ff ("IQ", "IQN") {
-      clocked_on : "CK";
-      next_state : "D";
-    }
+    ff ("IQ", "IQN") { clocked_on : "CK"; next_state : "D"; }
     pin (D) {
       direction : input;
       capacitance : 1.0;
@@ -44,11 +41,7 @@ library (retime_supply_rails) {
         fall_constraint (scalar) { values ("0.00"); }
       }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 1.0;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 1.0; }
     pin (Q) {
       direction : output;
       function : "IQ";

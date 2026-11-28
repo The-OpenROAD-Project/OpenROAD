@@ -4,6 +4,7 @@
 # and the result is proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
+source "ret_report.tcl"
 read_liberty ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib
 read_lef ihp-sg13g2/sg13g2_tech.lef
 read_lef ihp-sg13g2/sg13g2_stdcell.lef
@@ -20,6 +21,4 @@ run_dsec_test retime_dsec_hier_tied_base \
   -liberty_files ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib \
   -clock clk -resetn rst_n
 
-set v_file [make_result_file retime_dsec_hier_tied_base.v]
-write_verilog $v_file
-diff_files retime_dsec_hier_tied_base.vok $v_file
+report_new_cells

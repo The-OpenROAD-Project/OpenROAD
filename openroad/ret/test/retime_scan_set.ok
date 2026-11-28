@@ -11,4 +11,7 @@ worst slack max -0.4625
 worst slack max -0.4625
 r1 sky130_fd_sc_hd__sdfxtp_1
 r3 sky130_fd_sc_hd__dfstp_1
-No differences found.
+ret_ff_1 sky130_fd_sc_hd__dfxtp_1 top: D=m9 Q=ret_net_1 (g50/A) CLK=clk
+instances 54, nets 64
+r1: stays
+r3: stays

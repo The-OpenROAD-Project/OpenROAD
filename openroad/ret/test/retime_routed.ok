@@ -14,3 +14,9 @@ q1 keeps its special wire: 1
 [INFO RET-0053] Retime: slides 3, rounds 1, WNS -0.0297, TNS -0.0297, registers 2, placed 0, resized 0.
 VDD special wires: 1
 VSS special wires: 1
+worst slack max -0.1003
+[WARNING RET-0049] The design has annotated delays; it is not retimed.
+worst slack max -0.1003
+worst slack max -0.1604
+[WARNING RET-0048] The parasitics were read from SPEF; the design is not retimed.
+worst slack max -0.1604

@@ -1,6 +1,7 @@
-// retime_supply_bias inside a module, with the supply pins wired through
-// the module's ports: the cells read rail, well and gnd, which are vdd_main,
-// vbias and vss one level up.
+// retime_basic in a library with a well pin, inside a module, with the
+// supply pins wired through the module's ports: the cells read rail, well
+// and gnd, which are vdd_main, vbias and vss one level up.  The wells are on
+// a bias net of their own.
 module core (a, b, clk, y, rail, well, gnd);
   input a;
   input b;

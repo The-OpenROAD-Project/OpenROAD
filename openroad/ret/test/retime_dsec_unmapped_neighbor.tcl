@@ -2,6 +2,7 @@
 # register.  The result is proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
+source "ret_report.tcl"
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef
 read_liberty sky130hd/sky130hd_tt.lib
@@ -38,6 +39,4 @@ if { [llength $ra_gates] != 2 || [llength $rd_gates] != 1 || !$merged } {
 run_dsec_test retime_dsec_unmapped_neighbor \
   -liberty_files sky130hd/sky130hd_tt.lib -clock clk -resetn rst_n
 
-set v_file [make_result_file retime_dsec_unmapped_neighbor.v]
-write_verilog $v_file
-diff_files retime_dsec_unmapped_neighbor.vok $v_file
+report_new_cells

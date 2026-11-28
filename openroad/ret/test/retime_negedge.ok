@@ -20,5 +20,22 @@ worst slack max -49.64
 ---------------------------------------------------------------------------
 [INFO RET-0053] Retime: slides 4, rounds 1, WNS -49.6443, TNS -49.6443, registers 4, placed 0, resized 0.
 worst slack max -49.64
-Retime output passed/skipped sequential equivalence test
-No differences found.
+r1: removed
+r2: removed
+rn: stays
+g2/A reads g0 (AND2x2_ASAP7_75t_R)
+g11/A reads rn (DFFLQx4_ASAP7_75t_R)
+g13/A reads g12 (INVx1_ASAP7_75t_R)
+[INFO RET-0014] Retiming graph: 17 gates, 15 edges, 4 registers, 7 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -7.3408 |       -7.3408 |         4
+     1 |        2 |      1 |    2 |      2.7362 |        0.0000 |         4
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 2, rounds 1, WNS 2.7362, TNS 0.0000, registers 4, placed 0, resized 0.
+r1: removed
+r2: removed
+rn: removed
+g2/A reads g0 (AND2x2_ASAP7_75t_R)
+g11/A reads g10 (AND2x2_ASAP7_75t_R)
+g13/A reads ret_ff_2 (DFFHQx4_ASAP7_75t_R)

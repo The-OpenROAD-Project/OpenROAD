@@ -13,19 +13,14 @@ initialize_floorplan -die_area "0 0 1000 20" \
 create_clock -period 0.14 clk
 
 # Placed locations in microns.
-proc place_inst { name x } {
-  set inst [[ord::get_db_block] findInst $name]
-  $inst setLocation [ord::microns_to_dbu $x] [ord::microns_to_dbu 2.8]
-  $inst setPlacementStatus PLACED
-}
 set x 10
 foreach name {gi r0 g0} {
-  place_inst $name $x
+  place_inst -name $name -location "$x 2.8"
   incr x 5
 }
 set x 900
 foreach name {r1 h1 h2 h3 h4 r2 go} {
-  place_inst $name $x
+  place_inst -name $name -location "$x 2.8"
   incr x 5
 }
 

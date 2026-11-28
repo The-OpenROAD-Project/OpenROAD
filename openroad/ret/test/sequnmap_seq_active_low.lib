@@ -31,27 +31,17 @@ library (sequnmap_seq_active_low) {
   /* negedge plain flop, the asap7 DFFLQx4 shape. TRAP: area below DFF_P. */
   cell (DFF_N) {
     area : 3.8;
-    ff (IQ, IQN) {
-      clocked_on : "!CK";
-      next_state : "D";
-    }
+    ff (IQ, IQN) { clocked_on : "!CK"; next_state : "D"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_falling;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (Q) {
       direction : output;
       function : "IQ";
-      timing () { related_pin : "CK"; timing_type : falling_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : falling_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -59,27 +49,17 @@ library (sequnmap_seq_active_low) {
   /* shape with its ff IQN, IQNN naming: here IQN IS the state. */
   cell (DFF_N_ND) {
     area : 3.3;
-    ff (IQN, IQNN) {
-      clocked_on : "!CK";
-      next_state : "!D";
-    }
+    ff (IQN, IQNN) { clocked_on : "!CK"; next_state : "!D"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_falling;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (QN) {
       direction : output;
       function : "IQN";
-      timing () { related_pin : "CK"; timing_type : falling_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : falling_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -91,27 +71,17 @@ library (sequnmap_seq_active_low) {
   /* wrongly calls it inverting. Smallest area in the library on purpose. */
   cell (DFF_N_ND_QN) {
     area : 3.2;
-    ff (IQN, IQNN) {
-      clocked_on : "!CK";
-      next_state : "!D";
-    }
+    ff (IQN, IQNN) { clocked_on : "!CK"; next_state : "!D"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_falling;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (QN) {
       direction : output;
       function : "IQNN";
-      timing () { related_pin : "CK"; timing_type : falling_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : falling_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -119,33 +89,22 @@ library (sequnmap_seq_active_low) {
   /* next_state as DFFE_PP, clocked on the falling edge. */
   cell (DFFE_NP) {
     area : 4.8;
-    ff (IQ, IQN) {
-      clocked_on : "!CK";
-      next_state : "(D * EN) + (IQ * !EN)";
-    }
+    ff (IQ, IQN) { clocked_on : "!CK"; next_state : "(D * EN) + (IQ * !EN)"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_falling;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (EN) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_falling;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (Q) {
       direction : output;
       function : "IQ";
-      timing () { related_pin : "CK"; timing_type : falling_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : falling_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -153,33 +112,22 @@ library (sequnmap_seq_active_low) {
   /* the hold term still feeds back the stored bit. Q reads the state as is. */
   cell (DFFE_NP_ND) {
     area : 4.6;
-    ff (IQ, IQN) {
-      clocked_on : "!CK";
-      next_state : "!((D + !EN) * (!IQ + EN))";
-    }
+    ff (IQ, IQN) { clocked_on : "!CK"; next_state : "!((D + !EN) * (!IQ + EN))"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_falling;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (EN) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_falling;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (Q) {
       direction : output;
       function : "IQ";
-      timing () { related_pin : "CK"; timing_type : falling_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : falling_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -187,33 +135,22 @@ library (sequnmap_seq_active_low) {
   /* output side inversion, QN = IQN. */
   cell (DFFE_NP_QN) {
     area : 4.7;
-    ff (IQ, IQN) {
-      clocked_on : "!CK";
-      next_state : "IQ ^ (EN * (D ^ IQ))";
-    }
+    ff (IQ, IQN) { clocked_on : "!CK"; next_state : "IQ ^ (EN * (D ^ IQ))"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_falling;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (EN) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_falling;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (QN) {
       direction : output;
       function : "IQN";
-      timing () { related_pin : "CK"; timing_type : falling_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : falling_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 }

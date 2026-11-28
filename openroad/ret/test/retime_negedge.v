@@ -3,8 +3,6 @@
 //           forward across the NAND.
 //   cone 2  rn (DFFLQx4, falling edge) -> inverters: rn never moves, and the
 //           gates it feeds are never crossed.
-// rst_n is a synchronous reset in logic, so every register settles to a
-// defined value for the sequential equivalence check.
 module top (a, b, c, rst_n, clk, y, z);
   input a;
   input b;

@@ -37,108 +37,66 @@ library (sequnmap_basic) {
 
   cell (INV) {
     area : 1.0;
-    pin (A) {
-      direction : input;
-      capacitance : 0.001;
-    }
+    pin (A) { direction : input; capacitance : 0.001; }
     pin (Y) {
       direction : output;
       function : "!A";
-      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (AND2) {
     area : 2.0;
-    pin (A) {
-      direction : input;
-      capacitance : 0.001;
-    }
-    pin (B) {
-      direction : input;
-      capacitance : 0.001;
-    }
+    pin (A) { direction : input; capacitance : 0.001; }
+    pin (B) { direction : input; capacitance : 0.001; }
     pin (Y) {
       direction : output;
       function : "(A * B)";
-      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
-      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (OR2) {
     area : 2.0;
-    pin (A) {
-      direction : input;
-      capacitance : 0.001;
-    }
-    pin (B) {
-      direction : input;
-      capacitance : 0.001;
-    }
+    pin (A) { direction : input; capacitance : 0.001; }
+    pin (B) { direction : input; capacitance : 0.001; }
     pin (Y) {
       direction : output;
       function : "(A + B)";
-      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
-      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (AND2_AA) {
     area : 1.5;
-    pin (A) {
-      direction : input;
-      capacitance : 0.001;
-    }
-    pin (B) {
-      direction : input;
-      capacitance : 0.001;
-    }
+    pin (A) { direction : input; capacitance : 0.001; }
+    pin (B) { direction : input; capacitance : 0.001; }
     pin (Y) {
       direction : output;
       function : "(A * A)";
-      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
-      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (OR2_AA) {
     area : 1.5;
-    pin (A) {
-      direction : input;
-      capacitance : 0.001;
-    }
-    pin (B) {
-      direction : input;
-      capacitance : 0.001;
-    }
+    pin (A) { direction : input; capacitance : 0.001; }
+    pin (B) { direction : input; capacitance : 0.001; }
     pin (Y) {
       direction : output;
       function : "(A + A)";
-      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
-      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (INV_NA) {
     area : 0.5;
-    pin (A) {
-      direction : input;
-      capacitance : 0.001;
-    }
-    pin (Y) {
-      direction : output;
-      function : "!A";
-    }
+    pin (A) { direction : input; capacitance : 0.001; }
+    pin (Y) { direction : output; function : "!A"; }
   }
 
   /* two input mux: Y = S ? A1 : A0. Lets a test check that a next_state */
@@ -147,306 +105,189 @@ library (sequnmap_basic) {
   /* between a single gate and the 4 gate cone it replaces. */
   cell (MUX2) {
     area : 3.0;
-    pin (A0) {
-      direction : input;
-      capacitance : 0.001;
-    }
-    pin (A1) {
-      direction : input;
-      capacitance : 0.001;
-    }
-    pin (S) {
-      direction : input;
-      capacitance : 0.001;
-    }
+    pin (A0) { direction : input; capacitance : 0.001; }
+    pin (A1) { direction : input; capacitance : 0.001; }
+    pin (S) { direction : input; capacitance : 0.001; }
     pin (Y) {
       direction : output;
       function : "(A0 * !S) + (A1 * S)";
-      timing () { related_pin : "A0"; cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
-      timing () { related_pin : "A1"; cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
-      timing () { related_pin : "S"; cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "A0"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "A1"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "S"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (TIE1) {
     area : 1.0;
-    pin (Y) {
-      direction : output;
-      function : "1";
-    }
+    pin (Y) { direction : output; function : "1"; }
   }
 
   cell (TIE0) {
     area : 1.0;
-    pin (Y) {
-      direction : output;
-      function : "0";
-    }
+    pin (Y) { direction : output; function : "0"; }
   }
 
   cell (DFF_P) {
     area : 4.0;
-    ff (IQ, IQN) {
-      clocked_on : "CK";
-      next_state : "D";
-    }
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "D"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_rising;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (Q) {
       direction : output;
       function : "IQ";
-      timing () { related_pin : "CK"; timing_type : rising_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (DFF_P_QN) {
     area : 4.0;
-    ff (IQ, IQN) {
-      clocked_on : "CK";
-      next_state : "D";
-    }
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "D"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_rising;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (QN) {
       direction : output;
       function : "IQN";
-      timing () { related_pin : "CK"; timing_type : rising_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (DFF_P_2CK) {
     area : 3.0;
-    ff (IQ, IQN) {
-      clocked_on : "CK";
-      next_state : "D";
-    }
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "D"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_rising;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK2) {
       direction : input;
       clock : true;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_rising;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (Q) {
       direction : output;
       function : "IQ";
-      timing () { related_pin : "CK"; timing_type : rising_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (DFF_P_SL) {
     area : 2.5;
-    ff (IQ, IQN) {
-      clocked_on : "CK";
-      next_state : "D";
-    }
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "D"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_rising;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (SL) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_rising;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (Q) {
       direction : output;
       function : "IQ";
-      timing () { related_pin : "CK"; timing_type : rising_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (DFF_P_ND) {
     area : 3.5;
-    ff (IQ, IQN) {
-      clocked_on : "CK";
-      next_state : "!D";
-    }
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "!D"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_rising;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (QN) {
       direction : output;
       function : "IQ";
-      timing () { related_pin : "CK"; timing_type : rising_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (DFFE_PP) {
     area : 5.0;
-    ff (IQ, IQN) {
-      clocked_on : "CK";
-      next_state : "(D * EN) + (IQ * !EN)";
-    }
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "(D * EN) + (IQ * !EN)"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_rising;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (EN) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_rising;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (Q) {
       direction : output;
       function : "IQ";
-      timing () { related_pin : "CK"; timing_type : rising_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (DFF_PN0) {
     area : 5.0;
-    ff (IQ, IQN) {
-      clocked_on : "CK";
-      next_state : "D";
-      clear : "!RN";
-    }
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "D"; clear : "!RN"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_rising;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (RN) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_rising;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (Q) {
       direction : output;
       function : "IQ";
-      timing () { related_pin : "CK"; timing_type : rising_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (DFF_P_TQ) {
     area : 2.0;
-    ff (IQ, IQN) {
-      clocked_on : "CK";
-      next_state : "D";
-    }
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "D"; }
     pin (D) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_rising;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (OE) {
       direction : input;
       capacitance : 0.001;
-      timing () { related_pin : "CK"; timing_type : setup_rising;
-                  rise_constraint (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
     pin (Q) {
       direction : output;
       function : "IQ";
       three_state : "!OE";
-      timing () { related_pin : "CK"; timing_type : rising_edge;
-                  cell_rise (scalar) { values ("0.01"); }
-                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
   cell (DFF_P_NA) {
     area : 1.5;
-    ff (IQ, IQN) {
-      clocked_on : "CK";
-      next_state : "D";
-    }
-    pin (D) {
-      direction : input;
-      capacitance : 0.001;
-    }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.001;
-    }
-    pin (Q) {
-      direction : output;
-      function : "IQ";
-    }
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "D"; }
+    pin (D) { direction : input; capacitance : 0.001; }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
+    pin (Q) { direction : output; function : "IQ"; }
   }
 
 }

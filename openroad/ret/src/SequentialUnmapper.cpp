@@ -599,7 +599,8 @@ SequentialUnmapper::collectOutputMoves(odb::dbInst* inst,
     OutputMove move;
     move.old_net = output.pin->getNet();
     move.old_mod_net = output.pin->getModNet();
-    move.new_net = *output.inverted ? makeInverter(state_net_) : state_net_;
+    move.new_net = output.inverted.value_or(false) ? makeInverter(state_net_)
+                                                   : state_net_;
     for (odb::dbITerm* load : move.old_net->getITerms()) {
       if (load->getInst() != inst) {
         move.loads.push_back(load);

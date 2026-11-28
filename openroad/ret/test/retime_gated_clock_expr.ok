@@ -1,18 +1,13 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0227] LEF file: retime_gated_clock_expr.lef, created 1 library cells
-[INFO IFP-0001] Added 14 rows of 526 site FreePDK45_38x28_10R_NP_162NW_34O.
-[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 100.000 20.000 ) um
-[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 99.940 19.600 ) um
-[INFO IFP-0102] Core area:                         1958.824 um^2
-[INFO IFP-0103] Total instances area:                29.792 um^2
-[INFO IFP-0104] Effective utilization:                0.015
-[INFO IFP-0105] Number of instances:                     20
 [INFO RET-0014] Retiming graph: 16 gates, 13 edges, 4 registers, 9 pinned gates, 0 fenced registers.
  Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
 ---------------------------------------------------------------------------
- start |          |        |      |     -0.0817 |       -0.1567 |         4
-     1 |        4 |      1 |    4 |     -0.0817 |       -0.1240 |         4
+ start |          |        |      |     -0.0817 |       -0.1569 |         4
+     1 |        4 |      1 |    4 |     -0.0817 |       -0.1241 |         4
 ---------------------------------------------------------------------------
-[INFO RET-0053] Retime: slides 4, rounds 1, WNS -0.0817, TNS -0.1240, registers 4, placed 1, resized 0.
-Retime output passed/skipped sequential equivalence test
-No differences found.
+[INFO RET-0053] Retime: slides 4, rounds 1, WNS -0.0817, TNS -0.1241, registers 4, placed 0, resized 0.
+r1: moved
+rg: stays, a DFFG_X1
+g1 reads d1
+g8 reads qg

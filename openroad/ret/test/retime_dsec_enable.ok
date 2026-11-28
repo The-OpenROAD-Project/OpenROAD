@@ -19,4 +19,16 @@ worst slack max -0.1412
 worst slack max -0.0410
 unplaced instances: 0
 Retime output passed/skipped sequential equivalence test
-No differences found.
+ret_ff_11 sky130_fd_sc_hd__dfxtp_1 top: D=m1 Q=ret_net_11 (g11/A) CLK=clk
+ret_ff_12 sky130_fd_sc_hd__edfxtp_1 top: D=n1 DE=en Q=ret_net_12 (g3/A) CLK=clk
+ret_ff_13 sky130_fd_sc_hd__dfxtp_1 top: D=unmap_net_5 Q=ret_net_13 (unmap_and_4/A) CLK=clk
+ret_ff_14 sky130_fd_sc_hd__dfxtp_1 top: D=unmap_net_10 Q=ret_net_14 (unmap_and_9/A) CLK=clk
+unmap_and_2 sky130_fd_sc_hd__and2_0 top: A=d4 B=en2 X=unmap_net_2 (unmap_or_5/A)
+unmap_and_4 sky130_fd_sc_hd__and2_0 top: A=ret_net_13 B=unmap_net_3 X=unmap_net_4 (unmap_or_5/B)
+unmap_and_7 sky130_fd_sc_hd__and2_0 top: A=d6 B=en X=unmap_net_7 (unmap_or_10/A)
+unmap_and_9 sky130_fd_sc_hd__and2_0 top: A=ret_net_14 B=unmap_net_8 X=unmap_net_9 (unmap_or_10/B)
+unmap_inv_3 sky130_fd_sc_hd__clkinv_1 top: A=en2 Y=unmap_net_3 (unmap_and_4/B)
+unmap_inv_8 sky130_fd_sc_hd__clkinv_1 top: A=en Y=unmap_net_8 (unmap_and_9/B)
+unmap_or_10 sky130_fd_sc_hd__or2_0 top: A=unmap_net_7 B=unmap_net_9 X=unmap_net_10 (g10/B ret_ff_14/D)
+unmap_or_5 sky130_fd_sc_hd__or2_0 top: A=unmap_net_2 B=unmap_net_4 X=unmap_net_5 (g10/A ret_ff_13/D)
+instances 37, nets 45

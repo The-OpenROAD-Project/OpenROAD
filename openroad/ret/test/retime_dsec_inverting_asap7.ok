@@ -11,17 +11,19 @@
 [INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
 [INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
 worst slack max -44.87
-[INFO RET-0014] Retiming graph: 29 gates, 26 edges, 9 registers, 12 pinned gates, 0 fenced registers.
+[INFO RET-0014] Retiming graph: 19 gates, 17 edges, 6 registers, 8 pinned gates, 0 fenced registers.
  Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
 ---------------------------------------------------------------------------
- start |          |        |      |    -44.8740 |     -111.9322 |         9
-     1 |        2 |      1 |    2 |    -32.0823 |      -79.2713 |         7
-     2 |        2 |      1 |    2 |    -32.0823 |      -70.4134 |         7
-     3 |        2 |      1 |    2 |    -32.0823 |      -53.3357 |         7
-     4 |        1 |      1 |    1 |    -32.0823 |      -47.4156 |         7
-     5 |        1 |      1 |    1 |    -32.0823 |      -42.5551 |         7
+ start |          |        |      |    -44.8740 |      -79.8499 |         6
+     1 |        2 |      1 |    2 |    -29.2005 |      -47.1891 |         4
+     2 |        2 |      1 |    2 |    -24.7444 |      -38.3311 |         4
+     3 |        2 |      1 |    2 |    -13.5868 |      -21.2534 |         4
+     4 |        1 |      1 |    1 |     -7.6667 |      -15.3333 |         4
+     5 |        1 |      1 |    1 |     -7.6667 |      -10.4728 |         4
 ---------------------------------------------------------------------------
-[INFO RET-0053] Retime: slides 8, rounds 5, WNS -32.0823, TNS -42.5551, registers 7, placed 0, resized 0.
-worst slack max -32.08
+[INFO RET-0053] Retime: slides 8, rounds 5, WNS -7.6667, TNS -10.4728, registers 4, placed 0, resized 0.
+worst slack max -7.67
 Retime output passed/skipped sequential equivalence test
-No differences found.
+ret_ff_5 DFFHQNx1_ASAP7_75t_R top: CLK=clk D=j3 QN=ret_net_5 (g16/A)
+ret_ff_8 DFFHQNx1_ASAP7_75t_R top: CLK=clk D=n5 QN=ret_net_8 (g6/A)
+instances 23, nets 29

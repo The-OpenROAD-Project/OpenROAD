@@ -17,32 +17,22 @@ wire delays.
 ### Retime
 
 Slide registers forward across gates on paths that fail timing. A search
-proposes the moves on a delay model calibrated to STA: gate and wire delays,
-the clock-to-Q of the new register and the setup time of each endpoint. STA
-then decides what is kept. The moves are applied, the new cells placed and
-the design timed; they are kept when the setup slack improves and neither
-the worst nor the total negative slack is worse than at the start of the
-round or of the command, for setup and for hold, in any scene (corner or
-mode). Else the first of the halves, quarters, and so on that does so is
-kept. The moves are listed with the ones the delay model gains most from
-first, so a half keeps the best of them. Moves that are not kept are undone
-and leave the netlist and its constraints as they were. Rounds repeat from
-what was kept until one keeps nothing. A design that meets timing is left as
-it is.
+proposes the moves on a delay model calibrated to STA, and STA decides what
+is kept: the moves are applied, the new cells placed and the design timed,
+and they are kept when the setup slack improves and neither the worst nor
+the total negative slack gets worse, for setup and for hold, in any scene.
+Else the first of the halves, quarters, and so on that does so is kept.
+Moves that are not kept are undone and leave the netlist and its constraints
+as they were. Rounds repeat until one keeps nothing. A design that meets
+timing is left as it is.
 
 Only the register groups whose edge weights changed are rebuilt; every
 other cell keeps its placement. Each new cell is placed at the center of the
 bounding box of the placed cells it connects to, for detailed placement to
-legalize, and a new register with negative slack takes the best of its
-equivalent cells. Estimated parasitics of the nets that changed are
-refreshed. A new cell takes the supply nets of the cell it replaces: a
-supply pin the net of the pin of that name, and a pin with no such name the
-net of the pins of its kind, power or ground. `global_connect` connects any
-that remain. Run `retime` before
-clock tree synthesis and routing. A design is left as it is, with a warning,
-when it has routing, route guides or special wires on a net that is not a
-supply, parasitics read from SPEF, or annotated delays (`read_sdf`,
-`set_assigned_delay`): STA cannot bring those back for a move that is undone.
+legalize, and takes the supply nets of the cell it replaces. A new register
+with negative slack takes the best of its equivalent cells. Run `retime`
+before clock tree synthesis and routing: a design with routing, SPEF
+parasitics or annotated delays is left as it is, with a warning.
 
 Registers move by class, read from the liberty `next_state` function:
 
@@ -56,65 +46,19 @@ Registers move by class, read from the liberty `next_state` function:
   base flip-flop plus logic (inverters, 2-input ANDs and ORs, tie cells)
   computing its `next_state`, named `unmap_*`.
 
-These registers never move:
-
-- latches, scan cells, multi-bit and negative-edge registers, and registers
-  clocked by more than one pin or with a second pin marked as a clock (LEF
-  `USE CLOCK`, liberty `clock : true`);
-- registers with a tri-state output (liberty `three_state`), registers of a
-  cell whose LEF pins are not its liberty pins, and registers whose power
-  pins, or ground pins, are on different nets when a cell `retime` creates
-  has a supply pin of another name;
-- registers with a live asynchronous set or reset, with an input left
-  unconnected or on a net with a second driver (a tri-state bus), or with a
-  data input that is a constant (a tie cell, case analysis) or that a
-  primary input drives with no gate in between;
-- registers marked don't-touch, fixed in place, in a group or a region (a
-  power domain, for example), in a scan chain, with a pin on a don't-touch
-  net, driving a net with a non-default routing rule, or read by a
-  don't-touch cell;
-- registers named by `set_false_path`, `set_multicycle_path` or
-  `set_path_margin`, with a constraint on one of their pins or on a net
-  they drive, with a timing edge that `set_disable_timing` disables, or with
-  the `-reference_pin` of a port delay;
-- registers the SDC names as cells: in the `-from` or `-to` of
-  `set_max_delay`, `set_min_delay` or `group_path`, or in a constraint on
-  the cell such as a derate, unless `-move_sdc_registers` is given;
-- a register chain whose output reaches a primary output, a bidirectional
-  pin, a control pin of another register or a net with a second driver
-  (those read the chain at its current depth), one that meets a second
-  chain from the same gate in a register with two data pins, and a run of
-  more than 256 registers with no gate in between.
-
-Registers that one net feeds and gates read are rebuilt together on one
-clock net and the same supply nets, so such a register also stays when
-another of them stays, is on another clock net or has a supply pin on
-another net. In a hierarchical netlist (`link_design -hier`) a register
-stays inside its module.
-
-These gates are never crossed:
-
-- a gate fed through a register that stays, connected to a primary input or
-  output, driving a control pin of a register, or reachable by registers on
-  different clock nets or different supply nets;
-- a gate that drives or reads a net with a second driver, and a cell that
-  is not a plain combinational gate: a tri-state driver, an isolation cell,
-  a level shifter, a macro, a pad, or a cell without a liberty function;
-- a gate marked don't-touch, driving a don't-touch net or a net with a
-  non-default routing rule, in a group or a region, named by any of
-  those exceptions, with a constraint on one of its pins or on the net it
-  drives (case analysis, for example), or with a timing edge that
-  `set_disable_timing` disables; `-move_sdc_registers` changes none of
-  this.
-
-A register whose set or reset is tied inactive moves as the base flip-flop,
-and the tie cells only it read are removed unless one of the reasons above
-holds them in place. New cells never use a cell whose LEF pins are not its
-liberty pins, a `dont_use` cell or a cell that would be left with an open
-input; an enable or inverting register of one of the last two is unmapped
-when it moves. Tie cells ignore `set_dont_use`, as `repair_tie_fanout` does.
-The design must have one clock defined with `create_clock`; gated copies of
-it are fine.
+Latches, scan cells, negative-edge registers, registers with a live
+asynchronous set or reset, and anything marked don't-touch or fixed never
+move, and neither does a register chain whose output reaches a primary
+output or a control pin of another register (those read the chain at its
+current depth). Registers the SDC names stay too, except those it names only
+as cells in a path delay or a path group when `-move_sdc_registers` is
+given. Registers fed by one net are rebuilt together on one clock net, so a
+register also stays when it shares its input net with one of these or with
+a register on another clock net. A gate fed through such a register,
+connected to a primary input or output, driving a control pin of a register,
+or reachable by registers on different clock nets is never crossed, and only
+plain combinational gates are. The design must have one clock defined with
+`create_clock`; gated copies of it are fine.
 
 ```tcl
 retime
@@ -129,7 +73,7 @@ retime
 | ----- | ----- |
 | `-max_moves` | Stop after this many accepted register moves. `0` means unlimited. Default unlimited. |
 | `-margin` | The slack a move must gain, as a fraction of the clock period. Default `0.002`. |
-| `-move_sdc_registers` | Also move registers that the SDC names as cells in the `-from` or `-to` of a path delay or a path group, or in a constraint on the cell. Whatever names a register that moves is dropped with it. Meant for an SDC that lists every register, as `-to [all_registers]` does; see Limitations. |
+| `-move_sdc_registers` | Also move registers that the SDC names as cells in a path delay or a path group, as `-to [all_registers]` does. Whatever names a register that moves is dropped with it; see Limitations. |
 
 New registers are named `ret_ff_N`, their tie cells `ret_tie_N` and new
 nets `ret_net_N`. The log shows the slack after each round. `retime` stops
@@ -162,33 +106,12 @@ bazelisk test //openroad/ret/...
 works on one clock domain. Initial values of moved registers are not
 computed: the result is equivalent from the reset state only when the moved
 registers have no defined initial value, so verify the result with
-sequential equivalence checking. A scan cell is one with a liberty
-`test_cell` or a LEF `USE SCAN` pin; a scan flip-flop its library marks
-neither way, such as Nangate45 `SDFF_X1`, can be unmapped, which removes the
-scan cell.
+sequential equivalence checking.
 
-An SDC that lists every register (`group_path -to [all_registers]`, or the
-path delays of the asap7 platform constraints) keeps every register in place
-unless `-move_sdc_registers` is given. With that option a register that
-moves leaves those lists, and a constraint on that cell goes with it. A new
-register is in none of them, so the paths that start or end at it are timed
-without that path delay, and `retime` judges its moves without it: a move
-can lengthen a path from an input to a new register past a `set_max_delay`
-that `retime` does not see. Run the commands that build the lists again
-after `retime`, on the retimed netlist. Reading a file that `write_sdc`
-wrote does not do that: it lists the cells by name.
-
-`retime` deletes the cells and nets it replaced when it returns. Undoing it
-afterwards through an ECO opened before the command (`dbDatabase::beginEco`)
-brings them back without the SDC constraints that named them.
-
-STA judges the timing at the time of `retime`, setup and hold, with the
-ideal clocks of that stage; the resizer, clock tree synthesis and detailed
-placement that run afterwards can change it. With several scenes the search
-reads the delays, the slacks and the clock of the current one, and STA
-judges all of them: nothing is proposed for a scene that fails while the
-current one meets timing, and `retime` says so. `set_scene` makes a scene
-the current one.
+With `-move_sdc_registers`, a register that moves leaves the SDC lists that
+named it, and a new register is in none of them: run the commands that build
+those lists again after `retime`. With several scenes the search reads the
+current one, and STA judges all of them.
 
 ## License
 

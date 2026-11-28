@@ -11,4 +11,11 @@ worst slack max -0.2427
 [INFO RET-0053] Retime: slides 2, rounds 1, WNS -0.2424, TNS -0.4230, registers 5, placed 0, resized 0.
 worst slack max -0.2424
 Retime output passed/skipped sequential equivalence test
-No differences found.
+ret_ff_6 sky130_fd_sc_hd__dfxtp_1 top: D=unmap_net_2 Q=ret_net_6 (unmap_or_5/A) CLK=clk
+ret_ff_7 sky130_fd_sc_hd__dfxtp_1 top: D=unmap_net_3 Q=ret_net_7 (unmap_and_4/B) CLK=clk
+unmap_and_2 sky130_fd_sc_hd__and2_0 top: A=dd B=da X=unmap_net_2 (ret_ff_6/D)
+unmap_and_4 sky130_fd_sc_hd__and2_0 top: A=unmap_state_1 B=ret_net_7 X=unmap_net_4 (unmap_or_5/B)
+unmap_ff_1 sky130_fd_sc_hd__dfxtp_1 top: D=unmap_net_5 Q=unmap_state_1 (g2/A unmap_and_4/A) CLK=clk
+unmap_inv_3 sky130_fd_sc_hd__clkinv_1 top: A=da Y=unmap_net_3 (ret_ff_7/D)
+unmap_or_5 sky130_fd_sc_hd__or2_0 top: A=ret_net_6 B=unmap_net_4 X=unmap_net_5 (unmap_ff_1/D)
+instances 17, nets 22

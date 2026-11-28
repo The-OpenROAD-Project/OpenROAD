@@ -27,22 +27,10 @@ library (retime_supply_bias) {
 
   cell (BDFF_X1) {
     area : 4.00;
-    pg_pin (VPWR) {
-      voltage_name : VPWR;
-      pg_type : primary_power;
-    }
-    pg_pin (VPB) {
-      voltage_name : VPB;
-      pg_type : primary_power;
-    }
-    pg_pin (VGND) {
-      voltage_name : VGND;
-      pg_type : primary_ground;
-    }
-    ff ("IQ", "IQN") {
-      clocked_on : "CK";
-      next_state : "D";
-    }
+    pg_pin (VPWR) { voltage_name : VPWR; pg_type : primary_power; }
+    pg_pin (VPB) { voltage_name : VPB; pg_type : primary_power; }
+    pg_pin (VGND) { voltage_name : VGND; pg_type : primary_ground; }
+    ff ("IQ", "IQN") { clocked_on : "CK"; next_state : "D"; }
     pin (D) {
       direction : input;
       capacitance : 1.0;
@@ -59,11 +47,7 @@ library (retime_supply_bias) {
         fall_constraint (scalar) { values ("0.00"); }
       }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 1.0;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 1.0; }
     pin (Q) {
       direction : output;
       function : "IQ";
@@ -81,22 +65,10 @@ library (retime_supply_bias) {
 
   cell (BINV_X1) {
     area : 1.00;
-    pg_pin (VPWR) {
-      voltage_name : VPWR;
-      pg_type : primary_power;
-    }
-    pg_pin (VPB) {
-      voltage_name : VPB;
-      pg_type : primary_power;
-    }
-    pg_pin (VGND) {
-      voltage_name : VGND;
-      pg_type : primary_ground;
-    }
-    pin (A) {
-      direction : input;
-      capacitance : 1.0;
-    }
+    pg_pin (VPWR) { voltage_name : VPWR; pg_type : primary_power; }
+    pg_pin (VPB) { voltage_name : VPB; pg_type : primary_power; }
+    pg_pin (VGND) { voltage_name : VGND; pg_type : primary_ground; }
+    pin (A) { direction : input; capacitance : 1.0; }
     pin (ZN) {
       direction : output;
       function : "!A";
@@ -114,26 +86,11 @@ library (retime_supply_bias) {
 
   cell (BAND2_X1) {
     area : 2.00;
-    pg_pin (VPWR) {
-      voltage_name : VPWR;
-      pg_type : primary_power;
-    }
-    pg_pin (VPB) {
-      voltage_name : VPB;
-      pg_type : primary_power;
-    }
-    pg_pin (VGND) {
-      voltage_name : VGND;
-      pg_type : primary_ground;
-    }
-    pin (A1) {
-      direction : input;
-      capacitance : 1.0;
-    }
-    pin (A2) {
-      direction : input;
-      capacitance : 1.0;
-    }
+    pg_pin (VPWR) { voltage_name : VPWR; pg_type : primary_power; }
+    pg_pin (VPB) { voltage_name : VPB; pg_type : primary_power; }
+    pg_pin (VGND) { voltage_name : VGND; pg_type : primary_ground; }
+    pin (A1) { direction : input; capacitance : 1.0; }
+    pin (A2) { direction : input; capacitance : 1.0; }
     pin (ZN) {
       direction : output;
       function : "(A1 & A2)";
@@ -159,26 +116,11 @@ library (retime_supply_bias) {
 
   cell (BOR2_X1) {
     area : 2.00;
-    pg_pin (VPWR) {
-      voltage_name : VPWR;
-      pg_type : primary_power;
-    }
-    pg_pin (VPB) {
-      voltage_name : VPB;
-      pg_type : primary_power;
-    }
-    pg_pin (VGND) {
-      voltage_name : VGND;
-      pg_type : primary_ground;
-    }
-    pin (A1) {
-      direction : input;
-      capacitance : 1.0;
-    }
-    pin (A2) {
-      direction : input;
-      capacitance : 1.0;
-    }
+    pg_pin (VPWR) { voltage_name : VPWR; pg_type : primary_power; }
+    pg_pin (VPB) { voltage_name : VPB; pg_type : primary_power; }
+    pg_pin (VGND) { voltage_name : VGND; pg_type : primary_ground; }
+    pin (A1) { direction : input; capacitance : 1.0; }
+    pin (A2) { direction : input; capacitance : 1.0; }
     pin (ZN) {
       direction : output;
       function : "(A1 | A2)";
@@ -204,41 +146,17 @@ library (retime_supply_bias) {
 
   cell (BTIEH_X1) {
     area : 1.00;
-    pg_pin (VPWR) {
-      voltage_name : VPWR;
-      pg_type : primary_power;
-    }
-    pg_pin (VPB) {
-      voltage_name : VPB;
-      pg_type : primary_power;
-    }
-    pg_pin (VGND) {
-      voltage_name : VGND;
-      pg_type : primary_ground;
-    }
-    pin (Z) {
-      direction : output;
-      function : "1";
-    }
+    pg_pin (VPWR) { voltage_name : VPWR; pg_type : primary_power; }
+    pg_pin (VPB) { voltage_name : VPB; pg_type : primary_power; }
+    pg_pin (VGND) { voltage_name : VGND; pg_type : primary_ground; }
+    pin (Z) { direction : output; function : "1"; }
   }
 
   cell (BTIEL_X1) {
     area : 1.00;
-    pg_pin (VPWR) {
-      voltage_name : VPWR;
-      pg_type : primary_power;
-    }
-    pg_pin (VPB) {
-      voltage_name : VPB;
-      pg_type : primary_power;
-    }
-    pg_pin (VGND) {
-      voltage_name : VGND;
-      pg_type : primary_ground;
-    }
-    pin (Z) {
-      direction : output;
-      function : "0";
-    }
+    pg_pin (VPWR) { voltage_name : VPWR; pg_type : primary_power; }
+    pg_pin (VPB) { voltage_name : VPB; pg_type : primary_power; }
+    pg_pin (VGND) { voltage_name : VGND; pg_type : primary_ground; }
+    pin (Z) { direction : output; function : "0"; }
   }
 }

@@ -9,4 +9,5 @@ worst slack max -0.0580
 [INFO RET-0053] Retime: slides 1, rounds 1, WNS 0.0001, TNS 0.0000, registers 3, placed 0, resized 0.
 worst slack max 0.0001
 Retime output passed/skipped sequential equivalence test
-No differences found.
+ret_ff_1 DFF_X1 top: D=x0 CK=clk Q=ret_net_1 (i1/A)
+instances 18, nets 21

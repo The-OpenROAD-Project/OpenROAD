@@ -3,6 +3,7 @@
 # equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
+source "ret_report.tcl"
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef
 read_liberty sky130hd/sky130hd_tt.lib
@@ -17,6 +18,4 @@ report_worst_slack -max -digits 4
 run_dsec_test retime_dsec_deep -liberty_files sky130hd/sky130hd_tt.lib \
   -clock clk -resetn rst_n
 
-set v_file [make_result_file retime_dsec_deep.v]
-write_verilog $v_file
-diff_files retime_dsec_deep.vok $v_file
+report_new_cells

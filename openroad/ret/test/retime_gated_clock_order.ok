@@ -1,9 +1,0 @@
-[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO RET-0014] Retiming graph: 14 gates, 11 edges, 4 registers, 5 pinned gates, 0 fenced registers.
- Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
----------------------------------------------------------------------------
- start |          |        |      |     -0.0629 |       -0.1132 |         4
-     1 |        7 |      1 |    7 |     -0.0297 |       -0.0594 |         4
----------------------------------------------------------------------------
-[INFO RET-0053] Retime: slides 7, rounds 1, WNS -0.0297, TNS -0.0594, registers 4, placed 0, resized 0.
-No differences found.

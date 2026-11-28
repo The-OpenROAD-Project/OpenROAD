@@ -11,4 +11,7 @@ tns max -0.4511
 [INFO RET-0053] Retime: slides 9, rounds 1, WNS -0.1372, TNS -0.1778, registers 5, placed 0, resized 0.
 worst slack max -0.1372
 tns max -0.1778
-No differences found.
+ret_ff_1 sky130_fd_sc_hd__dfxtp_1 top: D=n9 Q=ret_net_1 (g10/A) CLK=clk
+instances 31, nets 36
+r3: stays
+r4: stays

@@ -24,7 +24,10 @@ worst slack max -0.0721
 tns max -0.0900
 r4: DFF_X1
 r5: DFF_X1
-unmap cells: unmap_ff_0 unmap_inv_2
 path group lists r4: 1
 Retime output passed/skipped sequential equivalence test
-No differences found.
+ret_ff_0 DFF_X1 top: D=d3 CK=clk Q=ret_net_0 (g8/A)
+ret_ff_8 DFF_X1 top: D=n3 CK=clk Q=ret_net_9 (g5/A)
+unmap_ff_0 DFF_X1 top: D=unmap_state_1 CK=clk Q=q6 (unmap_inv_2/A)
+unmap_inv_2 BUF_X1 top: A=q6 Z=z (z)
+instances 23, nets 29

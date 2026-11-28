@@ -1,4 +1,16 @@
-// Two registers on two clock ports.
+// comb: combinational only, a clock port and no register.  top: two
+// registers on two clock ports.
+module comb (a, b, clk, y);
+  input a;
+  input b;
+  input clk;
+  output y;
+  wire n0;
+
+  AND2_X1 g0 (.A1(a), .A2(b), .ZN(n0));
+  INV_X1 g1 (.A(n0), .ZN(y));
+endmodule
+
 module top (a, clk1, clk2, y);
   input a;
   input clk1;

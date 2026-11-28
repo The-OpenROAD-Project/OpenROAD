@@ -13,4 +13,16 @@ worst slack max -0.1785
 [INFO RET-0053] Retime: slides 5, rounds 2, WNS 0.0162, TNS 0.0000, registers 6, placed 0, resized 0.
 worst slack max 0.0162
 Retime output passed/skipped sequential equivalence test
-No differences found.
+u_core/ret_ff_11 sky130_fd_sc_hd__dfxtp_1 core: D=u_core/m2 Q=u_core/ret_net_11 (u_core/g12/A) CLK=clk
+u_core/ret_ff_13 sky130_fd_sc_hd__dfxtp_1 core: D=u_core/unmap_net_5 Q=u_core/ret_net_13 (u_core/unmap_and_4/A) CLK=clk
+u_core/ret_ff_14 sky130_fd_sc_hd__dfxtp_1 core: D=u_core/unmap_net_10 Q=u_core/ret_net_14 (u_core/unmap_and_9/A) CLK=clk
+u_core/ret_ff_15 sky130_fd_sc_hd__edfxtp_1 core: D=u_core/n3 DE=en Q=u_core/ret_net_15 (u_core/g5/A) CLK=clk
+u_core/unmap_and_2 sky130_fd_sc_hd__and2_0 core: A=u_core/d4 B=en2 X=u_core/unmap_net_2 (u_core/unmap_or_5/A)
+u_core/unmap_and_4 sky130_fd_sc_hd__and2_0 core: A=u_core/ret_net_13 B=u_core/unmap_net_3 X=u_core/unmap_net_4 (u_core/unmap_or_5/B)
+u_core/unmap_and_7 sky130_fd_sc_hd__and2_0 core: A=u_core/d6 B=en X=u_core/unmap_net_7 (u_core/unmap_or_10/A)
+u_core/unmap_and_9 sky130_fd_sc_hd__and2_0 core: A=u_core/ret_net_14 B=u_core/unmap_net_8 X=u_core/unmap_net_9 (u_core/unmap_or_10/B)
+u_core/unmap_inv_3 sky130_fd_sc_hd__clkinv_1 core: A=en2 Y=u_core/unmap_net_3 (u_core/unmap_and_4/B)
+u_core/unmap_inv_8 sky130_fd_sc_hd__clkinv_1 core: A=en Y=u_core/unmap_net_8 (u_core/unmap_and_9/B)
+u_core/unmap_or_10 sky130_fd_sc_hd__or2_0 core: A=u_core/unmap_net_7 B=u_core/unmap_net_9 X=u_core/unmap_net_10 (u_core/g10/B u_core/ret_ff_14/D)
+u_core/unmap_or_5 sky130_fd_sc_hd__or2_0 core: A=u_core/unmap_net_2 B=u_core/unmap_net_4 X=u_core/unmap_net_5 (u_core/g10/A u_core/ret_ff_13/D)
+instances 37, nets 45

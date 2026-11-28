@@ -1,4 +1,0 @@
-[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
-[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 4 pinned gates, 0 fenced registers.
-[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0503, TNS -0.0503, registers 2, placed 0, resized 0.

@@ -4,7 +4,7 @@
 //           DFF_X1, and the tie cells that only they read are removed.
 //   cone 2  r4 has RN tied high and is read through QN: a cell with a reset
 //           does not keep its class, so r4 is unmapped to a DFF_X1 plus an
-//           inverter before it slides.
+//           inverter before it slides across the buffer and the inverters.
 //   cone 3  r6 is reset by rst_n: it stays.
 // rst_n is also a synchronous reset in logic, so every register settles to a
 // defined value for the sequential equivalence check.
@@ -43,7 +43,7 @@ module top (a, b, c, e, rst_n, clk, y, z, w);
 
   AND2_X1 g10 (.A1(c), .A2(rst_n), .ZN(d4));
   DFFR_X1 r4 (.D(d4), .RN(hi4), .CK(clk), .QN(q4n));
-  INV_X1 g11 (.A(q4n), .ZN(m1));
+  BUF_X1 g11 (.A(q4n), .Z(m1));
   INV_X1 g12 (.A(m1), .ZN(m2));
   INV_X1 g13 (.A(m2), .ZN(m3));
   INV_X1 g14 (.A(m3), .ZN(m4));

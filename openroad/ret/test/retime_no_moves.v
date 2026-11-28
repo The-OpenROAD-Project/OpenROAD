@@ -1,5 +1,6 @@
 // The only register sits between a gate fed by inputs and a gate driving an
-// output; neither gate may be crossed, so retime finds no slides.
+// output.  A forward move would cross the gate driving the output, which is
+// never crossed, so retime finds no slides.
 module top (a, b, clk, y);
   input a;
   input b;

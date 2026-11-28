@@ -1,0 +1,80 @@
+*SPEF "IEEE 1481-1998"
+*DESIGN "top"
+*DATE "Thu Nov 26 00:00:00 2026"
+*VENDOR "OpenROAD"
+*PROGRAM "retime_routed test"
+*VERSION "1.0"
+*DESIGN_FLOW "PIN_CAP NONE" "NAME_SCOPE LOCAL"
+*DIVIDER /
+*DELIMITER :
+*BUS_DELIMITER [ ]
+*T_UNIT 1 NS
+*C_UNIT 1 FF
+*R_UNIT 1 OHM
+*L_UNIT 1 HENRY
+
+*D_NET n0 8.0
+*CONN
+*I g0:ZN O
+*I r1:D I
+*CAP
+1 g0:ZN 4.0
+2 r1:D 4.0
+*RES
+1 g0:ZN r1:D 500.0
+*END
+
+*D_NET q1 8.0
+*CONN
+*I r1:Q O
+*I g1:A I
+*CAP
+1 r1:Q 4.0
+2 g1:A 4.0
+*RES
+1 r1:Q g1:A 500.0
+*END
+
+*D_NET n1 8.0
+*CONN
+*I g1:ZN O
+*I g2:A I
+*CAP
+1 g1:ZN 4.0
+2 g2:A 4.0
+*RES
+1 g1:ZN g2:A 500.0
+*END
+
+*D_NET n2 8.0
+*CONN
+*I g2:ZN O
+*I g3:A I
+*CAP
+1 g2:ZN 4.0
+2 g3:A 4.0
+*RES
+1 g2:ZN g3:A 500.0
+*END
+
+*D_NET n3 8.0
+*CONN
+*I g3:ZN O
+*I g4:A I
+*CAP
+1 g3:ZN 4.0
+2 g4:A 4.0
+*RES
+1 g3:ZN g4:A 500.0
+*END
+
+*D_NET n4 8.0
+*CONN
+*I g4:ZN O
+*I r2:D I
+*CAP
+1 g4:ZN 4.0
+2 r2:D 4.0
+*RES
+1 g4:ZN r2:D 500.0
+*END

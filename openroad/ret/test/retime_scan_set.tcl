@@ -1,6 +1,7 @@
 # A scan flop and a register with a live asynchronous set never move, even
 # on failing paths; the same path behind a plain register slides (sky130hd).
 source "helpers.tcl"
+source "ret_report.tcl"
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef
 read_liberty sky130hd/sky130hd_tt.lib
@@ -17,6 +18,5 @@ foreach name {r1 r3} {
   puts "$name [[$inst getMaster] getName]"
 }
 
-set v_file [make_result_file retime_scan_set.v]
-write_verilog $v_file
-diff_files retime_scan_set.vok $v_file
+report_new_cells
+report_kept {r1 r3}

@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "SequentialUnmapper.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
@@ -25,8 +26,8 @@ namespace ret {
 // Fixture for the SequentialUnmapper unit tests.
 //
 // Tests load their own hand-made library pair(s) with setUpChipForTest,
-// build a tiny netlist with the tst::Fixture builders, run the unmapper,
-// then check the result two ways:
+// build a tiny netlist with makeCell and the port builders, run the
+// unmapper, then check the result two ways:
 //   - explicit structural asserts (cell counts, which pin a port sits on);
 //   - expectSameFunction: a truth-table comparison of the logic cone feeding
 //     the base flop's D pin against the original cell's liberty next_state.
@@ -35,12 +36,11 @@ namespace ret {
 class SequentialUnmapperFixture : public tst::Fixture
 {
  public:
-  using LibPair = std::pair<const char*, const char*>;  // (lef, lib)
-  using LeafNets = std::map<std::string, odb::dbNet*>;  // liberty pin -> net
+  using LibPair = std::pair<const char*, const char*>;   // (lef, lib)
+  using LeafNames = std::map<std::string, std::string>;  // liberty pin -> net
   // odb deletes std::less on dbObject*, hence the unordered map.
   using NetValues = std::unordered_map<odb::dbNet*, int>;
   using LeafValue = std::function<int(const sta::LibertyPort*)>;
-  using ExpectedFn = std::function<int(const LeafValue&)>;
 
   // Library pairs shared by the test files; the first LEF loaded creates
   // the tech, later LEFs are macros-only.
@@ -56,7 +56,7 @@ class SequentialUnmapperFixture : public tst::Fixture
   // No plain flip-flop; self-contained, so it is loaded alone.
   static constexpr LibPair kAsyncOnly{"sequnmap_async_only.lef",
                                       "sequnmap_async_only.lib"};
-  // kBasic plus flops with two outputs; self-contained, so it is loaded alone.
+  // Flops with two outputs, layered on kBasic.
   static constexpr LibPair kTwoOutputs{"sequnmap_two_outputs.lef",
                                        "sequnmap_two_outputs.lib"};
 
@@ -104,6 +104,26 @@ class SequentialUnmapperFixture : public tst::Fixture
     tst::BTermOptions options;
     options.io_type = odb::dbIoType::OUTPUT;
     makeBTerm(block_, name, options);
+  }
+
+  // An instance of `master` with each listed pin on the named net.
+  odb::dbInst* makeCell(const char* master,
+                        const char* name,
+                        const std::vector<tst::InstOptions::ITermInfo>& iterms)
+  {
+    tst::InstOptions options;
+    options.iterms = iterms;
+    return makeInst(block_, getDb()->findMaster(master), name, options);
+  }
+
+  // Unmaps every register it can; `unmapped` of them must be. Call wrapped
+  // in ASSERT_NO_FATAL_FAILURE.
+  void unmapAll(const int unmapped)
+  {
+    SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
+    ASSERT_TRUE(unmapper.prepare()) << "no base register or no inverter found";
+    EXPECT_EQ(unmapper.run(), unmapped);
+    expectSane();
   }
 
   // ---- netlist queries -----------------------------------------------------
@@ -237,14 +257,22 @@ class SequentialUnmapperFixture : public tst::Fixture
     });
   }
 
-  // Truth-table check: `net` must compute expected(leaf) for every
-  // assignment of the leaf nets and the state bit.
-  void expectNetFunction(odb::dbNet* net,
-                         const sta::Sequential* seq,
-                         const LeafNets& leaf_nets,
-                         odb::dbNet* state_net,
-                         const ExpectedFn& expected) const
+  // Truth-table check: the D cone of `base` must compute the next_state of
+  // `cell` for every value of the leaf nets and of the state, base's Q.
+  void expectSameFunction(odb::dbInst* base,
+                          const char* cell,
+                          const LeafNames& leaf_names) const
   {
+    ASSERT_NE(base, nullptr);
+    const sta::Sequential* seq = sequentialOf(cell);
+    ASSERT_NE(seq, nullptr);
+    std::map<std::string, odb::dbNet*> leaf_nets;
+    for (const auto& [pin, net_name] : leaf_names) {
+      leaf_nets[pin] = block_->findNet(net_name.c_str());
+      ASSERT_NE(leaf_nets[pin], nullptr) << net_name;
+    }
+    odb::dbNet* d_net = base->findITerm("D")->getNet();
+    odb::dbNet* state_net = base->findITerm("Q")->getNet();
     const std::vector<std::pair<std::string, odb::dbNet*>> leaves(
         leaf_nets.begin(), leaf_nets.end());
     const int n = static_cast<int>(leaves.size());
@@ -274,21 +302,10 @@ class SequentialUnmapperFixture : public tst::Fixture
         }
         return values.at(it->second);
       };
-      EXPECT_EQ(evalNet(net, values), expected(leaf))
-          << "net " << net->getName() << " differs from expected at " << row;
+      EXPECT_EQ(evalNet(d_net, values), evalFunc(seq->data(), leaf))
+          << "net " << d_net->getName() << " differs from next_state at "
+          << row;
     }
-  }
-
-  // The base flop's D cone must equal the cell's next_state.
-  void expectSameFunction(odb::dbNet* d_net,
-                          const sta::Sequential* seq,
-                          const LeafNets& leaf_nets,
-                          odb::dbNet* state_net) const
-  {
-    expectNetFunction(
-        d_net, seq, leaf_nets, state_net, [&](const LeafValue& leaf) {
-          return evalFunc(seq->data(), leaf);
-        });
   }
 
   // Netlist and timing-graph consistency: both return the number of new

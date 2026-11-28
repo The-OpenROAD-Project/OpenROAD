@@ -1,13 +1,21 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
-worst slack max -0.0486
-[INFO RET-0014] Retiming graph: 17 gates, 15 edges, 5 registers, 9 pinned gates, 0 fenced registers.
+worst slack max -0.0885
+[INFO RET-0014] Retiming graph: 42 gates, 37 edges, 13 registers, 21 pinned gates, 0 fenced registers.
+[INFO RET-0008] Unmapped 4 registers.
  Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
 ---------------------------------------------------------------------------
- start |          |        |      |     -0.0486 |       -0.0738 |         5
-     1 |        6 |      1 |    6 |     -0.0251 |       -0.0251 |         4
+ start |          |        |      |     -0.0885 |       -0.2593 |        13
+     1 |       17 |      1 |   17 |     -0.0251 |       -0.0633 |        10
 ---------------------------------------------------------------------------
-[INFO RET-0053] Retime: slides 6, rounds 1, WNS -0.0251, TNS -0.0251, registers 4, placed 0, resized 0.
+[INFO RET-0053] Retime: slides 17, rounds 1, WNS -0.0251, TNS -0.0633, registers 10, placed 0, resized 0.
 worst slack max -0.0251
 Retime output passed/skipped sequential equivalence test
-No differences found.
+u_core/ret_ff_9 DFF_X1 core: D=u_core/n6 CK=clk Q=u_core/ret_net_9 (u_core/g8/A1)
+u_mid/u_a/ret_ff_10 DFF_X1 leaf_a: D=u_mid/u_a/n4 CK=clk Q=u_mid/u_a/ret_net_10 (u_mid/u_a/g6/A)
+u_mid/u_a/unmap_inv_2 INV_X1 leaf_a: A=u_mid/u_a/d1 ZN=u_mid/u_a/unmap_net_2 (u_mid/u_a/g2/A1)
+u_mid/u_a/unmap_inv_4 INV_X1 leaf_a: A=u_mid/u_a/d2 ZN=u_mid/u_a/unmap_net_4 (u_mid/u_a/g2/A2)
+u_mid/u_b/ret_ff_11 DFF_X1 leaf_b: D=u_mid/u_b/n3 CK=clk Q=u_mid/u_b/ret_net_11 (u_mid/u_b/g5/A)
+u_mid/u_b/unmap_inv_6 INV_X1 leaf_b: A=u_mid/u_b/d1 ZN=u_mid/u_b/unmap_net_6 (u_mid/u_b/g2/A1)
+u_mid/u_b/unmap_inv_8 INV_X1 leaf_b: A=u_mid/u_b/d2 ZN=u_mid/u_b/unmap_net_8 (u_mid/u_b/g2/A2)
+instances 56, nets 66

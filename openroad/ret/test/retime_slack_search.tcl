@@ -3,6 +3,7 @@
 # it better.  Proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
+source "ret_report.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog retime_dsec_plain.v
@@ -15,9 +16,7 @@ create_clock -period 0.15 clk
 # Placed in one row, in path order, 5 microns apart.
 set x 5
 foreach name {g0 g1 r1 r2 g2 g3 g4 g5 g6 g7 g8 r3 g9} {
-  set inst [[ord::get_db_block] findInst $name]
-  $inst setLocation [ord::microns_to_dbu $x] [ord::microns_to_dbu 2.8]
-  $inst setPlacementStatus PLACED
+  place_inst -name $name -location "$x 2.8"
   incr x 5
 }
 set_wire_rc -resistance 1.0e-03 -capacitance 1.0e-05
@@ -32,13 +31,7 @@ retime
 estimate_parasitics -placement
 report_worst_slack -max -digits 4
 report_tns -digits 4
-set unplaced 0
-foreach inst [[ord::get_db_block] getInsts] {
-  if { ![$inst isPlaced] } {
-    incr unplaced
-  }
-}
-puts "unplaced instances: $unplaced"
+report_unplaced
 foreach inst [[ord::get_db_block] getInsts] {
   if { [string match "ret_ff*" [$inst getName]] } {
     lassign [$inst getLocation] x y
@@ -49,6 +42,4 @@ run_dsec_test retime_slack_search \
   -liberty_files Nangate45/Nangate45_typ.lib \
   -clock clk -resetn rst_n
 
-set v_file [make_result_file retime_slack_search.v]
-write_verilog $v_file
-diff_files retime_slack_search.vok $v_file
+report_new_cells

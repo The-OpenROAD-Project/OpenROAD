@@ -3,9 +3,6 @@
 //   cone 1  r1 (DFF_X1) -> inverters -> r2: r1 slides forward.
 //   cone 2  rg (DFFG_X1) -> inverters -> r3: rg never moves, so the
 //           inverters behind it are never crossed.
-// rst_n is a synchronous reset in logic and the gate enable is forced on
-// while it is asserted, so every register settles to a defined value for the
-// sequential equivalence check.
 module top (a, b, en_i, rst_n, clk, y, z);
   input a;
   input b;

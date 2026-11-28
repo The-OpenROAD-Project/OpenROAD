@@ -11,10 +11,7 @@ library (retime_gated_clock_expr) {
 
   cell (DFFG_X1) {
     area : 4.522;
-    ff (IQ, IQN) {
-      next_state : "D";
-      clocked_on : "CK & EN";
-    }
+    ff (IQ, IQN) { next_state : "D"; clocked_on : "CK & EN"; }
     pin (D) {
       direction : input;
       capacitance : 1.14;
@@ -31,15 +28,8 @@ library (retime_gated_clock_expr) {
         fall_constraint (scalar) { values ("0.01"); }
       }
     }
-    pin (CK) {
-      direction : input;
-      clock : true;
-      capacitance : 0.95;
-    }
-    pin (EN) {
-      direction : input;
-      capacitance : 0.95;
-    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.95; }
+    pin (EN) { direction : input; capacitance : 0.95; }
     pin (Q) {
       direction : output;
       function : "IQ";

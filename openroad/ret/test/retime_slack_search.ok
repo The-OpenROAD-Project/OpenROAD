@@ -20,4 +20,5 @@ tns max 0.0000
 unplaced instances: 0
 ret_ff_1 at 51.265 2.8
 Retime output passed/skipped sequential equivalence test
-No differences found.
+ret_ff_1 DFF_X1 top: D=n6 CK=clk Q=ret_net_1 (g8/A1)
+instances 12, nets 16

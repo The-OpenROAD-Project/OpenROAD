@@ -3,8 +3,9 @@
 # would move across g20 as one class and the new register would have no
 # enable net to connect.  Both stay, g20 is never crossed, and the plain
 # cone is retimed.  The floating DE makes sequential equivalence
-# meaningless, so the netlist is compared with a golden one.
+# meaningless, so the test reports the new cells instead.
 source "helpers.tcl"
+source "ret_report.tcl"
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef
 read_liberty sky130hd/sky130hd_tt.lib
@@ -18,6 +19,5 @@ retime
 report_worst_slack -max -digits 4
 report_tns -digits 4
 
-set v_file [make_result_file retime_open_input.v]
-write_verilog $v_file
-diff_files retime_open_input.vok $v_file
+report_new_cells
+report_kept {r3 r4}

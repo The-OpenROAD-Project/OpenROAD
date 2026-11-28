@@ -11,6 +11,7 @@
 # result is proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
+source "ret_report.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog retime_dsec_existing_names.v
@@ -21,23 +22,18 @@ initialize_floorplan -die_area "0 0 3500 20" \
 create_clock -period 0.16 clk
 set_input_delay -0.02 -clock clk [delete_from_list [all_inputs] [get_ports clk]]
 
-proc place_inst { name x } {
-  set inst [[ord::get_db_block] findInst $name]
-  $inst setLocation [ord::microns_to_dbu $x] [ord::microns_to_dbu 2.8]
-  $inst setPlacementStatus PLACED
-}
 # Placed locations in microns: cone 1 120 microns apart, cone 2 1900
 # microns past g10 and g11.
 set x 10
 foreach name {g0 g1 r1 r2 g2 g3 g4 g5 g6 g7 ret_ff_0 g8} {
-  place_inst $name $x
+  place_inst -name $name -location "$x 2.8"
   incr x 120
 }
-place_inst g10 1450
-place_inst g11 1455
+place_inst -name g10 -location "1450 2.8"
+place_inst -name g11 -location "1455 2.8"
 set x 3360
 foreach name {r4 r5 g12 g13 g14 g15 g16 g17 unmap_ff_0 unmap_inv_2} {
-  place_inst $name $x
+  place_inst -name $name -location "$x 2.8"
   incr x 5
 }
 set_wire_rc -resistance 4.0e-02 -capacitance 1.0e-05
@@ -62,13 +58,6 @@ foreach name {r4 r5} {
     puts "$name: [[$inst getMaster] getName]"
   }
 }
-set unmap_cells {}
-foreach inst [$block getInsts] {
-  if { [string match "unmap_*" [$inst getName]] } {
-    lappend unmap_cells [$inst getName]
-  }
-}
-puts "unmap cells: [lsort $unmap_cells]"
 set sdc_file [make_result_file retime_sta_unmap_undo.sdc]
 write_sdc $sdc_file
 set stream [open $sdc_file r]
@@ -79,6 +68,4 @@ puts "path group lists r4: [regexp {{r4}} $path_group]"
 run_dsec_test retime_sta_unmap_undo \
   -liberty_files Nangate45/Nangate45_typ.lib -clock clk -resetn rst_n
 
-set v_file [make_result_file retime_sta_unmap_undo.v]
-write_verilog $v_file
-diff_files retime_sta_unmap_undo.vok $v_file
+report_new_cells

@@ -13,4 +13,7 @@ worst slack max -0.1474
 [INFO RET-0053] Retime: slides 6, rounds 1, WNS 0.0064, TNS 0.0000, registers 2, placed 0, resized 0.
 worst slack max 0.0064
 Retime output passed/skipped sequential equivalence test
-No differences found.
+u_core/ret_ff_4 sg13g2_dfrbp_1 core: CLK=clk RESET_B=u_core/ret_net_5 D=u_core/n5 Q=u_core/ret_net_4 (u_core/g7/A)
+u_core/ret_tie_5 sg13g2_tiehi core: L_HI=u_core/ret_net_5 (u_core/ret_ff_4/RESET_B)
+u_core/unmap_inv_3 sg13g2_inv_1 core: Y=u_core/unmap_net_3 (u_core/g2/A) A=u_core/d1
+instances 15, nets 19

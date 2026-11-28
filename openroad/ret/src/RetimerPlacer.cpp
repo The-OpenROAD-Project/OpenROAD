@@ -145,6 +145,7 @@ std::vector<odb::dbMaster*> RetimerPlacer::findEquivalentMasters(
   std::ranges::stable_sort(
       by_area, [](const auto& a, const auto& b) { return a.first < b.first; });
   std::vector<odb::dbMaster*> masters;
+  masters.reserve(by_area.size());
   for (const auto& [area, other_master] : by_area) {
     masters.push_back(other_master);
   }

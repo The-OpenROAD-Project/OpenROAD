@@ -1,6 +1,11 @@
-# One clock with a gated copy: retime runs, the gated chain is retimed with its
-# new register on the gated net, and the gate fed from both clock nets is pinned.
+# One clock with a gated copy: retime runs, and each new register is on the
+# clock net of the register it replaces, the gated one for the gated chains,
+# also when it moves more than one gate deep and when that register is
+# removed before its replacement is made.  A gate fed from both clock nets
+# is pinned, and so are the gates fed from a net whose registers are on two
+# clock nets.
 source "helpers.tcl"
+source "ret_report.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog retime_gated_clock.v
@@ -9,6 +14,4 @@ create_clock -period 0.1 clk
 
 retime
 
-set v_file [make_result_file retime_gated_clock.v]
-write_verilog $v_file
-diff_files retime_gated_clock.vok $v_file
+report_new_cells
