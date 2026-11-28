@@ -60,18 +60,20 @@ FenceRect FenceRegion::nearestRect(int cx, int cy) const
 // Constructor
 // ===========================================================================
 
-NegotiationLegalizer::NegotiationLegalizer(Opendp* opendp,
-                                           odb::dbDatabase* db,
+NegotiationLegalizer::NegotiationLegalizer(odb::dbDatabase* db,
                                            utl::Logger* logger,
                                            const NegotiationOptions& options,
-                                           DplObserver* debug_observer,
-                                           Network* network)
-    : opendp_(opendp),
-      db_(db),
+                                           Grid* grid,
+                                           PlacementDRC* drc_engine,
+                                           const LegalSiteFinder& site_finder,
+                                           Network* network,
+                                           DplObserver* debug_observer)
+    : db_(db),
       logger_(logger),
       options_(options),
-      dpl_grid_(opendp ? opendp->grid_.get() : nullptr),
-      drc_engine_(opendp ? opendp->drc_engine_.get() : nullptr),
+      dpl_grid_(grid),
+      drc_engine_(drc_engine),
+      site_finder_(site_finder),
       debug_observer_(debug_observer),
       network_(network)
 {
@@ -359,7 +361,7 @@ void NegotiationLegalizer::commitNegotiationPosToDpl()
 
 bool NegotiationLegalizer::initFromDb()
 {
-  if (db_->getChip() == nullptr || !opendp_ || !dpl_grid_) {
+  if (db_->getChip() == nullptr || !dpl_grid_ || !network_) {
     return false;
   }
   auto* block = db_->getChip()->getBlock();
@@ -417,7 +419,8 @@ bool NegotiationLegalizer::initFromDb()
 
     if (cell.fixed) {
       // Cover the oriented footprint at its actual location.
-      const auto footprint = dpl_grid->gridCovering(opendp_->getBbox(db_inst));
+      const auto footprint
+          = dpl_grid->gridCovering(network_->instBBox(db_inst));
       cell.init_x = footprint.xlo.v;
       cell.init_y = footprint.ylo.v;
       cell.width = footprint.xhi.v - footprint.xlo.v;
@@ -769,7 +772,7 @@ void NegotiationLegalizer::addUsage(int cell_idx, int delta)
 
 void NegotiationLegalizer::syncCellToDplGrid(int cell_idx)
 {
-  if (!opendp_ || !dpl_grid_ || !network_) {
+  if (!dpl_grid_ || !network_) {
     return;
   }
   const NegCell& neg_cell = cells_[cell_idx];
@@ -800,7 +803,7 @@ void NegotiationLegalizer::syncCellToDplGrid(int cell_idx)
 
 void NegotiationLegalizer::eraseCellFromDplGrid(int cell_idx)
 {
-  if (!opendp_ || !dpl_grid_ || !network_) {
+  if (!dpl_grid_ || !network_) {
     return;
   }
   const NegCell& neg_cell = cells_[cell_idx];
@@ -820,12 +823,12 @@ void NegotiationLegalizer::eraseCellFromDplGrid(int cell_idx)
 
 void NegotiationLegalizer::syncAllCellsToDplGrid()
 {
-  if (!opendp_ || !dpl_grid_ || !network_) {
+  if (!dpl_grid_ || !network_) {
     return;
   }
   // Clear all movable cells from the DPL Grid first, then repaint at
   // their current positions.  Fixed cells were already painted during
-  // Opendp::setFixedGridCells() and should not be touched.
+  // Grid::setFixedGridCells() and should not be touched.
   for (const NegCell& neg_cell : cells_) {
     if (neg_cell.fixed || neg_cell.db_inst == nullptr) {
       continue;
@@ -865,7 +868,7 @@ void NegotiationLegalizer::syncAllCellsToDplGrid()
   // checkOneSiteGap blind to it.  setFixedGridCells() paints every site a
   // fixed cell overlaps (plus padding), matching checkPlacement even for
   // fixed cells that are not aligned to the site grid.
-  opendp_->setFixedGridCells();
+  dpl_grid_->setFixedGridCells(*network_);
 }
 
 // ===========================================================================
@@ -889,11 +892,10 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
       return false;
     }
   }
-  // Mirror Opendp::canBePlaced: the row must offer the cell's site, cell master
-  // must be able to take the orientation the row requires and a multi-row
-  // cell's power stack must line up across the span.
-  if (cell.db_inst != nullptr && opendp_ != nullptr && dpl_grid_
-      && network_ != nullptr) {
+  // Mirror LegalSiteFinder::canBePlaced: the row must offer the cell's site,
+  // cell master must be able to take the orientation the row requires and a
+  // multi-row cell's power stack must line up across the span.
+  if (cell.db_inst != nullptr && dpl_grid_ && network_ != nullptr) {
     auto* dbMaster = cell.db_inst->getMaster();
     odb::dbSite* site = dbMaster->getSite();
     if (site != nullptr) {
@@ -903,13 +905,13 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
         return false;
       }
       const unsigned masterSym = DetailedOrient::getMasterSymmetry(dbMaster);
-      if (!opendp_->checkMasterSym(masterSym, orient.value())) {
+      if (!LegalSiteFinder::checkMasterSym(masterSym, orient.value())) {
         return false;
       }
     }
     Node* node = cell.node;
     if (node != nullptr && node->getMaster()->isMultiRow()
-        && !opendp_->checkRowPowerCompatible(node, GridY{rowIdx})) {
+        && !site_finder_.checkRowPowerCompatible(node, GridY{rowIdx})) {
       return false;
     }
   }
@@ -1053,7 +1055,7 @@ bool NegotiationLegalizer::isCellLegal(int cell_idx) const
 
   // Check placement DRCs (edge spacing, blocked layers, padding, one-site
   // gaps, and fixed supply vias) using the DPL Grid.
-  if (opendp_ && drc_engine_ && network_) {
+  if (drc_engine_ && network_) {
     Node* node = cell.node;
     if (node != nullptr
         && !drc_engine_->checkDRC(

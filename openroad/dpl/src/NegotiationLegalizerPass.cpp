@@ -616,7 +616,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
 
   // Look up the DPL Node once for DRC checks (may be null if no
   // Opendp integration is available).
-  Node* node = (opendp_ && drc_engine_) ? cell.node : nullptr;
+  Node* node = drc_engine_ ? cell.node : nullptr;
   const odb::dbOrientType default_orient
       = node != nullptr ? node->getOrient() : odb::dbOrientType();
   odb::dbSite* site = cell.db_inst->getMaster()->getSite();
@@ -966,8 +966,9 @@ double NegotiationLegalizer::negotiationCost(int cell_idx,
 //   b(x,y) = δ + mf * max(δ − th, 0)
 // δ is the Manhattan displacement from the init position measured in site
 // widths on both axes (rowDispInSites converts rows), so it tracks real
-// distance the way Opendp::calcDist does.  Monotone increasing in δ (mf >= 0),
-// which findBestLocation relies on to bound the cost of unvisited wavefronts.
+// distance the way LegalSiteFinder::calcDist does.  Monotone increasing in δ
+// (mf >= 0), which findBestLocation relies on to bound the cost of unvisited
+// wavefronts.
 // ===========================================================================
 
 double NegotiationLegalizer::targetCostFromDisp(int disp) const
@@ -1043,7 +1044,7 @@ void NegotiationLegalizer::updateHistoryCosts(
 void NegotiationLegalizer::updateDrcHistoryCosts(
     const std::vector<int>& activeCells)
 {
-  if (!opendp_ || !drc_engine_ || !network_) {
+  if (!drc_engine_ || !network_) {
     return;
   }
   for (int idx : activeCells) {
@@ -1164,7 +1165,7 @@ std::vector<int> NegotiationLegalizer::collectIllegalCells(
 
 void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
 {
-  if (!opendp_ || !network_) {
+  if (!network_) {
     return;
   }
   ++diamond_recoveries_;
@@ -1181,7 +1182,7 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
     // cell must be ripped up first to avoid blocking itself.
     ripUp(idx);
     const PixelPt pt
-        = opendp_->diamondSearch(node, GridX{cell.x}, GridY{cell.y});
+        = site_finder_.diamondSearch(node, GridX{cell.x}, GridY{cell.y});
     if (pt.pixel) {
       place(idx, pt.x.v, pt.y.v);
       debugPrint(logger_,

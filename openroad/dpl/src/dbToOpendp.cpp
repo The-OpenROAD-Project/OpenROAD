@@ -221,42 +221,6 @@ void Opendp::initPlacementDRC()
                                                !odb::hasOneSiteMaster(db_));
 }
 
-static bool swapWidthHeight(const dbOrientType& orient)
-{
-  switch (orient.getValue()) {
-    case dbOrientType::R90:
-    case dbOrientType::MXR90:
-    case dbOrientType::R270:
-    case dbOrientType::MYR90:
-      return true;
-    case dbOrientType::R0:
-    case dbOrientType::R180:
-    case dbOrientType::MY:
-    case dbOrientType::MX:
-      return false;
-  }
-  // gcc warning
-  return false;
-}
-
-Rect Opendp::getBbox(odb::dbInst* inst)
-{
-  dbMaster* master = inst->getMaster();
-
-  int loc_x, loc_y;
-  inst->getLocation(loc_x, loc_y);
-  // Shift by core lower left.
-  loc_x -= core_.xMin();
-  loc_y -= core_.yMin();
-
-  int width = master->getWidth();
-  int height = master->getHeight();
-  if (swapWidthHeight(inst->getOrient())) {
-    std::swap(width, height);
-  }
-
-  return Rect(loc_x, loc_y, loc_x + width, loc_y + height);
-}
 void Opendp::createNetwork(const bool fixed_only)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
