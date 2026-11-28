@@ -981,8 +981,10 @@ void NesterovPlace::runRoutability(int iter,
   // placement that no longer exists by the time it lands. Wait for the motion
   // to come off its peak as well.
   //
-  // This can only ever delay the trigger, so a design already settled at its
-  // overflow gate is unaffected.
+  // The wait only ever delays the pass: a design already settled at its
+  // overflow gate runs it there. Reaching the target overflow does not cancel
+  // a waiting pass either: a wait still open on the iteration the placement
+  // would converge ends there, and the pass runs on that placement.
   const bool is_routability_active
       = npVars_.routability_driven_mode && is_routability_need_
         && average_overflow_unscaled_ <= npVars_.routability_end_overflow;
@@ -1004,17 +1006,36 @@ void NesterovPlace::runRoutability(int iter,
                NesterovBase::getSettleFraction() * 100.0f);
   }
 
-  if (is_routability_settled) {
+  // A pass can only revert to a saved snapshot, hence the third term.
+  const bool is_wait_ended_by_convergence
+      = is_routability_active && !is_routability_settled
+        && is_routability_snapshot_saved_ && isConvergenceDue();
+
+  if (is_routability_settled || is_wait_ended_by_convergence) {
     if (routability_settle_wait_start_iter_ != -1) {
-      log_->info(GPL,
-                 103,
-                 "Routability end extension finished at iter = {} after {} "
-                 "extra iterations: overflow {:.4f}, cells moving at {:.0f}% "
-                 "of peak displacement.",
-                 iter + 1,
-                 iter - routability_settle_wait_start_iter_,
-                 average_overflow_unscaled_,
-                 getWorstSettleRatio() * 100.0f);
+      if (is_routability_settled) {
+        log_->info(GPL,
+                   103,
+                   "Routability end extension finished at iter = {} after {} "
+                   "extra iterations: overflow {:.4f}, cells moving at {:.0f}% "
+                   "of peak displacement.",
+                   iter + 1,
+                   iter - routability_settle_wait_start_iter_,
+                   average_overflow_unscaled_,
+                   getWorstSettleRatio() * 100.0f);
+      } else {
+        log_->info(GPL,
+                   124,
+                   "Routability end extension ended at iter = {} after {} "
+                   "extra iterations: overflow {:.4f} reached the target "
+                   "overflow {:.4f} before the cells settled, at {:.0f}% of "
+                   "peak displacement.",
+                   iter + 1,
+                   iter - routability_settle_wait_start_iter_,
+                   average_overflow_unscaled_,
+                   npVars_.targetOverflow,
+                   getWorstSettleRatio() * 100.0f);
+      }
       routability_settle_wait_start_iter_ = -1;
     }
 
@@ -1185,6 +1206,16 @@ bool NesterovPlace::isConverged(int gpl_iter_count,
     return true;
   }
   return false;
+}
+
+bool NesterovPlace::isConvergenceDue() const
+{
+  for (const auto& nb : nbVec_) {
+    if (!nb->isConvergenceDue()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 NesterovBase* NesterovPlace::getTopLevelNB() const
