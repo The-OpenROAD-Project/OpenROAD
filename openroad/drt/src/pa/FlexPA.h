@@ -3,12 +3,15 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -29,6 +32,8 @@
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
 #include "pa/FlexPA_unique.h"
 namespace gtl = boost::polygon;
 
@@ -122,6 +127,10 @@ class FlexPA
   void addDirtyInst(frInst* inst);
   void addAvoidViaDef(const frViaDef* via_def);
   void removeDirtyInst(frInst* inst);
+  // Saves the access points inst uses before a master swap, so that
+  // updateDirtyInsts() keeps them when the new master has the same ones.
+  void saveSwappedInst(frInst* inst);
+  void clearSwappedInst(odb::dbInst* db_inst);
   void updateDirtyInsts();
   void removeFromInstsSet(frInst* inst);
   void addToInstsSet(frInst* inst);
@@ -161,6 +170,30 @@ class FlexPA
   frCollection<odb::dbInst*> target_insts_;
   frInstLocationSet insts_set_;
   frOrderedIdSet<frInst*> dirty_insts_;  // set of dirty instances
+  struct SavedAccessPoint
+  {
+    int id;
+    odb::Point point;
+    frLayerNum layer;
+    std::array<bool, 6> access;
+    const frViaDef* via_def;
+  };
+  struct SavedTerm
+  {
+    std::string_view name;
+    const frNet* net;
+    // Per pin; nullopt if the pin had no access point.
+    std::vector<std::optional<SavedAccessPoint>> pins;
+  };
+  struct SavedInst
+  {
+    const frMaster* master;
+    odb::dbTransform transform;
+    std::vector<SavedTerm> terms;
+  };
+  std::unordered_map<odb::dbInst*, SavedInst> swapped_insts_;
+  std::map<std::pair<const frMaster*, const frMaster*>, bool>
+      same_master_geom_cache_;
   std::string remote_host_;
   uint16_t remote_port_ = -1;
   std::string shared_vol_;
@@ -168,11 +201,20 @@ class FlexPA
 
   // helper functions
   frDesign* getDesign() const { return design_; }
+  // Returns true if masters have identical dieBox, master type, blockages
+  // (including spacing/designRuleWidth), and pin figures in DRT's parsed model.
+  bool hasSameMasterGeometry(const frMaster* a, const frMaster* b);
+  // Restores a swapped inst's saved access points when the new master has
+  // matching geometry and identical access points at the saved PA transform;
+  // returns false to fall back to row pattern generation.
+  bool restoreSwappedInst(frInst* inst);
   frTechObject* getTech() const { return design_->getTech(); }
   void setDesign(frDesign* in)
   {
     design_ = in;
     unique_insts_.setDesign(in);
+    swapped_insts_.clear();
+    same_master_geom_cache_.clear();
   }
   void applyPatternsFile(const char* file_path);
   ViaRawPriorityTuple getViaRawPriority(const frViaDef* via_def) const;

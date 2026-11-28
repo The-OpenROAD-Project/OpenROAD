@@ -23,6 +23,7 @@ class DesignCallBack : public odb::dbBlockCallBackObj
   void inDbITermPostConnect(odb::dbITerm* iterm) override;
 
  private:
+  void destroyInst(odb::dbInst* db_inst, bool save_pa);
   TritonRoute* router_;
 };
 }  // namespace drt

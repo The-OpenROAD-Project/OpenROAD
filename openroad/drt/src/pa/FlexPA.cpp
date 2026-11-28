@@ -3,9 +3,13 @@
 
 #include "pa/FlexPA.h"
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -19,6 +23,9 @@
 #include "db/infra/frTime.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frBlockage.h"
+#include "db/obj/frMaster.h"
+#include "db/obj/frShape.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
 #include "distributed/paUpdate.h"
@@ -84,6 +91,8 @@ void FlexPA::setDebug(std::unique_ptr<AbstractPAGraphics> pa_graphics)
 void FlexPA::init()
 {
   ProfileTask profile("PA:init");
+  swapped_insts_.clear();
+  same_master_geom_cache_.clear();
   for (auto& master : design_->getMasters()) {
     for (auto& term : master->getTerms()) {
       for (auto& pin : term->getPins()) {
@@ -117,6 +126,250 @@ void FlexPA::addAvoidViaDef(const frViaDef* via_def)
 void FlexPA::removeDirtyInst(frInst* inst)
 {
   dirty_insts_.erase(inst);
+}
+
+namespace {
+
+struct CanonicalFig
+{
+  frBlockObjectEnum type;
+  frLayerNum layer;
+  std::vector<std::pair<frCoord, frCoord>> coords;
+  auto operator<=>(const CanonicalFig&) const = default;
+};
+
+struct CanonicalBlockage
+{
+  frCoord design_rule_width;
+  frCoord min_spacing;
+  std::vector<CanonicalFig> figs;
+  auto operator<=>(const CanonicalBlockage&) const = default;
+};
+
+std::array<bool, 6> accessDirs(const frAccessPoint* ap)
+{
+  return {
+      ap->hasAccess(frDirEnum::E),
+      ap->hasAccess(frDirEnum::S),
+      ap->hasAccess(frDirEnum::W),
+      ap->hasAccess(frDirEnum::N),
+      ap->hasAccess(frDirEnum::U),
+      ap->hasAccess(frDirEnum::D),
+  };
+}
+
+const frViaDef* primaryViaDef(const frAccessPoint* ap)
+{
+  return ap->hasViaDef() ? ap->getViaDef() : nullptr;
+}
+
+std::optional<std::vector<CanonicalFig>> canonicalPinFigs(const frPin* pin)
+{
+  std::vector<CanonicalFig> figs;
+  figs.reserve(pin->getFigs().size());
+  for (const auto& fig : pin->getFigs()) {
+    if (fig->typeId() == frcRect) {
+      const auto* rect = static_cast<const frRect*>(fig.get());
+      const odb::Rect box = rect->getBBox();
+      figs.push_back(CanonicalFig{
+          .type = frcRect,
+          .layer = rect->getLayerNum(),
+          .coords = {{box.xMin(), box.yMin()}, {box.xMax(), box.yMax()}},
+      });
+    } else if (fig->typeId() == frcPolygon) {
+      const auto* poly = static_cast<const frPolygon*>(fig.get());
+      std::vector<std::pair<frCoord, frCoord>> pts;
+      pts.reserve(poly->getPoints().size());
+      for (const odb::Point& pt : poly->getPoints()) {
+        pts.emplace_back(pt.x(), pt.y());
+      }
+      figs.push_back(CanonicalFig{
+          .type = frcPolygon,
+          .layer = poly->getLayerNum(),
+          .coords = std::move(pts),
+      });
+    } else {
+      return std::nullopt;
+    }
+  }
+  std::ranges::sort(figs);
+  return figs;
+}
+
+std::optional<std::vector<CanonicalBlockage>> canonicalBlockages(
+    const frMaster* master)
+{
+  std::vector<CanonicalBlockage> blockages;
+  blockages.reserve(master->getBlockages().size());
+  for (const auto& blk : master->getBlockages()) {
+    auto figs = canonicalPinFigs(blk->getPin());
+    if (!figs.has_value()) {
+      return std::nullopt;
+    }
+    blockages.push_back(CanonicalBlockage{
+        .design_rule_width = blk->getDesignRuleWidth(),
+        .min_spacing = blk->getMinSpacing(),
+        .figs = std::move(*figs),
+    });
+  }
+  std::ranges::sort(blockages);
+  return blockages;
+}
+
+}  // namespace
+
+bool FlexPA::hasSameMasterGeometry(const frMaster* a, const frMaster* b)
+{
+  if (a == b) {
+    return true;
+  }
+  if (a == nullptr || b == nullptr) {
+    return false;
+  }
+  const auto key = std::minmax(a, b);
+  if (const auto it = same_master_geom_cache_.find(key);
+      it != same_master_geom_cache_.end()) {
+    return it->second;
+  }
+  auto check = [&] {
+    if (a->getDieBox() != b->getDieBox()
+        || a->getMasterType() != b->getMasterType()
+        || a->getBlockages().size() != b->getBlockages().size()
+        || a->getTerms().size() != b->getTerms().size()) {
+      return false;
+    }
+    const auto a_blks = canonicalBlockages(a);
+    const auto b_blks = canonicalBlockages(b);
+    if (!a_blks.has_value() || !b_blks.has_value() || *a_blks != *b_blks) {
+      return false;
+    }
+    for (const auto& term_a : a->getTerms()) {
+      const frMTerm* term_b = b->getTerm(term_a->getName());
+      if (term_b == nullptr || term_a->getType() != term_b->getType()
+          || term_a->getPins().size() != term_b->getPins().size()) {
+        return false;
+      }
+      for (size_t i = 0; i < term_a->getPins().size(); ++i) {
+        const auto a_figs = canonicalPinFigs(term_a->getPins()[i].get());
+        const auto b_figs = canonicalPinFigs(term_b->getPins()[i].get());
+        if (!a_figs.has_value() || !b_figs.has_value() || *a_figs != *b_figs) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+  const bool same = check();
+  same_master_geom_cache_.emplace(key, same);
+  return same;
+}
+
+void FlexPA::saveSwappedInst(frInst* inst)
+{
+  // If inst is already dirty (e.g. rewired earlier in the batch, or a second
+  // swap before updateDirtyInsts()), do not overwrite or create a snapshot:
+  // a prior swap's entry stays intact, while a prior rewire forces fallback.
+  if (dirty_insts_.contains(inst)) {
+    return;
+  }
+  // Record the transform where the saved access points were actually computed
+  // (not getTransform(), which may reflect an un-updated move) and per-term
+  // net connectivity so swap + rewiring falls back cleanly.
+  SavedInst saved{
+      .master = inst->getMaster(),
+      .transform = inst->getLatestPATransform(),
+      .terms = {},
+  };
+  saved.terms.reserve(inst->getInstTerms().size());
+  bool has_access = false;
+  for (auto& inst_term : inst->getInstTerms()) {
+    SavedTerm term_state{
+        .name = inst_term->getTerm()->getName(),
+        .net = inst_term->getNet(),
+        .pins = {},
+    };
+    const auto& aps = inst_term->getAccessPoints();
+    term_state.pins.reserve(aps.size());
+    for (frAccessPoint* ap : aps) {
+      if (ap == nullptr) {
+        term_state.pins.emplace_back();
+        continue;
+      }
+      has_access = true;
+      term_state.pins.emplace_back(SavedAccessPoint{
+          .id = ap->getId(),
+          .point = ap->getPoint(),
+          .layer = ap->getLayerNum(),
+          .access = accessDirs(ap),
+          .via_def = primaryViaDef(ap),
+      });
+    }
+    saved.terms.push_back(std::move(term_state));
+  }
+  if (has_access) {
+    swapped_insts_[inst->getDBInst()] = std::move(saved);
+  }
+}
+
+void FlexPA::clearSwappedInst(odb::dbInst* db_inst)
+{
+  swapped_insts_.erase(db_inst);
+}
+
+bool FlexPA::restoreSwappedInst(frInst* inst)
+{
+  const auto saved = swapped_insts_.find(inst->getDBInst());
+  if (saved == swapped_insts_.end()
+      || saved->second.transform != inst->getTransform()
+      || !hasSameMasterGeometry(saved->second.master, inst->getMaster())
+      || saved->second.terms.size() != inst->getInstTerms().size()) {
+    return false;
+  }
+  std::vector<std::pair<frInstTerm*, std::vector<frAccessPoint*>>> restored;
+  for (auto& inst_term : inst->getInstTerms()) {
+    const auto old_term = std::ranges::find(
+        saved->second.terms, inst_term->getTerm()->getName(), &SavedTerm::name);
+    const auto& pins = inst_term->getTerm()->getPins();
+    if (old_term == saved->second.terms.end()
+        || old_term->net != inst_term->getNet()
+        || old_term->pins.size() != pins.size()) {
+      return false;
+    }
+    std::vector<frAccessPoint*> aps(pins.size(), nullptr);
+    if (isSkipInstTerm(inst_term.get())) {
+      restored.emplace_back(inst_term.get(), std::move(aps));
+      continue;
+    }
+    for (size_t pin_idx = 0; pin_idx < pins.size(); pin_idx++) {
+      const auto& old_ap = old_term->pins[pin_idx];
+      if (!old_ap.has_value()) {
+        return false;
+      }
+      if (inst->getPinAccessIdx() < 0
+          || inst->getPinAccessIdx() >= pins[pin_idx]->getNumPinAccess()) {
+        return false;
+      }
+      const frPinAccess* pin_access
+          = pins[pin_idx]->getPinAccess(inst->getPinAccessIdx());
+      if (old_ap->id < 0 || old_ap->id >= pin_access->getNumAccessPoints()) {
+        return false;
+      }
+      frAccessPoint* ap = pin_access->getAccessPoint(old_ap->id);
+      if (ap->getPoint() != old_ap->point || ap->getLayerNum() != old_ap->layer
+          || accessDirs(ap) != old_ap->access
+          || primaryViaDef(ap) != old_ap->via_def) {
+        return false;
+      }
+      aps[pin_idx] = ap;
+    }
+    restored.emplace_back(inst_term.get(), std::move(aps));
+  }
+  for (auto& [inst_term, aps] : restored) {
+    inst_term->setAccessPoints(aps);
+  }
+  inst->setLatestPATransform();
+  inst->setHasPinAccessUpdate(true);
+  return true;
 }
 
 void FlexPA::updateDirtyInsts()
@@ -183,6 +436,15 @@ void FlexPA::updateDirtyInsts()
       addToInstsSet(inst);
     }
   }
+  // A master swap that kept every access point keeps its row pattern.
+  for (auto it = pattern_insts.begin(); it != pattern_insts.end();) {
+    if (restoreSwappedInst(*it)) {
+      it = pattern_insts.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  swapped_insts_.clear();
   frOrderedIdSet<frInst*> processed_insts;
   std::vector<std::vector<frInst*>> inst_rows;
   for (auto& inst : pattern_insts) {

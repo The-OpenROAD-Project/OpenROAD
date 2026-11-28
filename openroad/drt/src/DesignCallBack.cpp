@@ -60,7 +60,7 @@ void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
   }
 }
 
-void DesignCallBack::inDbInstDestroy(odb::dbInst* db_inst)
+void DesignCallBack::destroyInst(odb::dbInst* db_inst, bool save_pa)
 {
   auto design = router_->getDesign();
   if (design == nullptr || design->getTopBlock() == nullptr) {
@@ -70,6 +70,9 @@ void DesignCallBack::inDbInstDestroy(odb::dbInst* db_inst)
   if (inst == nullptr) {
     return;
   }
+  if (save_pa) {
+    router_->saveInstancePAData(inst);
+  }
   if (design->getRegionQuery() != nullptr) {
     design->getRegionQuery()->removeBlockObj(inst);
   }
@@ -77,10 +80,16 @@ void DesignCallBack::inDbInstDestroy(odb::dbInst* db_inst)
   router_->deleteInstancePAData(inst, true);
 }
 
+void DesignCallBack::inDbInstDestroy(odb::dbInst* db_inst)
+{
+  router_->clearSwappedInstancePAData(db_inst);
+  destroyInst(db_inst, /*save_pa=*/false);
+}
+
 void DesignCallBack::inDbInstSwapMasterBefore(odb::dbInst* db_inst,
                                               odb::dbMaster* db_master)
 {
-  inDbInstDestroy(db_inst);
+  destroyInst(db_inst, /*save_pa=*/true);
 }
 
 void DesignCallBack::inDbInstSwapMasterAfter(odb::dbInst* db_inst)
@@ -122,6 +131,8 @@ void DesignCallBack::inDbNetDestroy(odb::dbNet* db_net)
 void DesignCallBack::inDbITermPostDisconnect(odb::dbITerm* db_iterm,
                                              odb::dbNet* db_net)
 {
+  // Drop any saved swap snapshot before net destruction can free the old frNet.
+  router_->clearSwappedInstancePAData(db_iterm->getInst());
   auto design = router_->getDesign();
   if (design == nullptr || design->getTopBlock() == nullptr) {
     return;
@@ -137,6 +148,9 @@ void DesignCallBack::inDbITermPostDisconnect(odb::dbITerm* db_iterm,
   }
   net->removeInstTerm(inst_term);
   inst_term->addToNet(nullptr);
+  // Mark inst dirty so a subsequent swapMaster() in the same batch does not
+  // snapshot the post-disconnect connectivity and skip row-pattern fallback.
+  router_->addInstancePAData(inst);
 }
 
 void DesignCallBack::inDbITermPostConnect(odb::dbITerm* db_iterm)

@@ -186,6 +186,9 @@ class TritonRoute : public PinAccessService
   void fixMaxSpacing(int num_threads);
   void deleteInstancePAData(frInst* inst, bool delete_inst = false);
   void addInstancePAData(frInst* inst);
+  // Save and clear cached pin-access data across master swaps.
+  void saveInstancePAData(frInst* inst);
+  void clearSwappedInstancePAData(odb::dbInst* db_inst);
   void addAvoidViaDefPA(const frViaDef* via_def);
   void updateDirtyPAData();
 

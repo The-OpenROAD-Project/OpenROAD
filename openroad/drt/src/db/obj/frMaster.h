@@ -78,7 +78,7 @@ class frMaster : public frBlockObject
     }
     return nullptr;
   }
-  odb::dbMasterType getMasterType() { return masterType_; }
+  odb::dbMasterType getMasterType() const { return masterType_; }
   bool hasPinAccessUpdate() const { return !updated_pa_indices_.empty(); }
   const std::set<int>& getUpdatedPAIndices() const
   {
