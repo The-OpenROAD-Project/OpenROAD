@@ -128,7 +128,7 @@ namespace odb {
       {% for field in klass.fields %}
         {% if field.kind.needs_free(field.name) %}
           if (name_) {
-            free((void*) name_);
+            free(name_);
           }
         {% endif %}
         {% if field.table %}
@@ -154,7 +154,7 @@ namespace odb {
       void {{klass.name}}::{{field.setterFunctionName}}( {% if field.isSetByRef %}const {{field.setterArgumentType}}&{% else %}{{field.setterArgumentType}}{% endif %} {{field.argument}} )
       {
     
-        _{{klass.name}}* obj = (_{{klass.name}}*)this;
+        _{{klass.name}}* obj = reinterpret_cast<_{{klass.name}}*>(this);
 
         obj->{{field.name}}={{field.kind.setter_assign_rhs(field.argument)}};
       }
@@ -165,22 +165,22 @@ namespace odb {
       {
       {% set getter_kind = field.kind.getter_kind() %}
       {% if getter_kind == 'dbset' %}
-          _{{klass.name}}* obj = (_{{klass.name}}*)this;
+          _{{klass.name}}* obj = reinterpret_cast<_{{klass.name}}*>(const_cast<{{klass.name}}*>(this));
           return dbSet<{{field.table_base_type}}>(obj, obj->{{field.name}});
       {% elif getter_kind == 'out_param' %}
-          _{{klass.name}}* obj = (_{{klass.name}}*)this;
+          const _{{klass.name}}* obj = reinterpret_cast<const _{{klass.name}}*>(this);
           tbl = obj->{{field.name}};
       {% elif getter_kind == 'hash_find' %}
-          _{{klass.name}}* obj = (_{{klass.name}}*)this;
-          return ({{field.getterReturnType}}) obj->{{field.name}}.find(name);
+          _{{klass.name}}* obj = reinterpret_cast<_{{klass.name}}*>(const_cast<{{klass.name}}*>(this));
+          return reinterpret_cast<{{field.getterReturnType}}>(obj->{{field.name}}.find(name));
       {% else %}
-          _{{klass.name}}* obj = (_{{klass.name}}*)this;
+          const _{{klass.name}}* obj = reinterpret_cast<const _{{klass.name}}*>(this);
           {% if getter_kind == 'ref_lookup' %}
             if(obj->{{field.name}} == 0) {
               return nullptr;
             }
-            _{{field.parent}}* par = (_{{field.parent}}*) obj->getOwner();
-            return ({{field.refType}}) par->{{field.refTable}}->getPtr(obj->{{field.name}});
+            _{{field.parent}}* par = static_cast<_{{field.parent}}*>(obj->getOwner());
+            return reinterpret_cast<{{field.refType}}>(par->{{field.refTable}}->getPtr(obj->{{field.name}}));
           {% else %}
             return obj->{{field.name}};
           {% endif %}
@@ -197,7 +197,7 @@ namespace odb {
         void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.argument}} )
         {
       
-          _{{klass.name}}* obj = (_{{klass.name}}*)this;
+          _{{klass.name}}* obj = reinterpret_cast<_{{klass.name}}*>(this);
       
           obj->{{_struct.in_class_name}}.{{field.name}}={{field.argument}};
       
@@ -207,7 +207,7 @@ namespace odb {
       {% if 'no-get' not in field.flags %}
         {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}() const
         {
-          _{{klass.name}}* obj = (_{{klass.name}}*)this;
+          const _{{klass.name}}* obj = reinterpret_cast<const _{{klass.name}}*>(this);
           
           return obj->{{_struct.in_class_name}}.{{field.name}};
         }
@@ -221,16 +221,16 @@ namespace odb {
   {% if klass.gen_create %}
   {{klass.name}}* {{klass.name}}::create({{klass.factory_parent}}* parent)
   {
-    _{{klass.factory_parent}}* _parent = (_{{klass.factory_parent}}*) parent;
-    return ({{klass.name}}*) _parent->{{klass.factory_table}}->create();
+    _{{klass.factory_parent}}* _parent = reinterpret_cast<_{{klass.factory_parent}}*>(parent);
+    return reinterpret_cast<{{klass.name}}*>(_parent->{{klass.factory_table}}->create());
   }
   {% endif %}
   {% if klass.gen_destroy %}
   void {{klass.name}}::destroy({{klass.name}}* obj)
   {
-    _{{klass.factory_parent}}* _parent = (_{{klass.factory_parent}}*) obj->getImpl()->getOwner();
+    _{{klass.factory_parent}}* _parent = static_cast<_{{klass.factory_parent}}*>(obj->getImpl()->getOwner());
     dbProperty::destroyProperties(obj);
-    _parent->{{klass.factory_table}}->destroy((_{{klass.name}}*) obj);
+    _parent->{{klass.factory_table}}->destroy(reinterpret_cast<_{{klass.name}}*>(obj));
   }
   {% endif %}
   //User Code Begin {{klass.name}}PublicMethods

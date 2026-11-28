@@ -425,6 +425,33 @@
       "destroy":true
     },
     {
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerImplantWidthRule",
+      "type":"1_n",
+      "tbl_name":"implant_width_rules_tbl_",
+      "schema":"kSchemaLef58ImplantRules",
+      "create":true,
+      "destroy":true
+    },
+    {
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerImplantSpacingRule",
+      "type":"1_n",
+      "tbl_name":"implant_spacing_rules_tbl_",
+      "schema":"kSchemaLef58ImplantRules",
+      "create":true,
+      "destroy":true
+    },
+    {
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerCoreEdgeLengthRule",
+      "type":"1_n",
+      "tbl_name":"core_edge_length_rules_tbl_",
+      "schema":"kSchemaLef58ImplantRules",
+      "create":true,
+      "destroy":true
+    },
+    {
       "parent": "dbDft",
       "child": "dbScanPin",
       "type": "1_n",

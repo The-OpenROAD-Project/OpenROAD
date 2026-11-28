@@ -6,5 +6,5 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
 local net guides: 2
-[INFO ANT-0002] Found 6 net violations.
-[INFO ANT-0001] Found 6 pin violations.
+[INFO ANT-0002] Found 14 net violations.
+[INFO ANT-0001] Found 14 pin violations.

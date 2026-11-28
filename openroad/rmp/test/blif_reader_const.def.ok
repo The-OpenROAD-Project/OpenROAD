@@ -6,8 +6,8 @@ UNITS DISTANCE MICRONS 1000 ;
 COMPONENTS 5 ;
     - AND2_X1_1_1 AND2_X1 ;
     - AND2_X1_1_2 AND2_X1 ;
-    - LOGIC0_X1_11 LOGIC0_X1 ;
-    - LOGIC1_X1_11 LOGIC1_X1 ;
+    - LOGIC0_X1_1_1 LOGIC0_X1 ;
+    - LOGIC1_X1_1_1 LOGIC1_X1 ;
     - OR2_X1_1_1 OR2_X1 ;
 END COMPONENTS
 PINS 10 ;
@@ -33,8 +33,8 @@ NETS 14 ;
     - n6 ( PIN inp6 ) + USE SIGNAL ;
     - n7 ( PIN inp7 ) + USE SIGNAL ;
     - n8 ( PIN inp8 ) + USE SIGNAL ;
-    - or_1hinet ( AND2_X1_1_2 A2 ) ( LOGIC1_X1_11 Z ) + USE SIGNAL ;
-    - or_1lonet ( AND2_X1_1_1 A2 ) ( LOGIC0_X1_11 Z ) + USE SIGNAL ;
+    - or_1hinet ( AND2_X1_1_2 A2 ) ( LOGIC1_X1_1_1 Z ) + USE SIGNAL ;
+    - or_1lonet ( AND2_X1_1_1 A2 ) ( LOGIC0_X1_1_1 Z ) + USE SIGNAL ;
     - or_1t1 ( OR2_X1_1_1 A1 ) ( AND2_X1_1_1 ZN ) + USE SIGNAL ;
     - or_1t2 ( OR2_X1_1_1 A2 ) ( AND2_X1_1_2 ZN ) + USE SIGNAL ;
 END NETS

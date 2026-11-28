@@ -1,0 +1,11 @@
+# Consecutive comment lines must all be stripped.
+# A constant without a tie cell is an error.
+.model tmp_circuit
+.inputs n1 n3
+.outputs n17
+
+
+.gate _const0_ z=lonet
+.gate AND2_X1 A1=n1 A2=lonet ZN=t1
+.gate OR2_X1 A1=t1 A2=n3 ZN=n17
+.end

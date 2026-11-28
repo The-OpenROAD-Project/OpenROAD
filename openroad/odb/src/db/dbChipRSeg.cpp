@@ -82,14 +82,14 @@ void _dbChipRSeg::collectMemInfo(MemInfo& info)
 
 void dbChipRSeg::setResistance(float resistance)
 {
-  _dbChipRSeg* obj = (_dbChipRSeg*) this;
+  _dbChipRSeg* obj = reinterpret_cast<_dbChipRSeg*>(this);
 
   obj->resistance_ = resistance;
 }
 
 float dbChipRSeg::getResistance() const
 {
-  _dbChipRSeg* obj = (_dbChipRSeg*) this;
+  const _dbChipRSeg* obj = reinterpret_cast<const _dbChipRSeg*>(this);
   return obj->resistance_;
 }
 

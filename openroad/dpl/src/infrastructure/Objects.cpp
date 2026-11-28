@@ -4,11 +4,13 @@
 #include "infrastructure/Objects.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <string>
 #include <vector>
 
 #include "dpl/Opendp.h"
+#include "infrastructure/architecture.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -98,6 +100,61 @@ const std::vector<Master::PinShape>& Master::getPinShapes(const int level) const
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+Node Node::makeCell(odb::dbInst* inst, const odb::Rect& bbox)
+{
+  Node node;
+  node.setType(CELL);
+  node.setDbInst(inst);
+  node.setWidth(DbuX{bbox.dx()});
+  node.setHeight(DbuY{bbox.dy()});
+  node.setLeft(DbuX{bbox.xMin()});
+  node.setBottom(DbuY{bbox.yMin()});
+  node.setOrient(inst->getOrient());
+  return node;
+}
+
+Node Node::makeTerminal(const int id,
+                        odb::dbBTerm* bterm,
+                        const odb::Rect& core)
+{
+  const odb::Rect bbox = bterm->getBBox();
+  Node node;
+  node.setId(id);
+  node.setBTerm(bterm);
+  node.setType(TERMINAL);
+  node.setFixed(true);
+  node.setOrient(odb::dbOrientType::R0);
+  node.setWidth(DbuX{bbox.dx()});
+  // Height is zero, so the terminal's pin (zero offset, at the node center)
+  // sits on the shape's bottom edge.
+  node.setHeight(DbuY{0});
+  node.setOrigLeft(DbuX{bbox.xMin() - core.xMin()});
+  node.setOrigBottom(DbuY{bbox.yMin() - core.yMin()});
+  node.setLeft(node.getOrigLeft());
+  node.setBottom(node.getOrigBottom());
+  // Not relevant for terminal.
+  node.setBottomPower(Architecture::Row::Power_UNK);
+  node.setTopPower(Architecture::Row::Power_UNK);
+  return node;
+}
+
+Node Node::makeFiller(const int id,
+                      const DbuX left,
+                      const DbuY bottom,
+                      const DbuX width,
+                      const DbuY height)
+{
+  Node node;
+  node.setFixed(true);
+  node.setType(FILLER);
+  node.setId(id);
+  node.setHeight(height);
+  node.setWidth(width);
+  node.setBottom(bottom);
+  node.setLeft(left);
+  return node;
+}
+
 Node::~Node() = default;
 int Node::getId() const
 {
@@ -150,6 +207,11 @@ odb::dbInst* Node::getDbInst() const
   }
   return static_cast<odb::dbInst*>(db_owner_);
 }
+odb::dbMaster* Node::getDbMaster() const
+{
+  const odb::dbInst* inst = getDbInst();
+  return inst ? inst->getMaster() : nullptr;
+}
 odb::dbBTerm* Node::getBTerm() const
 {
   if (type_ != TERMINAL) {
@@ -175,20 +237,13 @@ bool Node::isHold() const
 }
 odb::dbSite* Node::getSite() const
 {
-  if (!getDbInst() || !getDbInst()->getMaster()) {
-    return nullptr;
-  }
-  return getDbInst()->getMaster()->getSite();
+  odb::dbMaster* const master = getDbMaster();
+  return master ? master->getSite() : nullptr;
 }
 DbuX Node::siteWidth() const
 {
-  if (getDbInst()) {
-    auto site = getDbInst()->getMaster()->getSite();
-    if (site) {
-      return DbuX{site->getWidth()};
-    }
-  }
-  return DbuX{0};
+  odb::dbSite* const site = getSite();
+  return site ? DbuX{site->getWidth()} : DbuX{0};
 }
 bool Node::isHybrid() const
 {
@@ -202,7 +257,8 @@ bool Node::isHybridParent() const
 }
 int64_t Node::area() const
 {
-  odb::dbMaster* master = getDbInst()->getMaster();
+  const odb::dbMaster* const master = getDbMaster();
+  assert(master != nullptr);  // Only CELL nodes have a master.
   return int64_t(master->getWidth()) * master->getHeight();
 }
 std::string Node::name() const
@@ -247,8 +303,8 @@ bool Node::isStdCell() const
 }
 bool Node::isBlock() const
 {
-  return getDbInst()
-         && getDbInst()->getMaster()->getType() == odb::dbMasterType::BLOCK;
+  const odb::dbMaster* master = getDbMaster();
+  return master && master->getType() == odb::dbMasterType::BLOCK;
 }
 Group* Node::getGroup() const
 {

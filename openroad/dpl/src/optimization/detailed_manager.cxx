@@ -39,7 +39,7 @@ static bool checkMasterSymmetry(Architecture* arch, const Node* nd, int rowId)
   const auto* rowPtr = arch->getRow(rowId);
   const unsigned rowOri = rowPtr->getOrient();
 
-  auto* dbMaster = nd->getDbInst()->getMaster();
+  auto* const dbMaster = nd->getDbMaster();
   unsigned masterSym = DetailedOrient::getMasterSymmetry(dbMaster);
 
   using odb::dbOrientType;
@@ -1290,6 +1290,46 @@ int DetailedMgr::checkEdgeSpacingInSegments()
   return err_n + err_p;
 }
 
+void DetailedMgr::checkAll()
+{
+  checkRegionAssignment();
+  checkRowAlignment();
+  checkSiteAlignment();
+  checkOverlapInSegments();
+  checkEdgeSpacingInSegments();
+}
+
+void DetailedMgr::repairOneSiteGaps()
+{
+  if (!disallowOneSiteGaps_) {
+    return;
+  }
+  // The repair moves go through the move list, so lift its limit while
+  // repairing.
+  const int saved_move_limit = moveLimit_;
+  constexpr int kRepairMoveLimit = 10000;
+  moveLimit_ = kRepairMoveLimit;
+  std::vector<std::vector<int>> violations;
+  getOneSiteGapViolationsPerSegment(violations, true);
+  moveLimit_ = saved_move_limit;
+
+  for (int i = 0; i < violations.size(); i++) {
+    if (violations[i].empty()) {
+      continue;
+    }
+    std::string violating_node_ids = "[";
+    for (const int node_id : violations[i]) {
+      violating_node_ids
+          += std::to_string(node_id) + ",]"[node_id == violations[i].back()];
+    }
+    logger_->warn(DPL,
+                  323,
+                  "One site gap violation in segment {:d} nodes: {}",
+                  i,
+                  violating_node_ids);
+  }
+}
+
 void DetailedMgr::getOneSiteGapViolationsPerSegment(
     std::vector<std::vector<int>>& violating_cells,
     bool fix_violations)
@@ -1858,7 +1898,7 @@ bool DetailedMgr::alignPos(const Node* ndi, DbuX& xi, const DbuX xl, DbuX xr)
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedMgr::checkSiteOrientation(Node* node, DbuX x, DbuY y)
 {
-  odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
+  odb::dbSite* site = node->getSite();
   const auto grid_x = grid_->gridX(x);
   const auto grid_y = grid_->gridSnapDownY(y);
   return grid_->getSiteOrientation(grid_x, grid_y, site).has_value();
@@ -3048,7 +3088,7 @@ void DetailedMgr::paintInGrid(Node* node)
 {
   const auto grid_x = grid_->gridX(node);
   const auto grid_y = grid_->gridSnapDownY(node);
-  odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
+  odb::dbSite* site = node->getSite();
 
   const auto orientation
       = grid_->getSiteOrientation(grid_x, grid_y, site).value();

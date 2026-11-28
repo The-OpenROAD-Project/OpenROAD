@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "MplObserver.h"
-#include "SimulatedAnnealingCore.h"
+#include "SACore.h"
 #include "clusterEngine.h"
 #include "mpl-util.h"
 #include "object.h"
@@ -26,15 +26,8 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
                   const odb::Rect& outline,
                   const std::vector<HardMacro>& macros,
                   const SACoreWeights& core_weights,
-                  // probability of each action
-                  float pos_swap_prob,
-                  float neg_swap_prob,
-                  float double_swap_prob,
-                  float exchange_prob,
-                  // Fast SA hyperparameter
-                  float init_prob,
-                  int max_num_step,
-                  int num_perturb_per_step,
+                  const SACoreActionProbs& action_probs,
+                  const SAHyperparams& hyperparams,
                   unsigned seed,
                   MplObserver* graphics,
                   utl::Logger* logger,
@@ -42,18 +35,9 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
 
   void run() override;
 
-  void setWeights(const SACoreWeights& weights);
+  void setCoreWeights(const SACoreWeights& weights);
 
   void fillDeadSpace() override {}
-  // print results
-  void printResults() const;
-
- private:
-  void calPenalty() override;
-
-  void perturb() override;
-  void saveState() override;
-  void restoreState() override;
 };
 
 }  // namespace mpl

@@ -99,79 +99,79 @@ void _dbGDSText::collectMemInfo(MemInfo& info)
 
 void dbGDSText::setLayer(int16_t layer)
 {
-  _dbGDSText* obj = (_dbGDSText*) this;
+  _dbGDSText* obj = reinterpret_cast<_dbGDSText*>(this);
 
   obj->layer_ = layer;
 }
 
 int16_t dbGDSText::getLayer() const
 {
-  _dbGDSText* obj = (_dbGDSText*) this;
+  const _dbGDSText* obj = reinterpret_cast<const _dbGDSText*>(this);
   return obj->layer_;
 }
 
 void dbGDSText::setDatatype(int16_t datatype)
 {
-  _dbGDSText* obj = (_dbGDSText*) this;
+  _dbGDSText* obj = reinterpret_cast<_dbGDSText*>(this);
 
   obj->datatype_ = datatype;
 }
 
 int16_t dbGDSText::getDatatype() const
 {
-  _dbGDSText* obj = (_dbGDSText*) this;
+  const _dbGDSText* obj = reinterpret_cast<const _dbGDSText*>(this);
   return obj->datatype_;
 }
 
 void dbGDSText::setOrigin(const Point& origin)
 {
-  _dbGDSText* obj = (_dbGDSText*) this;
+  _dbGDSText* obj = reinterpret_cast<_dbGDSText*>(this);
 
   obj->origin_ = origin;
 }
 
 Point dbGDSText::getOrigin() const
 {
-  _dbGDSText* obj = (_dbGDSText*) this;
+  const _dbGDSText* obj = reinterpret_cast<const _dbGDSText*>(this);
   return obj->origin_;
 }
 
 void dbGDSText::setPresentation(dbGDSTextPres presentation)
 {
-  _dbGDSText* obj = (_dbGDSText*) this;
+  _dbGDSText* obj = reinterpret_cast<_dbGDSText*>(this);
 
   obj->presentation_ = presentation;
 }
 
 dbGDSTextPres dbGDSText::getPresentation() const
 {
-  _dbGDSText* obj = (_dbGDSText*) this;
+  const _dbGDSText* obj = reinterpret_cast<const _dbGDSText*>(this);
   return obj->presentation_;
 }
 
 void dbGDSText::setTransform(dbGDSSTrans transform)
 {
-  _dbGDSText* obj = (_dbGDSText*) this;
+  _dbGDSText* obj = reinterpret_cast<_dbGDSText*>(this);
 
   obj->transform_ = transform;
 }
 
 dbGDSSTrans dbGDSText::getTransform() const
 {
-  _dbGDSText* obj = (_dbGDSText*) this;
+  const _dbGDSText* obj = reinterpret_cast<const _dbGDSText*>(this);
   return obj->transform_;
 }
 
 void dbGDSText::setText(const std::string& text)
 {
-  _dbGDSText* obj = (_dbGDSText*) this;
+  _dbGDSText* obj = reinterpret_cast<_dbGDSText*>(this);
 
   obj->text_ = text;
 }
 
 const std::string& dbGDSText::getText() const
 {
-  _dbGDSText* obj = (_dbGDSText*) this;
+  const _dbGDSText* obj = reinterpret_cast<const _dbGDSText*>(this);
   return obj->text_;
 }
 

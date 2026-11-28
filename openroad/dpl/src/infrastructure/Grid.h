@@ -129,6 +129,10 @@ class Grid
                         GridX grid_x_end,
                         GridY grid_y_end);
   void erasePixel(Node* cell);
+  // Occupy the pixel with the cell.
+  static void setGridCell(Node& cell, Pixel* pixel);
+  // Occupy the pixels of every fixed cell and reserve their padding.
+  void setFixedGridCells(Network& network);
   void visitCellPixels(
       Node& cell,
       bool padded,
@@ -212,8 +216,6 @@ class Grid
   // coordinate conversions read; allocateGrid() makes them again.
   void releasePixels();
   bool hasPixels() const { return !pixels_.empty(); }
-  // The rows are there and the pixels were released.
-  bool pixelsReleased() const { return row_count_ > 0 && pixels_.empty(); }
 
   bool hasHybridRows() const { return has_hybrid_rows_; }
 

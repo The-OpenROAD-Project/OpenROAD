@@ -45,7 +45,7 @@ odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
                             const odb::dbOrientType& orient)
 {
   odb::Rect bbox;
-  cell->getDbInst()->getMaster()->getPlacementBoundary(bbox);
+  cell->getDbMaster()->getPlacementBoundary(bbox);
   odb::dbTransform transform(orient);
   transform.apply(bbox);
   odb::Point offset(x.v - bbox.xMin(), y.v - bbox.yMin());
@@ -1105,7 +1105,7 @@ bool isCrWtBlClass(const Node* cell)
 {
   using odb::dbMasterType;
 
-  dbMasterType type = cell->getDbInst()->getMaster()->getType();
+  dbMasterType type = cell->getDbMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
   switch (type.getValue()) {
     case dbMasterType::CORE:
@@ -1156,7 +1156,7 @@ bool isCrWtBlClass(const Node* cell)
 
 bool isWellTap(const Node* cell)
 {
-  odb::dbMasterType type = cell->getDbInst()->getMaster()->getType();
+  odb::dbMasterType type = cell->getDbMaster()->getType();
   return type == odb::dbMasterType::CORE_WELLTAP;
 }
 

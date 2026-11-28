@@ -126,19 +126,19 @@ void _dbPolygon::collectMemInfo(MemInfo& info)
 
 const Polygon& dbPolygon::getPolygon() const
 {
-  _dbPolygon* obj = (_dbPolygon*) this;
+  const _dbPolygon* obj = reinterpret_cast<const _dbPolygon*>(this);
   return obj->polygon_;
 }
 
 int dbPolygon::getDesignRuleWidth() const
 {
-  _dbPolygon* obj = (_dbPolygon*) this;
+  const _dbPolygon* obj = reinterpret_cast<const _dbPolygon*>(this);
   return obj->design_rule_width_;
 }
 
 int dbPolygon::getMinSpacing() const
 {
-  _dbPolygon* obj = (_dbPolygon*) this;
+  const _dbPolygon* obj = reinterpret_cast<const _dbPolygon*>(this);
   return obj->min_spacing_;
 }
 

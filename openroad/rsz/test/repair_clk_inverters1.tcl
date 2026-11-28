@@ -10,4 +10,4 @@ repair_clock_inverters
 report_net clk1
 report_net c1_1/ZN
 report_net c1_2/ZN
-puts [[sta::sta_to_db_net [get_net net1]] getSigType]
+puts [[sta::sta_to_db_net [get_net net_1]] getSigType]

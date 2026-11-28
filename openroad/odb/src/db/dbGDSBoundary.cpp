@@ -87,40 +87,40 @@ void _dbGDSBoundary::collectMemInfo(MemInfo& info)
 
 void dbGDSBoundary::setLayer(int16_t layer)
 {
-  _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
+  _dbGDSBoundary* obj = reinterpret_cast<_dbGDSBoundary*>(this);
 
   obj->layer_ = layer;
 }
 
 int16_t dbGDSBoundary::getLayer() const
 {
-  _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
+  const _dbGDSBoundary* obj = reinterpret_cast<const _dbGDSBoundary*>(this);
   return obj->layer_;
 }
 
 void dbGDSBoundary::setDatatype(int16_t datatype)
 {
-  _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
+  _dbGDSBoundary* obj = reinterpret_cast<_dbGDSBoundary*>(this);
 
   obj->datatype_ = datatype;
 }
 
 int16_t dbGDSBoundary::getDatatype() const
 {
-  _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
+  const _dbGDSBoundary* obj = reinterpret_cast<const _dbGDSBoundary*>(this);
   return obj->datatype_;
 }
 
 void dbGDSBoundary::setXy(const std::vector<Point>& xy)
 {
-  _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
+  _dbGDSBoundary* obj = reinterpret_cast<_dbGDSBoundary*>(this);
 
   obj->xy_ = xy;
 }
 
 void dbGDSBoundary::getXy(std::vector<Point>& tbl) const
 {
-  _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
+  const _dbGDSBoundary* obj = reinterpret_cast<const _dbGDSBoundary*>(this);
   tbl = obj->xy_;
 }
 

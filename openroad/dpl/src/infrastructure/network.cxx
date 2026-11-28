@@ -18,6 +18,7 @@
 #include "infrastructure/architecture.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 namespace dpl {
 
@@ -474,32 +475,11 @@ void Network::addNode(odb::dbInst* inst)
 ////////////////////////////////////////////////////////////////////////////////
 void Network::addNode(odb::dbBTerm* bterm)
 {
-  // Just allocate a node, append it and give it the id
-  // that corresponds to its index.
-  Node ndi;
+  // The node's id is its index.
   const int id = nodes_.size();
-  ndi.setId(id);
-  ndi.setBTerm(bterm);
-  // Fill in data.
-  ndi.setType(Node::TERMINAL);
-  ndi.setFixed(true);
-  ndi.setOrient(odb::dbOrientType::R0);
-
-  DbuX ww(bterm->getBBox().xMax() - bterm->getBBox().xMin());
-  DbuY hh(bterm->getBBox().yMax() - bterm->getBBox().yMax());
-
-  ndi.setHeight(hh);
-  ndi.setWidth(ww);
-  ndi.setOrigLeft(DbuX{bterm->getBBox().xMin() - core_.xMin()});
-  ndi.setOrigBottom(DbuY{bterm->getBBox().yMin() - core_.yMin()});
-  ndi.setLeft(ndi.getOrigLeft());
-  ndi.setBottom(ndi.getOrigBottom());
-
-  // Not relevant for terminal.
-  ndi.setBottomPower(Architecture::Row::Power_UNK);
-  ndi.setTopPower(Architecture::Row::Power_UNK);
   term_to_node_idx_[bterm] = id;
-  nodes_.emplace_back(std::make_unique<Node>(ndi));
+  nodes_.emplace_back(
+      std::make_unique<Node>(Node::makeTerminal(id, bterm, core_)));
   ++terminals_cnt_;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -515,19 +495,26 @@ void Network::addFillerNode(const DbuX left,
                             const DbuX width,
                             const DbuY height)
 {
-  Node ndi;
-  const int id = (int) nodes_.size();
-  ndi.setFixed(true);
-  ndi.setType(Node::FILLER);
-  ndi.setId(id);
-  ndi.setHeight(height);
-  ndi.setWidth(width);
-  ndi.setBottom(bottom);
-  ndi.setLeft(left);
-  nodes_.emplace_back(std::make_unique<Node>(ndi));
+  const int id = static_cast<int>(nodes_.size());
+  nodes_.emplace_back(std::make_unique<Node>(
+      Node::makeFiller(id, left, bottom, width, height)));
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+odb::Rect Network::instBBox(odb::dbInst* inst) const
+{
+  const odb::dbMaster* master = inst->getMaster();
+  const odb::Point loc = inst->getLocation();
+  int width = master->getWidth();
+  int height = master->getHeight();
+  if (inst->getOrient().isRightAngleRotation()) {
+    std::swap(width, height);
+  }
+  const int x = loc.x() - core_.xMin();
+  const int y = loc.y() - core_.yMin();
+  return {x, y, x + width, y + height};
+}
+
 void Network::clear()
 {
   nodes_.clear();

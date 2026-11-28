@@ -190,53 +190,68 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   alignment_marker_rule_tbl_ = new dbTable<_dbAlignmentMarkerRule>(
       this,
       this,
-      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbDatabase::getObjectTable),
       dbAlignmentMarkerRuleObj);
   chip_tbl_ = new dbTable<_dbChip, 2>(
-      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
+      this,
+      this,
+      static_cast<GetObjTbl_t>(&_dbDatabase::getObjectTable),
+      dbChipObj);
   chip_hash_.setTable(chip_tbl_);
   prop_tbl_ = new dbTable<_dbProperty>(
-      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbPropertyObj);
+      this,
+      this,
+      static_cast<GetObjTbl_t>(&_dbDatabase::getObjectTable),
+      dbPropertyObj);
   chip_inst_tbl_ = new dbTable<_dbChipInst>(
-      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipInstObj);
+      this,
+      this,
+      static_cast<GetObjTbl_t>(&_dbDatabase::getObjectTable),
+      dbChipInstObj);
   chip_region_inst_tbl_ = new dbTable<_dbChipRegionInst>(
       this,
       this,
-      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbDatabase::getObjectTable),
       dbChipRegionInstObj);
   chip_conn_tbl_ = new dbTable<_dbChipConn>(
-      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipConnObj);
-  chip_bump_inst_tbl_
-      = new dbTable<_dbChipBumpInst>(this,
-                                     this,
-                                     (GetObjTbl_t) &_dbDatabase::getObjectTable,
-                                     dbChipBumpInstObj);
+      this,
+      this,
+      static_cast<GetObjTbl_t>(&_dbDatabase::getObjectTable),
+      dbChipConnObj);
+  chip_bump_inst_tbl_ = new dbTable<_dbChipBumpInst>(
+      this,
+      this,
+      static_cast<GetObjTbl_t>(&_dbDatabase::getObjectTable),
+      dbChipBumpInstObj);
   chip_net_tbl_ = new dbTable<_dbChipNet>(
-      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipNetObj);
+      this,
+      this,
+      static_cast<GetObjTbl_t>(&_dbDatabase::getObjectTable),
+      dbChipNetObj);
   unfolded_chip_inst_tbl_ = new dbTable<_dbUnfoldedChipInst>(
       this,
       this,
-      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbDatabase::getObjectTable),
       dbUnfoldedChipInstObj);
   unfolded_chip_region_inst_tbl_ = new dbTable<_dbUnfoldedChipRegionInst>(
       this,
       this,
-      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbDatabase::getObjectTable),
       dbUnfoldedChipRegionInstObj);
   unfolded_chip_bump_inst_tbl_ = new dbTable<_dbUnfoldedChipBumpInst>(
       this,
       this,
-      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbDatabase::getObjectTable),
       dbUnfoldedChipBumpInstObj);
   unfolded_chip_conn_tbl_ = new dbTable<_dbUnfoldedChipConn>(
       this,
       this,
-      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbDatabase::getObjectTable),
       dbUnfoldedChipConnObj);
   unfolded_chip_net_tbl_ = new dbTable<_dbUnfoldedChipNet>(
       this,
       this,
-      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbDatabase::getObjectTable),
       dbUnfoldedChipNetObj);
   // User Code Begin Constructor
   magic1_ = kMagic1;
@@ -675,99 +690,113 @@ utl::Logger* _dbObject::getLogger() const
 
 void dbDatabase::setDbuPerMicron(uint32_t dbu_per_micron)
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj = reinterpret_cast<_dbDatabase*>(this);
 
   obj->dbu_per_micron_ = dbu_per_micron;
 }
 
 uint32_t dbDatabase::getDbuPerMicron() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  const _dbDatabase* obj = reinterpret_cast<const _dbDatabase*>(this);
   return obj->dbu_per_micron_;
 }
 
 dbSet<dbAlignmentMarkerRule> dbDatabase::getAlignmentMarkerRules() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
   return dbSet<dbAlignmentMarkerRule>(obj, obj->alignment_marker_rule_tbl_);
 }
 
 dbSet<dbChip> dbDatabase::getChips() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
   return dbSet<dbChip>(obj, obj->chip_tbl_);
 }
 
 dbChip* dbDatabase::findChip(const char* name) const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
-  return (dbChip*) obj->chip_hash_.find(name);
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
+  return reinterpret_cast<dbChip*>(obj->chip_hash_.find(name));
 }
 
 dbSet<dbProperty> dbDatabase::getProperties() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
   return dbSet<dbProperty>(obj, obj->prop_tbl_);
 }
 
 dbSet<dbChipInst> dbDatabase::getChipInsts() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
   return dbSet<dbChipInst>(obj, obj->chip_inst_tbl_);
 }
 
 dbSet<dbChipRegionInst> dbDatabase::getChipRegionInsts() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
   return dbSet<dbChipRegionInst>(obj, obj->chip_region_inst_tbl_);
 }
 
 dbSet<dbChipConn> dbDatabase::getChipConns() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
   return dbSet<dbChipConn>(obj, obj->chip_conn_tbl_);
 }
 
 dbSet<dbChipBumpInst> dbDatabase::getChipBumpInsts() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
   return dbSet<dbChipBumpInst>(obj, obj->chip_bump_inst_tbl_);
 }
 
 dbSet<dbChipNet> dbDatabase::getChipNets() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
   return dbSet<dbChipNet>(obj, obj->chip_net_tbl_);
 }
 
 dbSet<dbUnfoldedChipInst> dbDatabase::getUnfoldedChipInsts() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
   return dbSet<dbUnfoldedChipInst>(obj, obj->unfolded_chip_inst_tbl_);
 }
 
 dbSet<dbUnfoldedChipRegionInst> dbDatabase::getUnfoldedChipRegionInsts() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
   return dbSet<dbUnfoldedChipRegionInst>(obj,
                                          obj->unfolded_chip_region_inst_tbl_);
 }
 
 dbSet<dbUnfoldedChipBumpInst> dbDatabase::getUnfoldedChipBumpInsts() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
   return dbSet<dbUnfoldedChipBumpInst>(obj, obj->unfolded_chip_bump_inst_tbl_);
 }
 
 dbSet<dbUnfoldedChipConn> dbDatabase::getUnfoldedChipConns() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
   return dbSet<dbUnfoldedChipConn>(obj, obj->unfolded_chip_conn_tbl_);
 }
 
 dbSet<dbUnfoldedChipNet> dbDatabase::getUnfoldedChipNets() const
 {
-  _dbDatabase* obj = (_dbDatabase*) this;
+  _dbDatabase* obj
+      = reinterpret_cast<_dbDatabase*>(const_cast<dbDatabase*>(this));
   return dbSet<dbUnfoldedChipNet>(obj, obj->unfolded_chip_net_tbl_);
 }
 
