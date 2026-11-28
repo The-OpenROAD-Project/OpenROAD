@@ -104,6 +104,68 @@ MACRO OR2
     END
   END Y
 END OR2
+
+MACRO AND2_AA
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.6 BY 1.0 ;
+  SITE core ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.25 0.15 0.35 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.65 0.15 0.75 ;
+    END
+  END B
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.45 0.45 0.55 0.55 ;
+    END
+  END Y
+END AND2_AA
+
+MACRO OR2_AA
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.6 BY 1.0 ;
+  SITE core ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.25 0.15 0.35 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.65 0.15 0.75 ;
+    END
+  END B
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.45 0.45 0.55 0.55 ;
+    END
+  END Y
+END OR2_AA
 MACRO MUX2
   CLASS CORE ;
   ORIGIN 0 0 ;

@@ -73,14 +73,17 @@ const sta::LibertyPort* onlyOutput(const sta::LibertyCell* cell,
   return input_count == inputs && output_count == 1 ? output : nullptr;
 }
 
-// `op` of input pins: NOT of one, AND or OR of two.
+// `op` of input pins: NOT of one, AND or OR of two different ones.
 bool isGateOf(const sta::FuncExpr* func, const sta::FuncExpr::Op op)
 {
-  const auto is_pin = [](const sta::FuncExpr* expr) {
-    return expr != nullptr && expr->op() == sta::FuncExpr::Op::port;
+  const auto is_input = [](const sta::FuncExpr* expr) {
+    return expr != nullptr && expr->op() == sta::FuncExpr::Op::port
+           && expr->port()->direction()->isInput();
   };
-  return func != nullptr && func->op() == op && is_pin(func->left())
-         && (op == sta::FuncExpr::Op::not_ || is_pin(func->right()));
+  return func != nullptr && func->op() == op && is_input(func->left())
+         && (op == sta::FuncExpr::Op::not_
+             || (is_input(func->right())
+                 && func->right()->port() != func->left()->port()));
 }
 
 // The first pin of the master that is an output always driving the constant

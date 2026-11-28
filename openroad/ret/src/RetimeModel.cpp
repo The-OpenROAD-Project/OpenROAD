@@ -122,6 +122,20 @@ float sceneCap(const sta::Scene* scene, const sta::LibertyPort* port)
   return (scene_port != nullptr ? scene_port : port)->capacitance();
 }
 
+// The register's first pin with a register clock port; nullptr without one.
+const sta::Pin* regClkPin(sta::dbSta* sta, odb::dbInst* reg)
+{
+  sta::dbNetwork* network = sta->getDbNetwork();
+  for (odb::dbITerm* iterm : reg->getITerms()) {
+    const sta::Pin* pin = network->dbToSta(iterm);
+    const sta::LibertyPort* port = network->libertyPort(pin);
+    if (port != nullptr && port->isRegClk()) {
+      return pin;
+    }
+  }
+  return nullptr;
+}
+
 }  // namespace
 
 void Retime::buildModel()
@@ -586,17 +600,17 @@ void Retime::sampleLaunchOffset()
 
 void Retime::sampleLaunch(odb::dbInst* flop, std::vector<float>& offsets)
 {
+  const sta::Pin* clock = regClkPin(sta_, flop);
+  if (clock == nullptr) {
+    return;
+  }
+  clock_slew_ = clockPinSlew(sta_, clock);
   sta::dbNetwork* network = sta_->getDbNetwork();
   const sta::LibertyCell* cell = libertyCell(sta_, flop->getMaster());
   for (odb::dbITerm* iterm : flop->getITerms()) {
-    const sta::Pin* pin = network->dbToSta(iterm);
-    const sta::LibertyPort* port = network->libertyPort(pin);
-    if (port == nullptr) {
-      continue;
-    }
-    if (port->isRegClk()) {
-      clock_slew_ = clockPinSlew(sta_, pin);
-    } else if (drivesNet(iterm)) {
+    const sta::LibertyPort* port
+        = network->libertyPort(network->dbToSta(iterm));
+    if (port != nullptr && drivesNet(iterm)) {
       const float table
           = registerClockToQ(sta_, cell, port, clock_slew_, loadCap(iterm));
       if (table >= 0.0f) {

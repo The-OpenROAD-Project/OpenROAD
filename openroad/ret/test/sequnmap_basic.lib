@@ -17,6 +17,7 @@
 /*   DFF_P_TQ  a tri-state output: never the base, never unmapped */
 /*   DFFE_PP   state feedback */
 /*   DFF_PN0   async clear */
+/* AND2_AA, OR2_AA  read A twice, area TRAP below AND2 and OR2: never builders */
 /* No timing tables on purpose: decompose reads FUNCTIONS, not delays. */
 /* ========================================================================== */
 library (sequnmap_basic) {
@@ -73,6 +74,38 @@ library (sequnmap_basic) {
     pin (Y) {
       direction : output;
       function : "(A + B)";
+    }
+  }
+
+  cell (AND2_AA) {
+    area : 1.5;
+    pin (A) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (B) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Y) {
+      direction : output;
+      function : "(A * A)";
+    }
+  }
+
+  cell (OR2_AA) {
+    area : 1.5;
+    pin (A) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (B) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Y) {
+      direction : output;
+      function : "(A + A)";
     }
   }
 
