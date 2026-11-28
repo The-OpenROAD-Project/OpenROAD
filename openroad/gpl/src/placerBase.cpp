@@ -933,6 +933,7 @@ void PlacerBaseCommon::init()
 
   instMap_.reserve(instStor_.size());
   insts_.reserve(instStor_.size());
+  placeInsts_.reserve(instStor_.size());
   for (auto& pb_inst : instStor_) {
     instMap_[pb_inst.dbInst()] = &pb_inst;
     insts_.push_back(&pb_inst);
@@ -940,6 +941,10 @@ void PlacerBaseCommon::init()
     if (!pb_inst.isFixed()) {
       placeInsts_.push_back(&pb_inst);
     }
+  }
+
+  if (pbVars_.skipNetsAndPins) {
+    return;
   }
 
   // nets fill
@@ -1231,6 +1236,32 @@ bool PlacerBase::isInGroup(odb::dbInst* inst) const
   return group == group_;
 }
 
+namespace {
+
+enum SiteInfo
+{
+  Blocked,    // site representation of dummy instances
+  Row,        // placable site
+  FixedInst,  // site taken by fixed instance
+};
+
+void fillSiteRect(std::vector<SiteInfo>& grid,
+                  const int64_t site_count_x,
+                  const std::pair<int, int> pair_x,
+                  const std::pair<int, int> pair_y,
+                  const SiteInfo val)
+{
+  if (pair_x.first >= pair_x.second || pair_y.first >= pair_y.second) {
+    return;
+  }
+  for (int j = pair_y.first; j < pair_y.second; ++j) {
+    auto* row_ptr = grid.data() + static_cast<int64_t>(j) * site_count_x;
+    std::fill(row_ptr + pair_x.first, row_ptr + pair_x.second, val);
+  }
+}
+
+}  // namespace
+
 // Use dummy instance to fill unusable sites.  Sites are unusable
 // due to fragmented rows or placement blockages.
 void PlacerBase::initInstsForUnusableSites()
@@ -1239,13 +1270,6 @@ void PlacerBase::initInstsForUnusableSites()
 
   int64_t siteCountX = region_bbox_.dx() / siteSizeX_;
   int64_t siteCountY = region_bbox_.dy() / siteSizeY_;
-
-  enum SiteInfo
-  {
-    Blocked,   // site representation of dummy instances
-    Row,       // placable site
-    FixedInst  // site taken by fixed instance
-  };
 
   //
   // Initialize siteGrid as Row.
@@ -1277,11 +1301,7 @@ void PlacerBase::initInstsForUnusableSites()
                                                0,
                                                siteCountY);
 
-      for (int i = pairX.first; i < pairX.second; i++) {
-        for (int j = pairY.first; j < pairY.second; j++) {
-          siteGrid[(j * siteCountX) + i] = Row;
-        }
-      }
+      fillSiteRect(siteGrid, siteCountX, pairX, pairY, SiteInfo::Row);
     }
 
     // Mark sites intersecting with any region as Blocked
@@ -1305,11 +1325,7 @@ void PlacerBase::initInstsForUnusableSites()
                                                    0,
                                                    siteCountY);
 
-          for (int i = pairX.first; i < pairX.second; i++) {
-            for (int j = pairY.first; j < pairY.second; j++) {
-              siteGrid[(j * siteCountX) + i] = SiteInfo::Blocked;
-            }
-          }
+          fillSiteRect(siteGrid, siteCountX, pairX, pairY, SiteInfo::Blocked);
         }
       }
     }
@@ -1337,11 +1353,7 @@ void PlacerBase::initInstsForUnusableSites()
                                                  siteCountY);
 
         // Then, unblock only the placeable areas
-        for (int i = pairX.first; i < pairX.second; i++) {
-          for (int j = pairY.first; j < pairY.second; j++) {
-            siteGrid[(j * siteCountX) + i] = SiteInfo::Row;
-          }
-        }
+        fillSiteRect(siteGrid, siteCountX, pairX, pairY, SiteInfo::Row);
       }
     }
   }
@@ -1434,18 +1446,22 @@ void PlacerBase::initInstsForUnusableSites()
                                                0,
                                                siteCountY);
 
-      for (int i = pairX.first; i < pairX.second; i++) {
-        for (int j = pairY.first; j < pairY.second; j++) {
-          siteGrid[(j * siteCountX) + i] = Blocked;
-          debugPrint(log_,
-                     GPL,
-                     "dummies",
-                     1,
-                     "Blocking site at ({}, {}) due to fixed macro {} halo.",
-                     i,
-                     j,
-                     db_inst->getName());
+      if (log_->debugCheck(GPL, "dummies", 1)) {
+        for (int i = pairX.first; i < pairX.second; i++) {
+          for (int j = pairY.first; j < pairY.second; j++) {
+            siteGrid[(static_cast<int64_t>(j) * siteCountX) + i] = Blocked;
+            debugPrint(log_,
+                       GPL,
+                       "dummies",
+                       1,
+                       "Blocking site at ({}, {}) due to fixed macro {} halo.",
+                       i,
+                       j,
+                       db_inst->getName());
+          }
         }
+      } else {
+        fillSiteRect(siteGrid, siteCountX, pairX, pairY, SiteInfo::Blocked);
       }
     }
 
@@ -1453,18 +1469,22 @@ void PlacerBase::initInstsForUnusableSites()
         inst->lx(), inst->ux(), region_bbox_.xMin(), siteSizeX_, 0, siteCountX);
     std::pair<int, int> pairY = getMinMaxIdx(
         inst->ly(), inst->uy(), region_bbox_.yMin(), siteSizeY_, 0, siteCountY);
-    for (int i = pairX.first; i < pairX.second; i++) {
-      for (int j = pairY.first; j < pairY.second; j++) {
-        siteGrid[(j * siteCountX) + i] = FixedInst;
-        debugPrint(log_,
-                   GPL,
-                   "dummies",
-                   1,
-                   "Blocking site at ({}, {}) due to fixed instance {}.",
-                   i,
-                   j,
-                   db_inst->getName());
+    if (log_->debugCheck(GPL, "dummies", 1)) {
+      for (int i = pairX.first; i < pairX.second; i++) {
+        for (int j = pairY.first; j < pairY.second; j++) {
+          siteGrid[(static_cast<int64_t>(j) * siteCountX) + i] = FixedInst;
+          debugPrint(log_,
+                     GPL,
+                     "dummies",
+                     1,
+                     "Blocking site at ({}, {}) due to fixed instance {}.",
+                     i,
+                     j,
+                     db_inst->getName());
+        }
       }
+    } else {
+      fillSiteRect(siteGrid, siteCountX, pairX, pairY, SiteInfo::FixedInst);
     }
   }
 
@@ -1492,12 +1512,11 @@ void PlacerBase::initInstsForUnusableSites()
             break;
           }
         }
-        for (int y = j; y < endY; y++) {
-          const int64_t base_idx = static_cast<int64_t>(y) * siteCountX;
-          std::fill(siteGrid.begin() + base_idx + startX,
-                    siteGrid.begin() + base_idx + endX,
-                    SiteInfo::FixedInst);
-        }
+        fillSiteRect(siteGrid,
+                     siteCountX,
+                     {startX, endX},
+                     {j, endY},
+                     SiteInfo::FixedInst);
         Instance dummy_gcell(region_bbox_.xMin() + (siteSizeX_ * startX),
                              region_bbox_.yMin() + (siteSizeY_ * j),
                              region_bbox_.xMin() + (siteSizeX_ * endX),
@@ -1601,6 +1620,30 @@ void PlacerBase::unlockAll()
 int64_t PlacerBase::macroInstsArea() const
 {
   return macroInstsArea_;
+}
+
+PlacerBase::UniformTargetDensityResult PlacerBase::computeUniformTargetDensity(
+    const bool use_uniform_target_density,
+    const float target_density) const
+{
+  if (placeInsts_.empty()) {
+    return {};
+  }
+  UniformTargetDensityResult res;
+  res.white_space_area = region_area_ - nonPlaceInstsArea_;
+  const float auto_target_density
+      = static_cast<float>(stdInstsArea_)
+            / static_cast<float>(res.white_space_area - macroInstsArea_)
+        + 0.01;
+  res.target_density
+      = use_uniform_target_density ? auto_target_density : target_density;
+  res.nesterov_insts_area = stdInstsArea_
+                            + static_cast<int64_t>(std::round(
+                                macroInstsArea() * res.target_density));
+  const float raw_uniform_density = static_cast<float>(res.nesterov_insts_area)
+                                    / static_cast<float>(res.white_space_area);
+  res.uniform_target_density = ceilf(raw_uniform_density * 100) / 100;
+  return res;
 }
 
 // https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op

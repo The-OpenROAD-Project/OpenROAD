@@ -289,6 +289,7 @@ struct PlacerBaseVars
   const bool placeIosMode;
   const bool disablePinDensityAdjust;
   const bool macroAreaInDenominator;
+  bool skipNetsAndPins = false;
 };
 
 // Class includes everything from PlacerBase that is not region specific
@@ -321,6 +322,7 @@ class PlacerBaseCommon
   int getPadRight() const { return pbVars_.padRight; }
   bool isSkipIoMode() const { return pbVars_.skipIoMode; }
   bool macroAreaInDenominator() const { return pbVars_.macroAreaInDenominator; }
+  bool isSkipNetsAndPins() const { return pbVars_.skipNetsAndPins; }
 
   int64_t getHpwl() const;
   void printInfo() const;
@@ -403,6 +405,17 @@ class PlacerBase
   int64_t nonPlaceInstsArea() const { return nonPlaceInstsArea_; }
   int64_t macroInstsArea() const;
   int64_t stdInstsArea() const { return stdInstsArea_; }
+
+  struct UniformTargetDensityResult
+  {
+    int64_t white_space_area = 0;
+    float target_density = 0.0f;
+    int64_t nesterov_insts_area = 0;
+    float uniform_target_density = 0.0f;
+  };
+  UniformTargetDensityResult computeUniformTargetDensity(
+      bool use_uniform_target_density,
+      float target_density) const;
 
   odb::dbDatabase* db() const { return db_; }
   odb::dbGroup* getGroup() const { return group_; }

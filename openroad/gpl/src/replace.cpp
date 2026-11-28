@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -160,6 +161,7 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
                                         const PlaceOptions& options)
 {
   checkHasCoreRows();
+  checkPlacerBaseHasNets();
   log_->info(GPL, 83, "Execute incremental mode global placement.");
   int placed_cnt = 0;
   int unplaced_cnt = 0;
@@ -287,6 +289,7 @@ void Replace::doInitialPlace(const int threads, const PlaceOptions& options)
 {
   checkHasCoreRows();
   checkPlaceIosSupported(options);
+  checkPlacerBaseHasNets();
   if (pbc_ == nullptr) {
     pbc_ = std::make_shared<PlacerBaseCommon>(db_, options, log_);
 
@@ -350,12 +353,14 @@ void Replace::initIoPinPlace()
   }
 }
 
-bool Replace::initNesterovPlace(const PlaceOptions& options,
-                                const int threads,
-                                bool check_density)
+bool Replace::initPlacerBase(const PlaceOptions& options,
+                             const bool check_density,
+                             const bool skip_nets_and_pins)
 {
   if (!pbc_) {
-    pbc_ = std::make_shared<PlacerBaseCommon>(db_, options, log_);
+    PlacerBaseVars pb_vars(options);
+    pb_vars.skipNetsAndPins = skip_nets_and_pins;
+    pbc_ = std::make_shared<PlacerBaseCommon>(db_, pb_vars, log_);
 
     pbVec_.push_back(
         std::make_shared<PlacerBase>(db_, pbc_, log_, check_density));
@@ -373,7 +378,25 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
     }
   }
 
-  if (total_placeable_insts_ == 0) {
+  return total_placeable_insts_ > 0;
+}
+
+void Replace::checkPlacerBaseHasNets() const
+{
+  if (pbc_ && pbc_->isSkipNetsAndPins()) {
+    log_->error(GPL,
+                172,
+                "Placer data was built without nets and pins; call reset "
+                "before placement.");
+  }
+}
+
+bool Replace::initNesterovPlace(const PlaceOptions& options,
+                                const int threads,
+                                bool check_density)
+{
+  checkPlacerBaseHasNets();
+  if (!initPlacerBase(options, check_density, false)) {
     log_->warn(GPL, 136, "No placeable instances - skipping placement.");
     return false;
   }
@@ -538,7 +561,7 @@ NesterovBase* Replace::getTopLevelNB() const
 }
 
 float Replace::getUniformTargetDensity(const PlaceOptions& options,
-                                       const int threads)
+                                       [[maybe_unused]] const int threads)
 {
   log_->info(GPL, 22, "Initialize gpl and calculate uniform density.");
   log_->redirectStringBegin();
@@ -547,8 +570,12 @@ float Replace::getUniformTargetDensity(const PlaceOptions& options,
   options_no_io.skipIo();  // in case bterms are not placed
 
   float density = 1.0f;
-  if (initNesterovPlace(options_no_io, threads, false)) {
-    density = getTopLevelNB()->getUniformTargetDensity();
+  if (initPlacerBase(options_no_io, false, true)) {
+    density
+        = pbVec_[0]
+              ->computeUniformTargetDensity(
+                  options_no_io.uniformTargetDensityMode, options_no_io.density)
+              .uniform_target_density;
   }
 
   log_->redirectStringEnd();  // discard output
