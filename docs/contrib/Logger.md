@@ -387,7 +387,7 @@ Debug messages are enabled with the tcl command:
 
 #### List debug calls
 
-Run this command in a tool's source directory to list `debugPrint` calls with a literal group name.
+Run this command in a tool's source directory (`openroad/<tool>/src`) to list `debugPrint` calls with a literal group name.
 The output gives the file, line, and group name.
 It includes calls that span multiple lines:
 
@@ -397,6 +397,23 @@ find . -type f \( -name '*.c' -o -name '*.cc' -o -name '*.cpp' -o -name '*.cxx' 
 
 Use the group name with `set_debug_level` to enable those messages; quote group names that contain spaces in Tcl (for example `set_debug_level CTS "tech char" 1`).
 Calls that use a variable for the group name need source inspection.
+
+To see the messages of an existing Tcl test, write a short script outside the repository (here `/tmp/debug_init.tcl`) that enables the group and then sources the test:
+
+```tcl
+set_debug_level GPL init 1
+source incremental02.tcl
+```
+
+Run the script from the test directory with an OpenROAD binary from `bazelisk build //:openroad`; a debug build is not needed:
+
+```shell
+cd openroad/gpl/test
+../../../bazel-bin/openroad/openroad -no_init -no_splash -exit -threads 1 /tmp/debug_init.tcl
+```
+
+A group prints only when the test reaches its `debugPrint` calls at the given level or lower.
+`set_debug_level` accepts any group name, so no output can also mean that the group name is wrong.
 
 ## Metrics
 
