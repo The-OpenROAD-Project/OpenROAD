@@ -13,6 +13,7 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "odb/isotropy.h"
 #include "utl/Logger.h"
 namespace dpl {
@@ -181,10 +182,7 @@ void Opendp::saveViolations(const std::vector<Node*>& failures,
     if (!marker) {
       break;
     }
-    int xMin = (failure->getLeft() + core_.xMin()).v;
-    int yMin = (failure->getBottom() + core_.yMin()).v;
-    int xMax = (failure->getLeft() + failure->getWidth() + core_.xMin()).v;
-    int yMax = (failure->getBottom() + failure->getHeight() + core_.yMin()).v;
+    odb::Rect shape = failure->getBBox();
 
     if (violation_type == "overlap") {
       const Node* o_cell = checkOverlap(*failure);
@@ -194,26 +192,14 @@ void Opendp::saveViolations(const std::vector<Node*>& failures,
                        "Could not find overlapping cell for cell {}",
                        failure->name());
       }
-      odb::Rect o_rect(o_cell->getLeft().v,
-                       o_cell->getBottom().v,
-                       o_cell->getLeft().v + o_cell->getWidth().v,
-                       o_cell->getBottom().v + o_cell->getHeight().v);
-      odb::Rect f_rect(failure->getLeft().v,
-                       failure->getBottom().v,
-                       failure->getLeft().v + failure->getWidth().v,
-                       failure->getBottom().v + failure->getHeight().v);
-
       odb::Rect overlap_rect;
-      o_rect.intersection(f_rect, overlap_rect);
-
-      xMin = overlap_rect.xMin() + core_.xMin();
-      yMin = overlap_rect.yMin() + core_.yMin();
-      xMax = overlap_rect.xMax() + core_.xMin();
-      yMax = overlap_rect.yMax() + core_.yMin();
+      o_cell->getBBox().intersection(shape, overlap_rect);
+      shape = overlap_rect;
 
       marker->addSource(o_cell->getDbInst());
     }
-    marker->addShape(odb::Rect{xMin, yMin, xMax, yMax});
+    shape.moveDelta(core_.xMin(), core_.yMin());
+    marker->addShape(shape);
     marker->addSource(failure->getDbInst());
   }
 }
@@ -353,9 +339,9 @@ void Opendp::reportOverlapFailure(Node* cell) const
   const Node* overlap = checkOverlap(*cell);
   logger_->report(" {} ({}) overlaps {} ({})",
                   cell->name(),
-                  cell->getDbInst()->getMaster()->getName(),
+                  cell->getDbMaster()->getName(),
                   overlap->name(),
-                  overlap->getDbInst()->getMaster()->getName());
+                  overlap->getDbMaster()->getName());
 }
 
 /* static */
@@ -465,22 +451,18 @@ Node* Opendp::checkOneSiteGaps(Node& cell) const
 
 bool Opendp::checkRegionPlacement(const Node* cell) const
 {
-  const DbuX x_begin = cell->getLeft();
-  const DbuX x_end = x_begin + cell->getWidth();
-  const DbuY y_begin = cell->getBottom();
-  const DbuY y_end = y_begin + cell->getHeight();
-
-  if (cell->getRegion()) {
-    const DbuX site_width = grid_->getSiteWidth();
-    return cell->getRegion()->contains(
-               odb::Rect(x_begin.v, y_begin.v, x_end.v, y_end.v))
-           && checkRegionOverlap(cell,
-                                 GridX{x_begin.v / site_width.v},
-                                 GridY{y_begin.v / cell->getHeight().v},
-                                 GridX{x_end.v / site_width.v},
-                                 GridY{y_end.v / cell->getHeight().v});
+  if (!cell->getRegion()) {
+    return true;
   }
-  return true;
+  const odb::Rect bbox = cell->getBBox();
+  const int site_width = grid_->getSiteWidth().v;
+  const int height = cell->getHeight().v;
+  return cell->getRegion()->contains(bbox)
+         && checkRegionOverlap(cell,
+                               GridX{bbox.xMin() / site_width},
+                               GridY{bbox.yMin() / height},
+                               GridX{bbox.xMax() / site_width},
+                               GridY{bbox.yMax() / height});
 }
 
 }  // namespace dpl

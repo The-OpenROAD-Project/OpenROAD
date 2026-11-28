@@ -19,6 +19,7 @@ namespace dpl {
 
 class DplObserver;
 class Opendp;
+class PlacementDRC;
 class Node;
 class Network;
 class Group;
@@ -87,6 +88,56 @@ struct NegCell
 };
 
 // ---------------------------------------------------------------------------
+// NegotiationOptions – settings fixed for the lifetime of a legalizer
+// ---------------------------------------------------------------------------
+struct NegotiationOptions
+{
+  // Hard displacement caps from detailed_placement.
+  int max_displacement_x{0};  // sites
+  int max_displacement_y{0};  // rows
+  bool disallow_one_site_gaps{false};
+
+  int site_search_window{kSiteSearchWindow};
+  int row_search_window{kRowSearchWindow};
+  // Uses site_search_window/row_search_window as hard ranges: disables both
+  // window extensions.
+  bool disable_window_extension{false};
+  double drc_penalty{kDrcPenalty};
+  int max_iter_neg{kMaxIterNeg};
+  double max_disp_multiplier{kMfDefault};  // mf on the paper
+  int max_disp_threshold{kThDefault};      // th on the paper
+
+  // Suppresses the configuration and per-iteration progress output.  Warnings
+  // (stalls, non-convergence) are always reported.
+  bool quiet{false};
+
+  // Debug-observer pauses: every debug_interval iterations from debug_start
+  // when iterative_debug is set, and per cell when deep_iterative_debug is.
+  bool iterative_debug{false};
+  bool deep_iterative_debug{false};
+  int debug_start{0};
+  int debug_interval{1};
+};
+
+// ---------------------------------------------------------------------------
+// NegotiationStats – convergence results of one legalize() call
+// ---------------------------------------------------------------------------
+struct NegotiationStats
+{
+  int total_moves{0};
+  // Iterations actually executed by each phase.
+  int phase1_iterations{0};
+  int phase2_iterations{0};
+  // Phase that drove the violation count to zero: 1 or 2.  -1 when the run
+  // ended without converging (phase-2 iteration limit, or a stall handed to
+  // the diamond search), 0 when negotiation never ran because every cell was
+  // already legal.
+  int converge_phase{0};
+  int diamond_recoveries{0};
+  std::string finish{"not run"};
+};
+
+// ---------------------------------------------------------------------------
 // NegotiationLegalizer
 // ---------------------------------------------------------------------------
 class NegotiationLegalizer
@@ -95,6 +146,7 @@ class NegotiationLegalizer
   NegotiationLegalizer(Opendp* opendp,
                        odb::dbDatabase* db,
                        utl::Logger* logger,
+                       const NegotiationOptions& options,
                        DplObserver* debug_observer = nullptr,
                        Network* network = nullptr);
   ~NegotiationLegalizer() = default;
@@ -112,43 +164,11 @@ class NegotiationLegalizer
   // Pass positions back to the DPL original structure.
   void commitNegotiationPosToDpl();
 
-  // Tuning knobs (all have paper-default values)
-  void setMf(double mf) { max_disp_multiplier_ = mf; }
-  void setTh(int th) { max_disp_threshold_ = th; }
-  void setMaxIterNeg(int n) { max_iter_neg_ = n; }
-  void setSiteSearchWindow(int w) { site_search_window_ = w; }
-  void setRowSearchWindow(int w) { row_search_window_ = w; }
-  void setDrcPenalty(double p) { drc_penalty_ = p; }
-  void setNumThreads(int n) { num_threads_ = n; }
-  // When set, site_search_window_/row_search_window_ are used as hard
-  // ranges: disables both window extensions.
-  void setDisableWindowExtension(bool disable)
-  {
-    disable_window_extension_ = disable;
-  }
-  // Suppresses the configuration and per-iteration progress output.  Warnings
-  // (stalls, non-convergence) are always reported.
-  void setQuiet(bool quiet) { quiet_ = quiet; }
-
   // Metrics (valid after legalize()), in site widths on both axes.
   [[nodiscard]] double avgDisplacement() const;
   [[nodiscard]] int maxDisplacement() const;
   [[nodiscard]] int numViolations() const;
-  [[nodiscard]] int totalMoves() const { return total_moves_; }
-  // Iterations actually executed by each phase.
-  [[nodiscard]] int phase1Iterations() const { return phase1_iterations_; }
-  [[nodiscard]] int phase2Iterations() const { return phase2_iterations_; }
-  [[nodiscard]] int totalIterations() const
-  {
-    return phase1_iterations_ + phase2_iterations_;
-  }
-  // Phase that drove the violation count to zero: 1 or 2.  -1 when the run
-  // ended without converging (phase-2 iteration limit, or a stall handed to
-  // the diamond search), 0 when negotiation never ran because every cell was
-  // already legal.
-  [[nodiscard]] int convergePhase() const;
-  [[nodiscard]] int diamondRecoveries() const { return diamond_recoveries_; }
-  [[nodiscard]] std::string finishDescription() const;
+  [[nodiscard]] NegotiationStats stats() const;
   [[nodiscard]] std::vector<Node*> getIllegalNodes() const;
 
  private:
@@ -162,6 +182,9 @@ class NegotiationLegalizer
     kPhase2Recovery,   // phase 2 stalled, diamond search took over
     kPhase2IterLimit   // phase-2 iteration limit exhausted
   };
+
+  [[nodiscard]] int convergePhase() const;
+  [[nodiscard]] std::string finishDescription() const;
 
   // Initialisation
   bool initFromDb();
@@ -222,7 +245,7 @@ class NegotiationLegalizer
 
   [[nodiscard]] bool shouldPrintIteration(int iter) const
   {
-    return !quiet_ && (iter < 10 || iter % 10 == 0);
+    return !options_.quiet && (iter < 10 || iter % 10 == 0);
   }
 
   // Stall recovery
@@ -282,13 +305,10 @@ class NegotiationLegalizer
   void syncAllCellsToDplGrid();
 
   // Pixel helpers – use the main DPL grid.
-  Pixel& gridAt(int x, int y)
-  {
-    return opendp_->grid_->pixel(GridY{y}, GridX{x});
-  }
+  Pixel& gridAt(int x, int y) { return dpl_grid_->pixel(GridY{y}, GridX{x}); }
   [[nodiscard]] const Pixel& gridAt(int x, int y) const
   {
-    return opendp_->grid_->pixel(GridY{y}, GridX{x});
+    return dpl_grid_->pixel(GridY{y}, GridX{x});
   }
   [[nodiscard]] bool gridExists(int x, int y) const
   {
@@ -300,6 +320,10 @@ class NegotiationLegalizer
   Opendp* opendp_{nullptr};
   odb::dbDatabase* db_{nullptr};
   utl::Logger* logger_{nullptr};
+  const NegotiationOptions options_;
+  // Opendp's pixel grid and DRC engine, shared with this legalizer.
+  Grid* dpl_grid_{nullptr};
+  PlacementDRC* drc_engine_{nullptr};
   DplObserver* debug_observer_{nullptr};
   Network* network_{nullptr};
 
@@ -324,11 +348,6 @@ class NegotiationLegalizer
   std::vector<uint32_t> hist_seen_stamp_;
   uint32_t hist_gen_{0};
 
-  double max_disp_multiplier_{kMfDefault};  // mf on the paper
-  int max_disp_threshold_{kThDefault};      // th on the paper
-  int max_iter_neg_{kMaxIterNeg};
-  int site_search_window_{kSiteSearchWindow};
-  int row_search_window_{kRowSearchWindow};
   int current_iter_{0};  // updated at the start of each negotiationIter call
 
   // Last-iteration stats, kept so runNegotiation can print the final row.
@@ -338,10 +357,6 @@ class NegotiationLegalizer
   int last_illegal_cells_{0};
   int last_illegal_sites_{0};
 
-  double drc_penalty_{kDrcPenalty};
-  int num_threads_{1};
-  bool disable_window_extension_{false};
-  bool quiet_{false};
   int total_moves_{0};
 
   // Convergence stats for the current runNegotiation call.

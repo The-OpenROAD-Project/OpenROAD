@@ -63,11 +63,15 @@ FenceRect FenceRegion::nearestRect(int cx, int cy) const
 NegotiationLegalizer::NegotiationLegalizer(Opendp* opendp,
                                            odb::dbDatabase* db,
                                            utl::Logger* logger,
+                                           const NegotiationOptions& options,
                                            DplObserver* debug_observer,
                                            Network* network)
     : opendp_(opendp),
       db_(db),
       logger_(logger),
+      options_(options),
+      dpl_grid_(opendp ? opendp->grid_.get() : nullptr),
+      drc_engine_(opendp ? opendp->drc_engine_.get() : nullptr),
       debug_observer_(debug_observer),
       network_(network)
 {
@@ -85,25 +89,27 @@ void NegotiationLegalizer::legalize()
              1,
              "NegotiationLegalizer: starting legalization.");
 
-  if (!quiet_) {
+  if (!options_.quiet) {
     logger_->info(utl::DPL,
                   1103,
                   "Negotiation base search window: +/-{} sites horizontally, "
                   "+/-{} rows vertically ",
-                  site_search_window_,
-                  row_search_window_);
+                  options_.site_search_window,
+                  options_.row_search_window);
     logger_->report("\tAutomatic search window extension {}.",
-                    disable_window_extension_ ? "disabled" : "enabled");
-    if (!disable_window_extension_) {
+                    options_.disable_window_extension ? "disabled" : "enabled");
+    if (!options_.disable_window_extension) {
       logger_->report(
           "\tSearch window extendable up to the max displacement cap of +/-{} "
           "sites, +/-{} rows near walls.",
-          opendp_->max_displacement_x_,
-          opendp_->max_displacement_y_);
+          options_.max_displacement_x,
+          options_.max_displacement_y);
     }
 
-    logger_->info(
-        utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
+    logger_->info(utl::DPL,
+                  1104,
+                  "NegotiationLegalizer DRC penalty: {}.",
+                  options_.drc_penalty);
   }
 
   if (debug_observer_ && db_->getChip() && db_->getChip()->getBlock()) {
@@ -205,7 +211,7 @@ void NegotiationLegalizer::legalize()
       maxDisp,
       nViol);
 
-  const Grid* dplGrid = opendp_->grid_.get();
+  const Grid* dplGrid = dpl_grid_;
   for (const auto& cell : cells_) {
     if (cell.fixed || cell.db_inst == nullptr) {
       continue;
@@ -231,7 +237,7 @@ void NegotiationLegalizer::legalize()
 
 void NegotiationLegalizer::commitNegotiationPosToOdb()
 {
-  const Grid* dplGrid = opendp_->grid_.get();
+  const Grid* dplGrid = dpl_grid_;
   for (const auto& cell : cells_) {
     if (cell.fixed || cell.db_inst == nullptr) {
       continue;
@@ -271,7 +277,7 @@ void NegotiationLegalizer::pushNegotiationPixels()
     }
   }
   // Overlay cells that fail PlacementDRC checks.
-  if (opendp_->drc_engine_ && network_) {
+  if (drc_engine_ && network_) {
     for (const auto& cell : cells_) {
       if (cell.fixed) {
         continue;
@@ -280,7 +286,7 @@ void NegotiationLegalizer::pushNegotiationPixels()
       if (node == nullptr) {
         continue;
       }
-      if (!opendp_->drc_engine_->checkDRC(
+      if (!drc_engine_->checkDRC(
               node, GridX{cell.x}, GridY{cell.y}, node->getOrient())) {
         for (int dy = 0; dy < cell.height; ++dy) {
           for (int gx = cell.x; gx < cell.x + cell.width; ++gx) {
@@ -294,7 +300,7 @@ void NegotiationLegalizer::pushNegotiationPixels()
     }
   }
 
-  const Grid* dplGrid = opendp_->grid_.get();
+  const Grid* dplGrid = dpl_grid_;
   std::vector<int> row_y_dbu(grid_h_ + 1);
   for (int r = 0; r <= grid_h_; ++r) {
     row_y_dbu[r] = dplGrid->gridYToDbu(GridY{r}).v;
@@ -330,7 +336,7 @@ void NegotiationLegalizer::commitNegotiationPosToDpl()
       continue;
     }
     const int coreX = cell.x * site_width_;
-    const int coreY = opendp_->grid_->gridYToDbu(GridY{cell.y}).v;
+    const int coreY = dpl_grid_->gridYToDbu(GridY{cell.y}).v;
     cell.node->setLeft(DbuX(coreX));
     cell.node->setBottom(DbuY(coreY));
     cell.node->setPlaced(true);
@@ -338,8 +344,8 @@ void NegotiationLegalizer::commitNegotiationPosToDpl()
     // Update orientation to match the row.
     odb::dbSite* site = cell.db_inst->getMaster()->getSite();
     if (site != nullptr) {
-      auto orient = opendp_->grid_->getSiteOrientation(
-          GridX{cell.x}, GridY{cell.y}, site);
+      auto orient
+          = dpl_grid_->getSiteOrientation(GridX{cell.x}, GridY{cell.y}, site);
       if (orient.has_value()) {
         cell.node->setOrient(orient.value());
       }
@@ -353,7 +359,7 @@ void NegotiationLegalizer::commitNegotiationPosToDpl()
 
 bool NegotiationLegalizer::initFromDb()
 {
-  if (db_->getChip() == nullptr || !opendp_ || !opendp_->grid_) {
+  if (db_->getChip() == nullptr || !opendp_ || !dpl_grid_) {
     return false;
   }
   auto* block = db_->getChip()->getBlock();
@@ -361,7 +367,7 @@ bool NegotiationLegalizer::initFromDb()
     return false;
   }
 
-  const Grid* dpl_grid = opendp_->grid_.get();
+  const Grid* dpl_grid = dpl_grid_;
 
   const odb::Rect core_area = dpl_grid->getCore();
   die_xlo_ = core_area.xMin();
@@ -453,7 +459,7 @@ bool NegotiationLegalizer::initFromDb()
     cells_.push_back(cell);
   }
 
-  if (!quiet_) {
+  if (!options_.quiet) {
     std::map<int, int> neg_height_counts;
     for (const NegCell& c : cells_) {
       neg_height_counts[c.height]++;
@@ -474,7 +480,7 @@ bool NegotiationLegalizer::initFromDb()
 
 void NegotiationLegalizer::buildGrid()
 {
-  Grid* dplGrid = opendp_->grid_.get();
+  Grid* dplGrid = dpl_grid_;
 
   // Reset all pixels to default negotiation state.  Also clear any cell
   // and padding pointers (including dummy_cell_ set by groupInitPixels2 for
@@ -531,7 +537,7 @@ void NegotiationLegalizer::initFenceRegions()
     FenceRegion fr;
     fr.id = region->getId();
 
-    const Grid* dpl_grid = opendp_->grid_.get();
+    const Grid* dpl_grid = dpl_grid_;
     for (auto* box : region->getBoundaries()) {
       FenceRect r;
       r.xlo = (box->xMin() - die_xlo_) / site_width_;
@@ -581,7 +587,7 @@ void NegotiationLegalizer::initFenceRegions()
 
 void NegotiationLegalizer::initialSnap()
 {
-  const Grid* dpl_grid = opendp_->grid_.get();
+  const Grid* dpl_grid = dpl_grid_;
 
   // Mirrors PlacementDRC::checkOneSiteGap against fixed cells only: the DPL
   // grid has no cells painted yet, and movable usage is added after the snap,
@@ -590,7 +596,7 @@ void NegotiationLegalizer::initialSnap()
     return !gridExists(gx, gy) || gridAt(gx, gy).usage > 0;
   };
   auto oneSiteGap = [&](const NegCell& cell, int px, int py) {
-    if (!opendp_->disallow_one_site_gaps_) {
+    if (!options_.disallow_one_site_gaps) {
       return false;
     }
     const int left = px - 1;
@@ -763,7 +769,7 @@ void NegotiationLegalizer::addUsage(int cell_idx, int delta)
 
 void NegotiationLegalizer::syncCellToDplGrid(int cell_idx)
 {
-  if (!opendp_ || !opendp_->grid_ || !network_) {
+  if (!opendp_ || !dpl_grid_ || !network_) {
     return;
   }
   const NegCell& neg_cell = cells_[cell_idx];
@@ -777,24 +783,24 @@ void NegotiationLegalizer::syncCellToDplGrid(int cell_idx)
   // Update the Node's position to match the NegCell so Grid operations
   // (which read Node left/bottom) see the current placement.
   node->setLeft(DbuX(neg_cell.x * site_width_));
-  node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{neg_cell.y}).v));
+  node->setBottom(DbuY(dpl_grid_->gridYToDbu(GridY{neg_cell.y}).v));
 
   // Update orientation to match the row.
   odb::dbSite* site = neg_cell.db_inst->getMaster()->getSite();
   if (site != nullptr) {
-    auto orient = opendp_->grid_->getSiteOrientation(
+    auto orient = dpl_grid_->getSiteOrientation(
         GridX{neg_cell.x}, GridY{neg_cell.y}, site);
     if (orient.has_value()) {
       node->setOrient(orient.value());
     }
   }
 
-  opendp_->grid_->paintPixel(node, GridX{neg_cell.x}, GridY{neg_cell.y});
+  dpl_grid_->paintPixel(node, GridX{neg_cell.x}, GridY{neg_cell.y});
 }
 
 void NegotiationLegalizer::eraseCellFromDplGrid(int cell_idx)
 {
-  if (!opendp_ || !opendp_->grid_ || !network_) {
+  if (!opendp_ || !dpl_grid_ || !network_) {
     return;
   }
   const NegCell& neg_cell = cells_[cell_idx];
@@ -808,13 +814,13 @@ void NegotiationLegalizer::eraseCellFromDplGrid(int cell_idx)
   // Ensure the Node's position matches the current NegCell position so
   // erasePixel clears the correct pixels (it reads gridCoveringPadded).
   node->setLeft(DbuX(neg_cell.x * site_width_));
-  node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{neg_cell.y}).v));
-  opendp_->grid_->erasePixel(node);
+  node->setBottom(DbuY(dpl_grid_->gridYToDbu(GridY{neg_cell.y}).v));
+  dpl_grid_->erasePixel(node);
 }
 
 void NegotiationLegalizer::syncAllCellsToDplGrid()
 {
-  if (!opendp_ || !opendp_->grid_ || !network_) {
+  if (!opendp_ || !dpl_grid_ || !network_) {
     return;
   }
   // Clear all movable cells from the DPL Grid first, then repaint at
@@ -830,8 +836,8 @@ void NegotiationLegalizer::syncAllCellsToDplGrid()
     }
     // Update Node position then erase whatever was previously painted.
     node->setLeft(DbuX(neg_cell.x * site_width_));
-    node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{neg_cell.y}).v));
-    opendp_->grid_->erasePixel(node);
+    node->setBottom(DbuY(dpl_grid_->gridYToDbu(GridY{neg_cell.y}).v));
+    dpl_grid_->erasePixel(node);
   }
   for (const NegCell& neg_cell : cells_) {
     if (neg_cell.fixed || neg_cell.db_inst == nullptr) {
@@ -844,13 +850,13 @@ void NegotiationLegalizer::syncAllCellsToDplGrid()
     // Set orientation to match the row, same as syncCellToDplGrid.
     odb::dbSite* site = neg_cell.db_inst->getMaster()->getSite();
     if (site != nullptr) {
-      auto orient = opendp_->grid_->getSiteOrientation(
+      auto orient = dpl_grid_->getSiteOrientation(
           GridX{neg_cell.x}, GridY{neg_cell.y}, site);
       if (orient.has_value()) {
         node->setOrient(orient.value());
       }
     }
-    opendp_->grid_->paintPixel(node, GridX{neg_cell.x}, GridY{neg_cell.y});
+    dpl_grid_->paintPixel(node, GridX{neg_cell.x}, GridY{neg_cell.y});
   }
   // Re-paint fixed cells last so they always win over any movable cell that
   // may have been placed at an overlapping initial position.  Without this,
@@ -886,13 +892,13 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
   // Mirror Opendp::canBePlaced: the row must offer the cell's site, cell master
   // must be able to take the orientation the row requires and a multi-row
   // cell's power stack must line up across the span.
-  if (cell.db_inst != nullptr && opendp_ != nullptr && opendp_->grid_
+  if (cell.db_inst != nullptr && opendp_ != nullptr && dpl_grid_
       && network_ != nullptr) {
     auto* dbMaster = cell.db_inst->getMaster();
     odb::dbSite* site = dbMaster->getSite();
     if (site != nullptr) {
-      const auto orient = opendp_->grid_->getSiteOrientation(
-          GridX{gridX}, GridY{rowIdx}, site);
+      const auto orient
+          = dpl_grid_->getSiteOrientation(GridX{gridX}, GridY{rowIdx}, site);
       if (!orient) {
         return false;
       }
@@ -958,7 +964,7 @@ std::vector<int> NegotiationLegalizer::verticalWindowRows(const NegCell& cell,
   // (`extended_cap`) to spend it in. A side that merely filled its quota is
   // reopened by a donation; a walled side cannot take one. If both sides
   // are walled short, the unspent quota is simply never used.
-  const int extended_cap = std::min(2 * max_scan, opendp_->max_displacement_y_);
+  const int extended_cap = std::min(2 * max_scan, options_.max_displacement_y);
   struct Side
   {
     int dir;
@@ -975,7 +981,7 @@ std::vector<int> NegotiationLegalizer::verticalWindowRows(const NegCell& cell,
   auto close = [&](Side& self, Side& other) {
     self.closed = true;
     self.walled = true;
-    if (!disable_window_extension_ && self.quota > 0 && !other.walled) {
+    if (!options_.disable_window_extension && self.quota > 0 && !other.walled) {
       other.quota += self.quota;
       other.cap = extended_cap;
       other.closed = false;  // reopen if it had merely filled its quota
@@ -1047,10 +1053,10 @@ bool NegotiationLegalizer::isCellLegal(int cell_idx) const
 
   // Check placement DRCs (edge spacing, blocked layers, padding, one-site
   // gaps, and fixed supply vias) using the DPL Grid.
-  if (opendp_ && opendp_->drc_engine_ && network_) {
+  if (opendp_ && drc_engine_ && network_) {
     Node* node = cell.node;
     if (node != nullptr
-        && !opendp_->drc_engine_->checkDRC(
+        && !drc_engine_->checkDRC(
             node, GridX{cell.x}, GridY{cell.y}, node->getOrient())) {
       return false;
     }
@@ -1107,6 +1113,18 @@ int NegotiationLegalizer::numViolations() const
     }
   }
   return count;
+}
+
+NegotiationStats NegotiationLegalizer::stats() const
+{
+  return NegotiationStats{
+      .total_moves = total_moves_,
+      .phase1_iterations = phase1_iterations_,
+      .phase2_iterations = phase2_iterations_,
+      .converge_phase = convergePhase(),
+      .diamond_recoveries = diamond_recoveries_,
+      .finish = finishDescription(),
+  };
 }
 
 int NegotiationLegalizer::convergePhase() const

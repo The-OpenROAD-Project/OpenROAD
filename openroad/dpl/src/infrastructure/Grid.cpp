@@ -623,7 +623,7 @@ GridY Grid::gridHeight(const Node* cell) const
   if (!cell->getDbInst()) {
     return GridY{1};
   }
-  auto site = cell->getDbInst()->getMaster()->getSite();
+  auto site = cell->getSite();
   if (!site) {
     const int spanned_rows = (gridEndY(cell) - gridSnapDownY(cell)).v;
     return GridY{max(1, spanned_rows)};
@@ -759,20 +759,19 @@ DbuY Grid::gridYToDbu(GridY y) const
 GridX Grid::gridPaddedEndX(const Node* cell) const
 {
   const DbuX site_width = getSiteWidth();
-  const DbuX end_x = cell->getLeft() + cell->getWidth()
-                     + gridToDbu(padding_->padRight(cell), site_width);
+  const DbuX end_x
+      = cell->getRight() + gridToDbu(padding_->padRight(cell), site_width);
   return GridX{divCeil(end_x.v, site_width.v)};
 }
 
 GridX Grid::gridEndX(const Node* cell) const
 {
-  return GridX{
-      divCeil((cell->getLeft() + cell->getWidth()).v, getSiteWidth().v)};
+  return GridX{divCeil(cell->getRight().v, getSiteWidth().v)};
 }
 
 GridY Grid::gridEndY(const Node* cell) const
 {
-  return gridEndY(cell->getBottom() + cell->getHeight());
+  return gridEndY(cell->getTop());
 }
 
 bool Grid::cellFitsInCore(Node* cell) const

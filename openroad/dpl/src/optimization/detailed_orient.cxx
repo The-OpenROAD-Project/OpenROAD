@@ -165,7 +165,7 @@ bool DetailedOrient::orientMultiHeightCellForRow(Node* ndi, int row)
   // indicate some sort of problem.
   //
 
-  auto* dbMaster = ndi->getDbInst()->getMaster();
+  auto* const dbMaster = ndi->getDbMaster();
   unsigned masterSym = getMasterSymmetry(dbMaster);
 
   bool flip = false;
@@ -231,7 +231,7 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row)
   const unsigned rowOri = arch_->getRow(row)->getOrient();
   const unsigned cellOri = ndi->getOrient();
 
-  auto* dbMaster = ndi->getDbInst()->getMaster();
+  auto* const dbMaster = ndi->getDbMaster();
   unsigned masterSym = getMasterSymmetry(dbMaster);
 
   using odb::dbOrientType;

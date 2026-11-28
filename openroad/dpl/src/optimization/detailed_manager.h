@@ -129,6 +129,11 @@ class DetailedMgr
   int checkSiteAlignment();
   int checkRowAlignment();
   int checkRegionAssignment();
+  // Runs every segment-level check above; each reports its own count.
+  void checkAll();
+  // When one-site gaps are disallowed, fixes the remaining gaps and warns
+  // about each segment that still has some.
+  void repairOneSiteGaps();
   void getOneSiteGapViolationsPerSegment(
       std::vector<std::vector<int>>& violating_cells,
       bool fix_violations);
@@ -252,8 +257,6 @@ class DetailedMgr
 
   // For help aligning cells to sites.
   bool alignPos(const Node* ndi, DbuX& xi, DbuX xl, DbuX xr);
-  int getMoveLimit() { return moveLimit_; }
-  void setMoveLimit(unsigned int newMoveLimit) { moveLimit_ = newMoveLimit; }
   void addAttempts(int n) { total_attempts_ += n; }
   int getTotalAttempts() const { return total_attempts_; }
 
