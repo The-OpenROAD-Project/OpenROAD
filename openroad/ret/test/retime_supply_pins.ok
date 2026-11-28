@@ -1,0 +1,14 @@
+[INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_tech.lef, created 19 layers, 300 vias
+[INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_stdcell.lef, created 78 library cells
+[INFO RET-0047] No plain D flip-flop; new registers are sg13g2_dfrbp_1 with RESET_B tied high.
+[INFO RET-0014] Retiming graph: 10 gates, 9 edges, 3 registers, 4 pinned gates, 0 fenced registers.
+[INFO RET-0008] Unmapped 1 registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.1474 |       -0.1474 |         3
+     1 |        6 |      1 |    6 |      0.0064 |        0.0000 |         2
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 6, rounds 1, WNS 0.0064, TNS 0.0000, registers 2, placed 0, resized 0.
+ret_ff_4: VDD=VDD special=1, VSS=VSS special=1
+ret_tie_5: VDD=VDD special=1, VSS=VSS special=1
+unmap_inv_3: VDD=VDD special=1, VSS=VSS special=1

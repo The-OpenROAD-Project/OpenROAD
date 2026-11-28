@@ -1,0 +1,10 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: retime_tristate.lef, created 2 library cells
+worst slack max -0.1457
+[INFO RET-0014] Retiming graph: 21 gates, 18 edges, 7 registers, 10 pinned gates, 0 fenced registers.
+[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.1457, TNS -0.2105, registers 7, placed 0, resized 0.
+worst slack max -0.1457
+r1: stays
+re: stays
+rt: stays
+ru: stays

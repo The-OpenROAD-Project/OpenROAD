@@ -1,0 +1,88 @@
+/* QDFF_X8: the liberty pins, functions and timing arcs of Nangate45 DFF_X1
+   with a faster clock-to-output arc, so the cell choice of the STA check
+   prefers it for a new register with negative slack.  Its LEF has one more
+   input.
+   DFF_NOARC: the same pins and functions without timing arcs; its LEF is
+   DFF_X1's. */
+library (retime_place_size) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  capacitive_load_unit (1, ff);
+  pulling_resistance_unit : "1kohm";
+  leakage_power_unit : "1nW";
+  voltage_map (VDD, 1.1);
+  voltage_map (VSS, 0.0);
+
+  cell (QDFF_X8) {
+    area : 9.0;
+    ff ("IQ", "IQN") { next_state : "D"; clocked_on : "CK"; }
+    pg_pin (VDD) { voltage_name : VDD; pg_type : primary_power; }
+    pg_pin (VSS) { voltage_name : VSS; pg_type : primary_ground; }
+    pin (D) {
+      direction : input;
+      capacitance : 1.1;
+      timing () {
+        related_pin : "CK";
+        timing_type : setup_rising;
+        rise_constraint (scalar) { values ("0.03"); }
+        fall_constraint (scalar) { values ("0.03"); }
+      }
+      timing () {
+        related_pin : "CK";
+        timing_type : hold_rising;
+        rise_constraint (scalar) { values ("0.0"); }
+        fall_constraint (scalar) { values ("0.0"); }
+      }
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.95;
+      timing () {
+        related_pin : "CK";
+        timing_type : min_pulse_width;
+        rise_constraint (scalar) { values ("0.05"); }
+        fall_constraint (scalar) { values ("0.05"); }
+      }
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      timing () {
+        related_pin : "CK";
+        timing_type : rising_edge;
+        timing_sense : non_unate;
+        cell_rise (scalar) { values ("0.05"); }
+        cell_fall (scalar) { values ("0.05"); }
+        rise_transition (scalar) { values ("0.01"); }
+        fall_transition (scalar) { values ("0.01"); }
+      }
+    }
+    pin (QN) {
+      direction : output;
+      function : "IQN";
+      timing () {
+        related_pin : "CK";
+        timing_type : rising_edge;
+        timing_sense : non_unate;
+        cell_rise (scalar) { values ("0.05"); }
+        cell_fall (scalar) { values ("0.05"); }
+        rise_transition (scalar) { values ("0.01"); }
+        fall_transition (scalar) { values ("0.01"); }
+      }
+    }
+  }
+
+  cell (DFF_NOARC) {
+    area : 5.0;
+    ff ("IQ", "IQN") { next_state : "D"; clocked_on : "CK"; }
+    pg_pin (VDD) { voltage_name : VDD; pg_type : primary_power; }
+    pg_pin (VSS) { voltage_name : VSS; pg_type : primary_ground; }
+    pin (D) { direction : input; capacitance : 1.1; }
+    pin (CK) { direction : input; clock : true; capacitance : 0.95; }
+    pin (Q) { direction : output; function : "IQ"; }
+    pin (QN) { direction : output; function : "IQN"; }
+  }
+}

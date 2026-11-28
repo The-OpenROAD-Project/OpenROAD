@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
+%{
+#include "ord/OpenRoad.hh"
+#include "ret/Retimer.h"
+%}
+
+%include "../../Exception.i"
+
+%inline %{
+
+namespace ret {
+
+void
+retime_cmd(int max_moves,
+           double margin,
+           bool move_sdc_registers)
+{
+  const RetimeOptions options{.max_moves = max_moves,
+                              .margin = margin,
+                              .move_sdc_registers = move_sdc_registers};
+  ord::OpenRoad::openRoad()->getRetimer()->retime(options);
+}
+
+} // namespace ret
+
+%} // inline

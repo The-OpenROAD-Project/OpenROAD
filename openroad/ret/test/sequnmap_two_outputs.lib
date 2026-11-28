@@ -1,0 +1,63 @@
+/* ========================================================================== */
+/* sequnmap_two_outputs.lib: two flops with two outputs, layered on */
+/* sequnmap_basic, for unit testing SequentialUnmapper: */
+/*   DFF_P_QQN  publishes the state on Q and !state on QN */
+/*   DFF_P_ODD  Q publishes the state, Y a function of the state and D */
+/* One scalar timing arc per signal pin: the unmapper builds only from cells */
+/* STA times.  It reads functions, not delays. */
+/* ========================================================================== */
+library (sequnmap_two_outputs) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  capacitive_load_unit (1, pf);
+  pulling_resistance_unit : "1kohm";
+  leakage_power_unit : "1nW";
+  default_fanout_load : 1.0;
+  default_inout_pin_cap : 0.001;
+  default_input_pin_cap : 0.001;
+  default_output_pin_cap : 0.0;
+
+  cell (DFF_P_QQN) {
+    area : 5.0;
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "D"; }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+    pin (QN) {
+      direction : output;
+      function : "IQN";
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+
+  cell (DFF_P_ODD) {
+    area : 5.0;
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "D"; }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+    pin (Y) {
+      direction : output;
+      function : "IQ & D";
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+}

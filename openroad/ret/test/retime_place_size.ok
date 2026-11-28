@@ -1,0 +1,35 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: retime_place_size.lef, created 2 library cells
+[WARNING ORD-2001] LEF macro QDFF_X8 pin EXTRA missing from liberty cell.
+[WARNING ORD-2001] LEF macro QDFF_X8 pin EXTRA missing from liberty cell.
+[INFO IFP-0001] Added 14 rows of 1578 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 300.000 20.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 299.820 19.600 ) um
+[INFO IFP-0102] Core area:                         5876.472 um^2
+[INFO IFP-0103] Total instances area:                21.014 um^2
+[INFO IFP-0104] Effective utilization:                0.004
+[INFO IFP-0105] Number of instances:                     13
+worst slack max -1.1237
+[INFO RET-0014] Retiming graph: 10 gates, 9 edges, 3 registers, 4 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -1.1237 |       -1.1237 |         3
+     1 |        2 |      1 |    2 |     -0.3913 |       -0.3913 |         2
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 2, rounds 1, WNS -0.3913, TNS -0.3913, registers 2, placed 1, resized 1.
+worst slack max -0.3913
+ret_ff_1 is a DFF_X2
+Retime output passed/skipped sequential equivalence test
+[WARNING ORD-2001] LEF macro QDFF_X8 pin EXTRA missing from liberty cell.
+rq EXTRA reads x
+[INFO RET-0014] Retiming graph: 12 gates, 10 edges, 4 registers, 5 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.0503 |       -0.0722 |         4
+     1 |        3 |      1 |    3 |     -0.0297 |       -0.0516 |         4
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 3, rounds 1, WNS -0.0297, TNS -0.0516, registers 4, placed 0, resized 0.
+r1: moved
+rq: stays, a QDFF_X8
+g1 reads n0
+g7 reads qq

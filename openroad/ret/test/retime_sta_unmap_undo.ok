@@ -1,0 +1,33 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0001] Added 14 rows of 18421 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 3500.000 20.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 3499.990 19.600 ) um
+[INFO IFP-0102] Core area:                        68599.804 um^2
+[INFO IFP-0103] Total instances area:                44.954 um^2
+[INFO IFP-0104] Effective utilization:                0.001
+[INFO IFP-0105] Number of instances:                     24
+worst slack max -0.0832
+tns max -0.1553
+[INFO RET-0014] Retiming graph: 18 gates, 16 edges, 6 registers, 8 pinned gates, 0 fenced registers.
+[INFO RET-0008] Unmapped 2 registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.0832 |       -0.1553 |         6
+     1 |       10 |      2 |    3 |     -0.0721 |       -0.0900 |         5
+[INFO RET-0008] Unmapped 2 registers.
+[INFO RET-0008] Unmapped 2 registers.
+[INFO RET-0008] Unmapped 2 registers.
+     2 |        7 |      3 |    0 |     -0.0721 |       -0.0900 |         5
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 3, rounds 1, WNS -0.0721, TNS -0.0900, registers 5, placed 1, resized 0.
+worst slack max -0.0721
+tns max -0.0900
+r4: DFF_X1
+r5: DFF_X1
+path group lists r4: 1
+Retime output passed/skipped sequential equivalence test
+ret_ff_0 DFF_X1 top: D=d3 CK=clk Q=ret_net_0 (g8/A)
+ret_ff_8 DFF_X1 top: D=n3 CK=clk Q=ret_net_9 (g5/A)
+unmap_ff_0 DFF_X1 top: D=unmap_state_1 CK=clk Q=q6 (unmap_inv_2/A)
+unmap_inv_2 BUF_X1 top: A=q6 Z=z (z)
+instances 23, nets 29

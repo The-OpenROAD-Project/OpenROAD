@@ -1,0 +1,13 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+worst slack max -0.1275
+[INFO RET-0014] Retiming graph: 7 gates, 5 edges, 2 registers, 4 pinned gates, 1 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.1275 |       -0.1275 |         3
+     1 |        3 |      1 |    3 |     -0.0396 |       -0.0396 |         3
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 3, rounds 1, WNS -0.0396, TNS -0.0396, registers 3, placed 0, resized 0.
+worst slack max -0.0396
+ret_ff_1 sky130_fd_sc_hd__dfxtp_1 top: D=e3 Q=ret_net_1 (i4/A) CLK=clk
+instances 10, nets 14

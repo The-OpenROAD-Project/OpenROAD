@@ -1,0 +1,162 @@
+/* A library whose cells all have a well pin: VPWR, VPB and VGND in the LEF.
+   One cell of each kind retime builds with: a flip-flop, an inverter, an AND,
+   an OR and the two tie cells. */
+library (retime_supply_bias) {
+  voltage_map (VPWR, 1.10);
+  voltage_map (VPB, 1.10);
+  voltage_map (VGND, 0.00);
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  leakage_power_unit : "1nW";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  pulling_resistance_unit : "1kohm";
+  capacitive_load_unit (1,ff);
+  nom_process : 1.00;
+  nom_temperature : 25.00;
+  nom_voltage : 1.10;
+  slew_lower_threshold_pct_fall : 30.00;
+  slew_lower_threshold_pct_rise : 30.00;
+  slew_upper_threshold_pct_fall : 70.00;
+  slew_upper_threshold_pct_rise : 70.00;
+  slew_derate_from_library : 1.00;
+  input_threshold_pct_fall : 50.00;
+  input_threshold_pct_rise : 50.00;
+  output_threshold_pct_fall : 50.00;
+  output_threshold_pct_rise : 50.00;
+
+  cell (BDFF_X1) {
+    area : 4.00;
+    pg_pin (VPWR) { voltage_name : VPWR; pg_type : primary_power; }
+    pg_pin (VPB) { voltage_name : VPB; pg_type : primary_power; }
+    pg_pin (VGND) { voltage_name : VGND; pg_type : primary_ground; }
+    ff ("IQ", "IQN") { clocked_on : "CK"; next_state : "D"; }
+    pin (D) {
+      direction : input;
+      capacitance : 1.0;
+      timing () {
+        related_pin : "CK";
+        timing_type : setup_rising;
+        rise_constraint (scalar) { values ("0.03"); }
+        fall_constraint (scalar) { values ("0.03"); }
+      }
+      timing () {
+        related_pin : "CK";
+        timing_type : hold_rising;
+        rise_constraint (scalar) { values ("0.00"); }
+        fall_constraint (scalar) { values ("0.00"); }
+      }
+    }
+    pin (CK) { direction : input; clock : true; capacitance : 1.0; }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      max_capacitance : 60.0;
+      timing () {
+        related_pin : "CK";
+        timing_type : rising_edge;
+        cell_rise (scalar) { values ("0.08"); }
+        cell_fall (scalar) { values ("0.08"); }
+        rise_transition (scalar) { values ("0.01"); }
+        fall_transition (scalar) { values ("0.01"); }
+      }
+    }
+  }
+
+  cell (BINV_X1) {
+    area : 1.00;
+    pg_pin (VPWR) { voltage_name : VPWR; pg_type : primary_power; }
+    pg_pin (VPB) { voltage_name : VPB; pg_type : primary_power; }
+    pg_pin (VGND) { voltage_name : VGND; pg_type : primary_ground; }
+    pin (A) { direction : input; capacitance : 1.0; }
+    pin (ZN) {
+      direction : output;
+      function : "!A";
+      max_capacitance : 60.0;
+      timing () {
+        related_pin : "A";
+        timing_sense : negative_unate;
+        cell_rise (scalar) { values ("0.03"); }
+        cell_fall (scalar) { values ("0.03"); }
+        rise_transition (scalar) { values ("0.01"); }
+        fall_transition (scalar) { values ("0.01"); }
+      }
+    }
+  }
+
+  cell (BAND2_X1) {
+    area : 2.00;
+    pg_pin (VPWR) { voltage_name : VPWR; pg_type : primary_power; }
+    pg_pin (VPB) { voltage_name : VPB; pg_type : primary_power; }
+    pg_pin (VGND) { voltage_name : VGND; pg_type : primary_ground; }
+    pin (A1) { direction : input; capacitance : 1.0; }
+    pin (A2) { direction : input; capacitance : 1.0; }
+    pin (ZN) {
+      direction : output;
+      function : "(A1 & A2)";
+      max_capacitance : 60.0;
+      timing () {
+        related_pin : "A1";
+        timing_sense : positive_unate;
+        cell_rise (scalar) { values ("0.03"); }
+        cell_fall (scalar) { values ("0.03"); }
+        rise_transition (scalar) { values ("0.01"); }
+        fall_transition (scalar) { values ("0.01"); }
+      }
+      timing () {
+        related_pin : "A2";
+        timing_sense : positive_unate;
+        cell_rise (scalar) { values ("0.03"); }
+        cell_fall (scalar) { values ("0.03"); }
+        rise_transition (scalar) { values ("0.01"); }
+        fall_transition (scalar) { values ("0.01"); }
+      }
+    }
+  }
+
+  cell (BOR2_X1) {
+    area : 2.00;
+    pg_pin (VPWR) { voltage_name : VPWR; pg_type : primary_power; }
+    pg_pin (VPB) { voltage_name : VPB; pg_type : primary_power; }
+    pg_pin (VGND) { voltage_name : VGND; pg_type : primary_ground; }
+    pin (A1) { direction : input; capacitance : 1.0; }
+    pin (A2) { direction : input; capacitance : 1.0; }
+    pin (ZN) {
+      direction : output;
+      function : "(A1 | A2)";
+      max_capacitance : 60.0;
+      timing () {
+        related_pin : "A1";
+        timing_sense : positive_unate;
+        cell_rise (scalar) { values ("0.03"); }
+        cell_fall (scalar) { values ("0.03"); }
+        rise_transition (scalar) { values ("0.01"); }
+        fall_transition (scalar) { values ("0.01"); }
+      }
+      timing () {
+        related_pin : "A2";
+        timing_sense : positive_unate;
+        cell_rise (scalar) { values ("0.03"); }
+        cell_fall (scalar) { values ("0.03"); }
+        rise_transition (scalar) { values ("0.01"); }
+        fall_transition (scalar) { values ("0.01"); }
+      }
+    }
+  }
+
+  cell (BTIEH_X1) {
+    area : 1.00;
+    pg_pin (VPWR) { voltage_name : VPWR; pg_type : primary_power; }
+    pg_pin (VPB) { voltage_name : VPB; pg_type : primary_power; }
+    pg_pin (VGND) { voltage_name : VGND; pg_type : primary_ground; }
+    pin (Z) { direction : output; function : "1"; }
+  }
+
+  cell (BTIEL_X1) {
+    area : 1.00;
+    pg_pin (VPWR) { voltage_name : VPWR; pg_type : primary_power; }
+    pg_pin (VPB) { voltage_name : VPB; pg_type : primary_power; }
+    pg_pin (VGND) { voltage_name : VGND; pg_type : primary_ground; }
+    pin (Z) { direction : output; function : "0"; }
+  }
+}

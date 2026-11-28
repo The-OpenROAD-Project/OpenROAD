@@ -1,0 +1,47 @@
+/* One flip-flop clocked by "CK & EN", shaped like Nangate45 DFF_X1 with scalar
+   timing taken from its tables. */
+library (retime_gated_clock_expr) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  capacitive_load_unit (1, ff);
+  pulling_resistance_unit : "1kohm";
+  leakage_power_unit : "1nW";
+
+  cell (DFFG_X1) {
+    area : 4.522;
+    ff (IQ, IQN) { next_state : "D"; clocked_on : "CK & EN"; }
+    pin (D) {
+      direction : input;
+      capacitance : 1.14;
+      timing () {
+        related_pin : "CK";
+        timing_type : setup_rising;
+        rise_constraint (scalar) { values ("0.04"); }
+        fall_constraint (scalar) { values ("0.04"); }
+      }
+      timing () {
+        related_pin : "CK";
+        timing_type : hold_rising;
+        rise_constraint (scalar) { values ("0.01"); }
+        fall_constraint (scalar) { values ("0.01"); }
+      }
+    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.95; }
+    pin (EN) { direction : input; capacitance : 0.95; }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      timing () {
+        related_pin : "CK";
+        timing_type : rising_edge;
+        timing_sense : non_unate;
+        cell_rise (scalar) { values ("0.085"); }
+        cell_fall (scalar) { values ("0.085"); }
+        rise_transition (scalar) { values ("0.01"); }
+        fall_transition (scalar) { values ("0.01"); }
+      }
+    }
+  }
+}

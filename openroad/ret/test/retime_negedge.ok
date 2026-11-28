@@ -1,0 +1,41 @@
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13178, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13211, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13244, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13277, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13310, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13343, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13376, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14772, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14805, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+worst slack max -49.64
+[WARNING RET-0035] 1 negative-edge registers are left in place.
+[INFO RET-0014] Retiming graph: 17 gates, 14 edges, 4 registers, 8 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |    -49.6443 |      -71.5276 |         5
+     1 |        4 |      1 |    4 |    -49.6443 |      -49.6443 |         4
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 4, rounds 1, WNS -49.6443, TNS -49.6443, registers 4, placed 0, resized 0.
+worst slack max -49.64
+r1: removed
+r2: removed
+rn: stays
+g2/A reads g0 (AND2x2_ASAP7_75t_R)
+g11/A reads rn (DFFLQx4_ASAP7_75t_R)
+g13/A reads g12 (INVx1_ASAP7_75t_R)
+[INFO RET-0014] Retiming graph: 17 gates, 15 edges, 4 registers, 7 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -7.3408 |       -7.3408 |         4
+     1 |        2 |      1 |    2 |      2.7362 |        0.0000 |         4
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 2, rounds 1, WNS 2.7362, TNS 0.0000, registers 4, placed 0, resized 0.
+r1: removed
+r2: removed
+rn: removed
+g2/A reads g0 (AND2x2_ASAP7_75t_R)
+g11/A reads g10 (AND2x2_ASAP7_75t_R)
+g13/A reads ret_ff_2 (DFFHQx4_ASAP7_75t_R)

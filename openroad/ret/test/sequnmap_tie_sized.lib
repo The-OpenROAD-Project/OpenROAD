@@ -1,0 +1,143 @@
+/* ========================================================================== */
+/* sequnmap_tie_sized.lib: hand sized liberty for unit testing SequentialUnmapper. */
+/* Tie discovery, sizing case: several single output ties per constant, x2 listed BEFORE x1 */
+/* so a first match scan picks the wrong one. The smallest, TIE1x1 and TIE0x1 at area 1.0, */
+/* must win and MULTIE at area 3.0 must LOSE. Two smaller cells must LOSE too: TIE0Z drives */
+/* its constant through a tri-state output, and the output of TIE0NP has no pin in the LEF. */
+/* DFF_P_TIE0 and DFF_P_TIE1 carry the constant leaves, DFF_P, INV, AND2, OR2 support prepare. */
+/* One scalar timing arc per signal pin: the unmapper builds only from cells */
+/* STA times.  It reads functions, not delays. */
+/* ========================================================================== */
+library (sequnmap_tie_sized) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  capacitive_load_unit (1, pf);
+  pulling_resistance_unit : "1kohm";
+  leakage_power_unit : "1nW";
+  default_fanout_load : 1.0;
+  default_inout_pin_cap : 0.001;
+  default_input_pin_cap : 0.001;
+  default_output_pin_cap : 0.0;
+
+  cell (INV) {
+    area : 1.0;
+    pin (A) { direction : input; capacitance : 0.001; }
+    pin (Y) {
+      direction : output;
+      function : "!A";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+
+  cell (AND2) {
+    area : 2.0;
+    pin (A) { direction : input; capacitance : 0.001; }
+    pin (B) { direction : input; capacitance : 0.001; }
+    pin (Y) {
+      direction : output;
+      function : "(A * B)";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+
+  cell (OR2) {
+    area : 2.0;
+    pin (A) { direction : input; capacitance : 0.001; }
+    pin (B) { direction : input; capacitance : 0.001; }
+    pin (Y) {
+      direction : output;
+      function : "(A + B)";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+
+  cell (DFF_P) {
+    area : 4.0;
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "D"; }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+
+  cell (TIE1x2) {
+    area : 2.0;
+    pin (Y) { direction : output; function : "1"; }
+  }
+
+  cell (TIE1x1) {
+    area : 1.0;
+    pin (Y) { direction : output; function : "1"; }
+  }
+
+  cell (TIE0x2) {
+    area : 2.0;
+    pin (Y) { direction : output; function : "0"; }
+  }
+
+  cell (TIE0x1) {
+    area : 1.0;
+    pin (Y) { direction : output; function : "0"; }
+  }
+
+  cell (TIE0Z) {
+    area : 0.5;
+    pin (EN) { direction : input; capacitance : 0.001; }
+    pin (Y) { direction : output; function : "0"; three_state : "!EN"; }
+  }
+
+  cell (TIE0NP) {
+    area : 0.25;
+    pin (Z) { direction : output; function : "0"; }
+  }
+
+  cell (MULTIE) {
+    area : 3.0;
+    pin (HI) { direction : output; function : "1"; }
+    pin (LO) { direction : output; function : "0"; }
+  }
+
+  cell (DFF_P_TIE0) {
+    area : 4.0;
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "(D + 0)"; }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+
+  cell (DFF_P_TIE1) {
+    area : 4.0;
+    ff (IQ, IQN) { clocked_on : "CK"; next_state : "(D + 1)"; }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+
+}

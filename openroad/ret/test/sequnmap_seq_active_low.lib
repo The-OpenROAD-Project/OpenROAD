@@ -1,0 +1,156 @@
+/* ========================================================================== */
+/* sequnmap_seq_active_low.lib: NEGATIVE EDGE flops, layered on sequnmap_basic. */
+/* Load the basic pair first, it creates the tech, then this pair on top with */
+/* loadLibaryLef and a second readLiberty. Every find scan then sees both. */
+/*   DFF_N        plain, falling edge, asap7 DFFLQx4 shape */
+/*   DFF_N_ND     stores !D, QN reads the state, asap7 DFFLQNx1 shape and naming */
+/*   DFF_N_ND_QN  stores !D and publishes the complement, net NON inverting */
+/*   DFFE_NP      enable flop, falling edge */
+/*   DFFE_NP_ND   enable flop storing !D, next_state written in De Morgan form */
+/*   DFFE_NP_QN   enable flop publishing the complement, next_state written with XOR */
+/* DELIBERATE TRAPS: every cell is priced BELOW its posedge twin, DFF_N 3.8 below */
+/* DFF_P 4.0, DFF_N_ND 3.3 below DFF_P_ND 3.5, DFFE_NP variants 4.6 to 4.8 below */
+/* DFFE_PP 5.0, so any finder that ignores clocked_on picks a negedge cell. The */
+/* harder next_state forms give synth nested NOT and xor_ nodes for the same function. */
+/* One scalar timing arc per signal pin: the unmapper builds only from cells */
+/* STA times.  It reads functions, not delays. */
+/* ========================================================================== */
+library (sequnmap_seq_active_low) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  capacitive_load_unit (1, pf);
+  pulling_resistance_unit : "1kohm";
+  leakage_power_unit : "1nW";
+  default_fanout_load : 1.0;
+  default_inout_pin_cap : 0.001;
+  default_input_pin_cap : 0.001;
+  default_output_pin_cap : 0.0;
+
+  /* negedge plain flop, the asap7 DFFLQx4 shape. TRAP: area below DFF_P. */
+  cell (DFF_N) {
+    area : 3.8;
+    ff (IQ, IQN) { clocked_on : "!CK"; next_state : "D"; }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      timing () { related_pin : "CK"; timing_type : falling_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+
+  /* negedge, stores !D, QN reads the state variable directly, the asap7 DFFLQNx1 */
+  /* shape with its ff IQN, IQNN naming: here IQN IS the state. */
+  cell (DFF_N_ND) {
+    area : 3.3;
+    ff (IQN, IQNN) { clocked_on : "!CK"; next_state : "!D"; }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
+    pin (QN) {
+      direction : output;
+      function : "IQN";
+      timing () { related_pin : "CK"; timing_type : falling_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+
+  /* the double inversion trap, in asap7s state variable naming: the stored */
+  /* bit is NAMED IQN and holds !D, the pin QN reads IQNN, the COMPLEMENT of */
+  /* the stored bit. Net function: next Q equals D, a NON inverting flop written */
+  /* the most confusing way possible. A correct decompose builds an inverter on */
+  /* BOTH sides, a finder that only asks does the pin read the complement */
+  /* wrongly calls it inverting. Smallest area in the library on purpose. */
+  cell (DFF_N_ND_QN) {
+    area : 3.2;
+    ff (IQN, IQNN) { clocked_on : "!CK"; next_state : "!D"; }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
+    pin (QN) {
+      direction : output;
+      function : "IQNN";
+      timing () { related_pin : "CK"; timing_type : falling_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+
+  /* negedge enable flop, asap7 has no such cell, Yosys name DFFE_NP. Same mux */
+  /* next_state as DFFE_PP, clocked on the falling edge. */
+  cell (DFFE_NP) {
+    area : 4.8;
+    ff (IQ, IQN) { clocked_on : "!CK"; next_state : "(D * EN) + (IQ * !EN)"; }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (EN) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      timing () { related_pin : "CK"; timing_type : falling_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+
+  /* negedge enable flop that STORES !D, input side inversion inside the mux, */
+  /* the hold term still feeds back the stored bit. Q reads the state as is. */
+  cell (DFFE_NP_ND) {
+    area : 4.6;
+    ff (IQ, IQN) { clocked_on : "!CK"; next_state : "!((D + !EN) * (!IQ + EN))"; }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (EN) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+      timing () { related_pin : "CK"; timing_type : falling_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+
+  /* negedge enable flop that stores D and PUBLISHES the complement: */
+  /* output side inversion, QN = IQN. */
+  cell (DFFE_NP_QN) {
+    area : 4.7;
+    ff (IQ, IQN) { clocked_on : "!CK"; next_state : "IQ ^ (EN * (D ^ IQ))"; }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (EN) {
+      direction : input;
+      capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling; rise_constraint (scalar) { values ("0.01"); } }
+    }
+    pin (CK) { direction : input; clock : true; capacitance : 0.001; }
+    pin (QN) {
+      direction : output;
+      function : "IQN";
+      timing () { related_pin : "CK"; timing_type : falling_edge; cell_rise (scalar) { values ("0.01"); } rise_transition (scalar) { values ("0.01"); } }
+    }
+  }
+}

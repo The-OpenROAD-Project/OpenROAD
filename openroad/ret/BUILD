@@ -1,0 +1,154 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
+load("//bazel:tcl_encode_or.bzl", "tcl_encode")
+load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
+
+package(
+    default_visibility = ["//:__subpackages__"],
+    features = ["layering_check"],
+)
+
+cc_library(
+    name = "ret",
+    srcs = [
+        "src/RegisterTiming.cpp",
+        "src/RegisterTiming.h",
+        "src/RegisterUtils.cpp",
+        "src/RegisterUtils.h",
+        "src/Retime.cpp",
+        "src/Retime.h",
+        "src/RetimeModel.cpp",
+        "src/Retimer.cpp",
+        "src/RetimerPlacer.cpp",
+        "src/RetimerPlacer.h",
+        "src/RetimingGraph.cpp",
+        "src/RetimingGraph.h",
+        "src/SequentialUnmapper.cpp",
+        "src/SequentialUnmapper.h",
+        "src/StaCheck.cpp",
+        "src/StaCheck.h",
+    ],
+    hdrs = [
+        "include/ret/Retimer.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/est",
+        "//openroad/odb/src/db",
+        "//openroad/rsz",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
+    ],
+)
+
+# Private headers, for the unit tests in test.
+cc_library(
+    name = "ret_internal",
+    testonly = True,
+    hdrs = [
+        "src/RegisterTiming.h",
+        "src/RegisterUtils.h",
+        "src/Retime.h",
+        "src/RetimerPlacer.h",
+        "src/RetimingGraph.h",
+        "src/SequentialUnmapper.h",
+        "src/StaCheck.h",
+    ],
+    strip_include_prefix = "src",
+    visibility = ["//openroad/ret/test:__pkg__"],
+    deps = [
+        ":ret",
+        "//openroad/odb/src/db",
+    ],
+)
+
+cc_library(
+    name = "ui",
+    srcs = [
+        "src/MakeRet.cpp",
+        ":swig",
+        ":tcl",
+    ],
+    hdrs = [
+        "include/ret/MakeRet.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":ret",
+        "//:ord",
+        "//openroad/utl",
+        "@tcl_lang//:tcl",
+    ],
+)
+
+tcl_encode(
+    name = "tcl",
+    srcs = [
+        "src/ret.tcl",
+    ],
+    char_array_name = "ret_tcl_inits",
+    namespace = "ret",
+)
+
+tcl_wrap_cc(
+    name = "swig",
+    srcs = [
+        "src/ret.i",
+        "//:error_swig",
+    ],
+    module = "ret",
+    namespace_prefix = "ret",
+    root_swig_src = "src/ret.i",
+    swig_includes = [
+        "src",
+    ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/ret/Retimer.h",
+        "src/ret-py.i",
+        "//:error_swig-py",
+    ],
+    module = "ret_py",
+    root_swig_src = "src/ret-py.i",
+    swig_includes = [
+        "include",
+        "src",
+    ],
+)
+
+exports_files(["README.md"])
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/ret.tcl",
+    ],
+    visibility = ["//openroad/ret/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = [
+        "//docs:__pkg__",
+        "//openroad/ret/test:__pkg__",
+    ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src"],
+    deps = [":ret"],
+)

@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO RET-0014] Retiming graph: 11 gates, 10 edges, 3 registers, 6 pinned gates, 0 fenced registers.
+[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.9319, TNS -1.1044, registers 3, placed 0, resized 0.
+r1: stays
+worst slack max -0.1561
+tns max -0.2290
+[INFO RET-0014] Retiming graph: 11 gates, 10 edges, 3 registers, 6 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.1561 |       -0.2290 |         3
+     1 |        3 |      1 |    3 |     -0.1561 |       -0.1985 |         4
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 3, rounds 1, WNS -0.1561, TNS -0.1985, registers 4, placed 0, resized 0.
+worst slack max -0.1561
+tns max -0.1985
+Retime output passed/skipped sequential equivalence test

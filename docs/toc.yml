@@ -78,6 +78,8 @@ entries:
         title: VSRC Description
   - file: main/openroad/gpl/README
     title: Global Placement
+  - file: main/openroad/ret/README
+    title: Retiming
   - file: main/openroad/sta/README
     title: Static Timing Analyzer (external)
   - file: main/openroad/est/README

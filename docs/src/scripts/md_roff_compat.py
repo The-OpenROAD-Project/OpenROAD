@@ -88,6 +88,7 @@ tools = [
     "psm",
     "ram",
     "rcx",
+    "ret",
     "rmp",
     "rsz",
     "sta",

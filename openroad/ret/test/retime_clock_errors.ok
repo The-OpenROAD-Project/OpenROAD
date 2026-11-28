@@ -1,0 +1,8 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO RET-0029] No register with a clock pin; nothing to retime.
+[ERROR RET-0030] No clock defined.
+RET-0030
+[ERROR RET-0033] 2 clocks defined; only single-clock designs can be retimed.
+RET-0033
+[INFO RET-0014] Retiming graph: 3 gates, 2 edges, 2 registers, 2 pinned gates, 0 fenced registers.
+[INFO RET-0053] Retime: slides 0, rounds 0, WNS INF, TNS 0.0000, registers 2, placed 0, resized 0.

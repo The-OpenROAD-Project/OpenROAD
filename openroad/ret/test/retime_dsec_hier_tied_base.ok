@@ -1,0 +1,19 @@
+[INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_tech.lef, created 19 layers, 300 vias
+[INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_stdcell.lef, created 78 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+worst slack max -0.1474
+[INFO RET-0047] No plain D flip-flop; new registers are sg13g2_dfrbp_1 with RESET_B tied high.
+[INFO RET-0014] Retiming graph: 10 gates, 9 edges, 3 registers, 4 pinned gates, 0 fenced registers.
+[INFO RET-0008] Unmapped 1 registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.1474 |       -0.1474 |         3
+     1 |        6 |      1 |    6 |      0.0064 |        0.0000 |         2
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 6, rounds 1, WNS 0.0064, TNS 0.0000, registers 2, placed 0, resized 0.
+worst slack max 0.0064
+Retime output passed/skipped sequential equivalence test
+u_core/ret_ff_4 sg13g2_dfrbp_1 core: CLK=clk RESET_B=u_core/ret_net_5 D=u_core/n5 Q=u_core/ret_net_4 (u_core/g7/A)
+u_core/ret_tie_5 sg13g2_tiehi core: L_HI=u_core/ret_net_5 (u_core/ret_ff_4/RESET_B)
+u_core/unmap_inv_3 sg13g2_inv_1 core: Y=u_core/unmap_net_3 (u_core/g2/A) A=u_core/d1
+instances 15, nets 19

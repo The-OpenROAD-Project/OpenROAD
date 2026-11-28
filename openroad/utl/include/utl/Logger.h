@@ -75,6 +75,7 @@ class Progress;
   X(PSM)                \
   X(RAM)                \
   X(RCX)                \
+  X(RET)                \
   X(RMP)                \
   X(RSZ)                \
   X(STA)                \

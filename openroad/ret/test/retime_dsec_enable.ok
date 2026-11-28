@@ -1,0 +1,34 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[INFO IFP-0001] Added 7 rows of 434 site unithd.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 200.000 20.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 199.640 19.040 ) um
+[INFO IFP-0102] Core area:                         3801.146 um^2
+[INFO IFP-0103] Total instances area:               272.762 um^2
+[INFO IFP-0104] Effective utilization:                0.072
+[INFO IFP-0105] Number of instances:                     29
+worst slack max -0.1412
+[INFO RET-0014] Retiming graph: 23 gates, 20 edges, 6 registers, 11 pinned gates, 0 fenced registers.
+[INFO RET-0008] Unmapped 2 registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.1412 |       -0.1693 |         6
+     1 |        2 |      1 |    2 |     -0.0410 |       -0.0410 |         6
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 2, rounds 1, WNS -0.0410, TNS -0.0410, registers 6, placed 12, resized 0.
+worst slack max -0.0410
+unplaced instances: 0
+Retime output passed/skipped sequential equivalence test
+ret_ff_11 sky130_fd_sc_hd__dfxtp_1 top: D=m1 Q=ret_net_11 (g11/A) CLK=clk
+ret_ff_12 sky130_fd_sc_hd__edfxtp_1 top: D=n1 DE=en Q=ret_net_12 (g3/A) CLK=clk
+ret_ff_13 sky130_fd_sc_hd__dfxtp_1 top: D=unmap_net_5 Q=ret_net_13 (unmap_and_4/A) CLK=clk
+ret_ff_14 sky130_fd_sc_hd__dfxtp_1 top: D=unmap_net_10 Q=ret_net_14 (unmap_and_9/A) CLK=clk
+unmap_and_2 sky130_fd_sc_hd__and2_0 top: A=d4 B=en2 X=unmap_net_2 (unmap_or_5/A)
+unmap_and_4 sky130_fd_sc_hd__and2_0 top: A=ret_net_13 B=unmap_net_3 X=unmap_net_4 (unmap_or_5/B)
+unmap_and_7 sky130_fd_sc_hd__and2_0 top: A=d6 B=en X=unmap_net_7 (unmap_or_10/A)
+unmap_and_9 sky130_fd_sc_hd__and2_0 top: A=ret_net_14 B=unmap_net_8 X=unmap_net_9 (unmap_or_10/B)
+unmap_inv_3 sky130_fd_sc_hd__clkinv_1 top: A=en2 Y=unmap_net_3 (unmap_and_4/B)
+unmap_inv_8 sky130_fd_sc_hd__clkinv_1 top: A=en Y=unmap_net_8 (unmap_and_9/B)
+unmap_or_10 sky130_fd_sc_hd__or2_0 top: A=unmap_net_7 B=unmap_net_9 X=unmap_net_10 (g10/B ret_ff_14/D)
+unmap_or_5 sky130_fd_sc_hd__or2_0 top: A=unmap_net_2 B=unmap_net_4 X=unmap_net_5 (g10/A ret_ff_13/D)
+instances 37, nets 45

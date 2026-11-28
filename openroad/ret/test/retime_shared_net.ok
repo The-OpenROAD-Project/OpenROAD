@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+worst slack max -0.0612
+[INFO RET-0014] Retiming graph: 8 gates, 5 edges, 2 registers, 5 pinned gates, 0 fenced registers.
+[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0612, TNS -0.0612, registers 2, placed 0, resized 0.
+worst slack max -0.0612
+i1/A reads bus

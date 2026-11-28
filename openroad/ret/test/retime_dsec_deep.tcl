@@ -1,0 +1,21 @@
+# Two registers of different classes cross the same gate, one after the other,
+# and keep their order and their classes.  The result is proven sequentially
+# equivalent with ABC dsec.
+source "helpers.tcl"
+source "ret_helpers.tcl"
+source "ret_report.tcl"
+read_lef sky130hd/sky130hd.tlef
+read_lef sky130hd/sky130hd_std_cell.lef
+read_liberty sky130hd/sky130hd_tt.lib
+read_verilog retime_dsec_deep.v
+link_design top
+create_clock -period 0.6 clk
+
+write_verilog_for_dsec retime_dsec_deep before
+report_worst_slack -max -digits 4
+retime
+report_worst_slack -max -digits 4
+run_dsec_test retime_dsec_deep -liberty_files sky130hd/sky130hd_tt.lib \
+  -clock clk -resetn rst_n
+
+report_new_cells
