@@ -4082,6 +4082,41 @@ void NesterovBase::saveSnapshot()
   }
 }
 
+void NesterovBase::settleOnIterate(const int iter)
+{
+  if (isConverged_ || sum_overflow_unscaled_ > npVars_->targetOverflow) {
+    return;
+  }
+  pullSlpFromDevice();
+
+  updateGCellDensityCenterLocation(curCoordi_);
+  const float denominator = getOverflowDenominator(iter);
+  sum_overflow_unscaled_ = getOverflowAreaUnscaled() / denominator;
+  if (sum_overflow_unscaled_ > npVars_->targetOverflow) {
+    // Not converged: the next step starts from the look-ahead.
+    updateGCellDensityCenterLocation(curSLPCoordi_);
+    return;
+  }
+
+  // No step is taken from here, so the gradients evaluated at the look-ahead
+  // are left as they are.
+  curSLPCoordi_ = curCoordi_;
+  sum_overflow_ = getOverflowArea() / denominator;
+  prev_hpwl_ = nbc_->getHpwl();
+
+#ifdef ENABLE_GPU
+  if (nb_device_ctx_) {
+    nb_device_ctx_->syncCoordsToDevice(curSLPCoordi_,
+                                       prevSLPCoordi_,
+                                       curCoordi_,
+                                       curSLPSumGrads_,
+                                       prevSLPSumGrads_);
+    commitCoordsToDeviceState(SlpSlot::Cur);
+    host_coords_fresh_ = true;
+  }
+#endif
+}
+
 bool NesterovBase::checkConvergence(int gpl_iter_count,
                                     int routability_gpl_iter_count,
                                     RouteBase* rb)

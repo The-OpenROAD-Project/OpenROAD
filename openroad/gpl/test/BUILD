@@ -390,6 +390,27 @@ cc_test(
     ],
 )
 
+# How global placement's Nesterov descent ends.
+cc_test(
+    name = "end_of_descent_test",
+    srcs = ["end_of_descent_test.cpp"],
+    data = [
+        "gcd.def",
+        "nangate45.lef",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/gpl:gpl_impl",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/odb/src/lefin",
+        "//openroad/tst",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 cc_test(
     name = "overflow_test",
     srcs = ["overflow_test.cpp"],

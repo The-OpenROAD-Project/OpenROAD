@@ -196,9 +196,9 @@ Using 2 tracks default min distance between IO pins.
       410 |   0.1292 |  1.266086e+04 |   +0.47% |  9.39e-07 |  (spm_inst_1_domain)
       420 |   0.1107 |  1.265969e+04 |   -0.01% |  1.46e-06 |  (spm_inst_0_domain)
       420 |   0.1118 |  1.265969e+04 |   -0.01% |  1.38e-06 |  (spm_inst_1_domain)
-      425 |   0.0988 |  1.260376e+04 |          |  1.75e-06 | spm_inst_1_domain
+      426 |   0.0995 |  1.260569e+04 |          |  1.81e-06 | spm_inst_1_domain
 ---------------------------------------------------------------
-[INFO GPL-1016] Region 'spm_inst_1_domain' placement finished at iteration 425
+[INFO GPL-1016] Region 'spm_inst_1_domain' placement finished at iteration 426
 [INFO GPL-1002] Placed Cell Area             3725.6211
 [INFO GPL-1003] Available Free Area         23100.0000
 [INFO GPL-1004] Minimum Feasible Density        0.1700 (cell_area / free_area)
@@ -206,9 +206,9 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-1007]     - For 90% usage of free space: 0.1792
 [INFO GPL-1008]     - For 80% usage of free space: 0.2016
 [INFO GPL-1009]     - For 50% usage of free space: 0.3226
-      428 |   0.0981 |  1.262656e+04 |          |  2.07e-06 | spm_inst_0_domain
+      429 |   0.0989 |  1.261406e+04 |          |  2.15e-06 | spm_inst_0_domain
 ---------------------------------------------------------------
-[INFO GPL-1016] Region 'spm_inst_0_domain' placement finished at iteration 428
+[INFO GPL-1016] Region 'spm_inst_0_domain' placement finished at iteration 429
 [INFO GPL-1002] Placed Cell Area             3725.6211
 [INFO GPL-1003] Available Free Area         23100.0000
 [INFO GPL-1004] Minimum Feasible Density        0.1700 (cell_area / free_area)
@@ -217,5 +217,5 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-1008]     - For 80% usage of free space: 0.2016
 [INFO GPL-1009]     - For 50% usage of free space: 0.3226
 [INFO GPL-1014] Final placement area: 7451.24 (+0.00%)
-[INFO GPL-1018] Final HPWL (um): 12633.22
+[INFO GPL-1018] Final HPWL (um): 12620.40
 No differences found.
