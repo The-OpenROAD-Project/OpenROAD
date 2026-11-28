@@ -1365,6 +1365,8 @@ NesterovBaseCommon::NesterovBaseCommon(
     }
   }
 
+  refreshWireLengthPreconditioners();
+
   // Construct the device-side coordinate pool (instance coords, per-pin
   // offsets, net→pin CSR) only when the GPU path is selected at run time.
   // The HPWL backend factory then takes a pointer to it; the GPU backend
@@ -1775,7 +1777,22 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientPinWA(const GPin* gPin,
 FloatPoint NesterovBaseCommon::getWireLengthPreconditioner(
     const GCell* gCell) const
 {
-  return FloatPoint(gCell->gPins().size(), gCell->gPins().size());
+  const float precond = gCell->wireLengthPreconditioner();
+  return FloatPoint(precond, precond);
+}
+
+void NesterovBaseCommon::refreshWireLengthPreconditioners()
+{
+  const size_t num_cells = gCellStor_.size();
+#pragma omp parallel for num_threads(num_threads_)
+  for (size_t i = 0; i < num_cells; ++i) {
+    GCell& gCell = gCellStor_[i];
+    float precond = 0.0f;
+    for (const GPin* gPin : gCell.gPins()) {
+      precond += gPin->getGNet()->getTotalWeight();
+    }
+    gCell.setWireLengthPreconditioner(precond);
+  }
 }
 
 void NesterovBaseCommon::updateDbGCells()
@@ -2020,6 +2037,8 @@ void NesterovBaseCommon::fixPointers()
       }
     }
   }
+
+  refreshWireLengthPreconditioners();
 
 #ifdef ENABLE_GPU
   // gCellStor_ contents were rebuilt — any device coord copy is stale.

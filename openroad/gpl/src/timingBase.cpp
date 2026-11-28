@@ -233,6 +233,7 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore,
     }
   }
 
+  nbc_->refreshWireLengthPreconditioners();
   debugPrint(log_,
              GPL,
              "timing",

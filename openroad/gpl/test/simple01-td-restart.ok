@@ -102,19 +102,18 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0111] Timing-driven: restarting Nesterov momentum.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      220 |   0.6131 |  2.644688e+03 |   +0.00% |  2.48e-09 |      
-      230 |   0.5516 |  2.745082e+03 |   +3.80% |  4.03e-09 |      
-      240 |   0.5166 |  2.819674e+03 |   +2.72% |  6.57e-09 |      
-      250 |   0.4666 |  2.887607e+03 |   +2.41% |  1.07e-08 |      
-      260 |   0.4178 |  2.946039e+03 |   +2.02% |  1.74e-08 |      
-      270 |   0.3753 |  3.015619e+03 |   +2.36% |  2.84e-08 |      
-      280 |   0.3253 |  3.089998e+03 |   +2.47% |  4.49e-08 |      
-      290 |   0.2810 |  3.142167e+03 |   +1.69% |  6.61e-08 |      
-      300 |   0.2451 |  3.198102e+03 |   +1.78% |  9.74e-08 |      
-      310 |   0.2171 |  3.241042e+03 |   +1.34% |  1.43e-07 |      
-      320 |   0.1956 |  3.260459e+03 |   +0.60% |  2.11e-07 |      
+      220 |   0.5806 |  2.677154e+03 |   +0.00% |  2.48e-09 |      
+      230 |   0.5459 |  2.738985e+03 |   +2.31% |  4.03e-09 |      
+      240 |   0.5082 |  2.810389e+03 |   +2.61% |  6.57e-09 |      
+      250 |   0.4627 |  2.868975e+03 |   +2.08% |  1.07e-08 |      
+      260 |   0.4165 |  2.931753e+03 |   +2.19% |  1.74e-08 |      
+      270 |   0.3661 |  3.001642e+03 |   +2.38% |  2.84e-08 |      
+      280 |   0.3140 |  3.043055e+03 |   +1.38% |  4.35e-08 |      
+      290 |   0.2762 |  3.091693e+03 |   +1.60% |  6.41e-08 |      
+      300 |   0.2427 |  3.133970e+03 |   +1.37% |  9.45e-08 |      
+      310 |   0.2184 |  3.176847e+03 |   +1.37% |  1.39e-07 |      
 [INFO GPL-0100] Timing-driven iteration 2/2, virtual: false.
-[INFO GPL-0101]    Iter: 322, overflow: 0.194, keep resizer changes at: 1, HPWL: 6525074
+[INFO GPL-0101]    Iter: 320, overflow: 0.193, keep resizer changes at: 1, HPWL: 6404641
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       615
@@ -131,29 +130,26 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
       160 |     +0.0% |      76 |       76 |       160
       192 |     +0.0% |      80 |       80 |       128
       224 |     +0.0% |      86 |       86 |        96
-[WARNING RSZ-2009] Skipping buffering because no valid buffering solution satisfying the design rules can be found for net connected to pin _355_/ZN.
-[WARNING RSZ-2005] cannot find a viable buffering solution on pin _355_/ZN after 1 rounds of buffering (no solution meets design rules)
-[WARNING RSZ-2009] Skipping buffering because no valid buffering solution satisfying the design rules can be found for net connected to pin _276_/ZN.
-[WARNING RSZ-2005] cannot find a viable buffering solution on pin _276_/ZN after 1 rounds of buffering (no solution meets design rules)
-      256 |     +0.0% |     125 |      125 |        64
-      288 |     +0.0% |     165 |      165 |        32
-    final |     -0.0% |     226 |      226 |         0
+      256 |     +0.0% |     158 |      158 |        64
+      288 |     +0.0% |     198 |      198 |        32
+    final |     -0.0% |     259 |      259 |         0
 -------------------------------------------------------
-[INFO GPL-0106] Timing-driven: worst slack 1.2525858e-09
+[INFO GPL-0106] Timing-driven: worst slack 1.2376996e-09
 [INFO GPL-0107] Timing-driven: repair_design delta area: -0.266 um^2 (-0.03%)
 [INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 0 (+0.00%)
-[INFO GPL-0109] Timing-driven: repair_design, gcells created: 226, deleted: 226
+[INFO GPL-0109] Timing-driven: repair_design, gcells created: 259, deleted: 259
 [INFO GPL-0110] Timing-driven: new target density: 0.91695476
 [INFO GPL-0111] Timing-driven: restarting Nesterov momentum.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      330 |   0.1767 |  3.163753e+03 |   +0.00% |  3.11e-07 |      
-      340 |   0.1479 |  3.171443e+03 |   +0.24% |  4.59e-07 |      
-      350 |   0.1205 |  3.177666e+03 |   +0.20% |  6.76e-07 |      
-      360 |   0.0999 |  3.185515e+03 |   +0.25% |  9.95e-07 |      
-      360 |   0.0999 |  3.185515e+03 |          |  1.03e-06 |      
+      320 |   0.2009 |  3.061470e+03 |   +0.00% |  2.05e-07 |      
+      330 |   0.1743 |  3.016631e+03 |   -1.46% |  3.02e-07 |      
+      340 |   0.1548 |  3.034213e+03 |   +0.58% |  4.45e-07 |      
+      350 |   0.1324 |  3.045242e+03 |   +0.36% |  6.55e-07 |      
+      360 |   0.1117 |  3.058488e+03 |   +0.43% |  9.66e-07 |      
+      368 |   0.0989 |  3.067443e+03 |          |  1.37e-06 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 360
+[INFO GPL-1001] Global placement finished at iteration 368
 [INFO GPL-1002] Placed Cell Area              807.9404
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.6400 (cell_area / free_area)
@@ -163,6 +159,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1011] Original area (um^2): 600.99
 [INFO GPL-1013] Total timing-driven delta area: 206.95 (+34.43%)
 [INFO GPL-1014] Final placement area: 807.94 (+34.43%)
-[INFO GPL-1018] Final HPWL (um): 3185.20
-worst slack max 1.25
+[INFO GPL-1018] Final HPWL (um): 3070.23
+worst slack max 1.24
 No differences found.

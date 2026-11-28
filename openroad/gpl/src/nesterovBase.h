@@ -139,6 +139,9 @@ class GCell
   float getGradientY() const { return gradientY_; }
   float getDensityScale() const { return densityScale_; }
 
+  void setWireLengthPreconditioner(float precond) { wlPrecond_ = precond; }
+  float wireLengthPreconditioner() const { return wlPrecond_; }
+
   bool isInstance() const;
   bool isFiller() const;
   bool isMacroInstance() const;
@@ -164,6 +167,7 @@ class GCell
   float densityScale_ = 0;
   float gradientX_ = 0;
   float gradientY_ = 0;
+  float wlPrecond_ = 0.0f;
 
   GCellChange change_ = GCellChange::kNone;
 };
@@ -953,6 +957,7 @@ class NesterovBaseCommon
 
   // for preconditioner
   FloatPoint getWireLengthPreconditioner(const GCell* gCell) const;
+  void refreshWireLengthPreconditioners();
 
   int64_t getHpwl();
 
