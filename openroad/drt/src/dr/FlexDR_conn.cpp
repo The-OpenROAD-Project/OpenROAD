@@ -1125,15 +1125,25 @@ void FlexDRConnectivityChecker::merge_commit(
     cnt++;
     frEndStyle end_style = victimPathSeg->getEndStyle();
     frUInt4 end_ext = victimPathSeg->getEndExt();
+    frEndStyle begin_style = victimPathSeg->getBeginStyle();
+    frUInt4 begin_ext = victimPathSeg->getBeginExt();
     for (; cnt < (int) victims.size(); cnt++) {
       frPathSeg* curr = static_cast<frPathSeg*>(netRouteObjs[victims[cnt]]);
       if (curr->high() > newSegSpan.hi) {
         break;
       }
-      if (curr->high() >= high) {
+      // A truncated end is what ties a segment to its pin access point; an
+      // extended end at the same coordinate must not replace it (the rule
+      // merge_perform_helper already applies when it picks currEndPs).
+      if (curr->high() > high
+          || (curr->high() == high && end_style != frcTruncateEndStyle)) {
         end_style = curr->getEndStyle();
         end_ext = curr->getEndExt();
         high = curr->high();
+      }
+      if (curr->low() == newSegSpan.lo && curr->isBeginTruncated()) {
+        begin_style = curr->getBeginStyle();
+        begin_ext = curr->getBeginExt();
       }
       if (save_updates_) {
         drUpdate update(drUpdate::REMOVE_FROM_NET);
@@ -1145,6 +1155,7 @@ void FlexDRConnectivityChecker::merge_commit(
       net->removeShape(curr);
       netRouteObjs[victims[cnt]] = nullptr;
     }
+    victimPathSeg->setBeginStyle(begin_style, begin_ext);
     victimPathSeg->setEndStyle(end_style, end_ext);
     regionQuery->addDRObj(victimPathSeg);
     if (save_updates_) {
