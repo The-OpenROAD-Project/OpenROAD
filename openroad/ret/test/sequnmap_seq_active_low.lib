@@ -12,7 +12,8 @@
 /* DFF_P 4.0, DFF_N_ND 3.3 below DFF_P_ND 3.5, DFFE_NP variants 4.6 to 4.8 below */
 /* DFFE_PP 5.0, so any finder that ignores clocked_on picks a negedge cell. The */
 /* harder next_state forms give synth nested NOT and xor_ nodes for the same function. */
-/* No timing tables on purpose: decompose reads FUNCTIONS, not delays. */
+/* One scalar timing arc per signal pin: the unmapper builds only from cells */
+/* STA times.  It reads functions, not delays. */
 /* ========================================================================== */
 library (sequnmap_seq_active_low) {
   delay_model : table_lookup;
@@ -37,6 +38,8 @@ library (sequnmap_seq_active_low) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -46,6 +49,9 @@ library (sequnmap_seq_active_low) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : falling_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -60,6 +66,8 @@ library (sequnmap_seq_active_low) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -69,6 +77,9 @@ library (sequnmap_seq_active_low) {
     pin (QN) {
       direction : output;
       function : "IQN";
+      timing () { related_pin : "CK"; timing_type : falling_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -87,6 +98,8 @@ library (sequnmap_seq_active_low) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -96,6 +109,9 @@ library (sequnmap_seq_active_low) {
     pin (QN) {
       direction : output;
       function : "IQNN";
+      timing () { related_pin : "CK"; timing_type : falling_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -110,10 +126,14 @@ library (sequnmap_seq_active_low) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (EN) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -123,6 +143,9 @@ library (sequnmap_seq_active_low) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : falling_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -137,10 +160,14 @@ library (sequnmap_seq_active_low) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (EN) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -150,6 +177,9 @@ library (sequnmap_seq_active_low) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : falling_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -164,10 +194,14 @@ library (sequnmap_seq_active_low) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (EN) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -177,6 +211,9 @@ library (sequnmap_seq_active_low) {
     pin (QN) {
       direction : output;
       function : "IQN";
+      timing () { related_pin : "CK"; timing_type : falling_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 }

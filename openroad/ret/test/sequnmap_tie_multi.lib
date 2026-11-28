@@ -4,7 +4,8 @@
 /* and the SMALLEST area, so both tie slots must select it and mkTie must pick the pin by stored mterm. */
 /* DFF_P_TIE0 and DFF_P_TIE1 carry constant leaves 0 and 1 to reach the tie builder. */
 /* DFF_P, INV, AND2, OR2 are the support cells prepare needs. */
-/* No timing tables on purpose: decompose reads FUNCTIONS, not delays. */
+/* One scalar timing arc per signal pin: the unmapper builds only from cells */
+/* STA times.  It reads functions, not delays. */
 /* ========================================================================== */
 library (sequnmap_tie_multi) {
   delay_model : table_lookup;
@@ -28,6 +29,8 @@ library (sequnmap_tie_multi) {
     pin (Y) {
       direction : output;
       function : "!A";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -44,6 +47,10 @@ library (sequnmap_tie_multi) {
     pin (Y) {
       direction : output;
       function : "(A * B)";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -60,6 +67,10 @@ library (sequnmap_tie_multi) {
     pin (Y) {
       direction : output;
       function : "(A + B)";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -72,6 +83,8 @@ library (sequnmap_tie_multi) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -81,6 +94,9 @@ library (sequnmap_tie_multi) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -121,6 +137,8 @@ library (sequnmap_tie_multi) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -130,6 +148,9 @@ library (sequnmap_tie_multi) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -142,6 +163,8 @@ library (sequnmap_tie_multi) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -151,6 +174,9 @@ library (sequnmap_tie_multi) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 

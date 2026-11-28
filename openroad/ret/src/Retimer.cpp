@@ -438,14 +438,13 @@ int Retimer::applySlides(const std::vector<odb::dbInst*>& slides,
 
 Retime Retimer::runSearch(const RetimingGraph& graph, const int max_moves) const
 {
-  Retime search(
-      &graph,
-      sta_,
-      logger_,
-      unmapper_->getBaseSequentialDMTerm(),
-      [this](odb::dbMaster* master) {
-        return placer_->masterAndEquivalents(master);
-      });
+  Retime search(&graph,
+                sta_,
+                logger_,
+                unmapper_->getBaseSequentialDMTerm(),
+                [this](odb::dbMaster* master) {
+                  return placer_->masterAndEquivalents(master);
+                });
   search.run(max_moves, options_.margin);
   return search;
 }

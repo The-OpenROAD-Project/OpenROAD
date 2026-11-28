@@ -11,7 +11,8 @@
 /*   DFF_PD0     TRAP: 3.0, but its reset reads the data pin too (R * D): */
 /*               holding it inactive by constants would tie D */
 /*   DFF_PC0     TRAP: 3.0, the same with the clock pin (R * CK) */
-/* No timing tables on purpose: decompose reads FUNCTIONS, not delays. */
+/* One scalar timing arc per signal pin: the unmapper builds only from cells */
+/* STA times.  It reads functions, not delays. */
 /* ========================================================================== */
 library (sequnmap_async_only) {
   delay_model : table_lookup;
@@ -35,6 +36,8 @@ library (sequnmap_async_only) {
     pin (Y) {
       direction : output;
       function : "!A";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -51,6 +54,10 @@ library (sequnmap_async_only) {
     pin (Y) {
       direction : output;
       function : "(A * B)";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -67,6 +74,10 @@ library (sequnmap_async_only) {
     pin (Y) {
       direction : output;
       function : "(A + B)";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -96,10 +107,14 @@ library (sequnmap_async_only) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (RN) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -109,6 +124,9 @@ library (sequnmap_async_only) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -122,10 +140,14 @@ library (sequnmap_async_only) {
     pin (D) {
       direction : input;
       capacitance : 0.002;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (RN) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -135,6 +157,9 @@ library (sequnmap_async_only) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -151,14 +176,20 @@ library (sequnmap_async_only) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (RN) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (SN) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -168,6 +199,9 @@ library (sequnmap_async_only) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -180,10 +214,14 @@ library (sequnmap_async_only) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (R) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -193,6 +231,9 @@ library (sequnmap_async_only) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -205,10 +246,14 @@ library (sequnmap_async_only) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (EN) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -218,6 +263,9 @@ library (sequnmap_async_only) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -231,10 +279,14 @@ library (sequnmap_async_only) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (R) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_falling;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -244,6 +296,9 @@ library (sequnmap_async_only) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : falling_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -257,10 +312,14 @@ library (sequnmap_async_only) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (R) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -270,6 +329,9 @@ library (sequnmap_async_only) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -283,10 +345,14 @@ library (sequnmap_async_only) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (R) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -296,6 +362,9 @@ library (sequnmap_async_only) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 

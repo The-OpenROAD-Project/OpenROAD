@@ -173,11 +173,11 @@ class Retime
 
   void computeGateArcs();
   // nullopt without a table arc.  forced_slew: nullopt is STA's input slew.
-  std::optional<TableArc> characterizeArc(
-      int v,
-      odb::dbITerm* input,
-      float load,
-      std::optional<float> forced_slew = std::nullopt) const;
+  std::optional<TableArc> characterizeArc(int v,
+                                          odb::dbITerm* input,
+                                          float load,
+                                          std::optional<float> forced_slew
+                                          = std::nullopt) const;
   float pinCap(odb::dbITerm* pin) const;
   void calibrateArcs(int t);
   double modeledOutputArrival(int t, bool registered) const;

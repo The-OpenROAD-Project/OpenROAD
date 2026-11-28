@@ -123,9 +123,10 @@ class SequentialUnmapper
     std::vector<odb::dbBTerm*> ports;
   };
 
-  // nullptr when no new instance may be of the cell.  A tie cell follows only
-  // the liberty dont_use: flows keep tie cells out of sizing with
-  // set_dont_use and still tie nets with them.
+  // nullptr when no new instance may be of the cell, or STA would not time it.
+  // A tie cell follows only the liberty dont_use, and has no timing arcs:
+  // flows keep tie cells out of sizing with set_dont_use and still tie nets
+  // with them.
   odb::dbMaster* usableMaster(const sta::LibertyCell* cell,
                               bool tie = false) const;
   // No master when the cell is not a base register.

@@ -38,7 +38,8 @@ TEST_F(SequentialUnmapperCellTest, FixtureLoads)
 // The base cell must be the plain posedge flop, not the smaller
 // inverting-storage DFF_P_ND, not the smaller DFF_P_2CK with its second
 // clock pin, not the smaller DFF_P_SL with an input a new register would
-// leave open, and not the smaller negedge DFF_N.
+// leave open, not the smaller DFF_P_NA without timing arcs, and not the
+// smaller negedge DFF_N.
 TEST_F(SequentialUnmapperCellTest, PicksPlainPosedgeBase)
 {
   ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic, kNegedge}));

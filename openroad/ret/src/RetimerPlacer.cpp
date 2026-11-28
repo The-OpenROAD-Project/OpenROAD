@@ -18,6 +18,7 @@
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
+#include "sta/EquivCells.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
@@ -131,7 +132,8 @@ std::vector<odb::dbMaster*> RetimerPlacer::findEquivalentMasters(
   }
   std::vector<std::pair<float, odb::dbMaster*>> by_area;
   for (const sta::LibertyCell* other : *equivs) {
-    if (other == cell || !isUsableCell(other, resizer_)) {
+    if (other == cell || !isUsableCell(other, resizer_)
+        || !sta::equivCellTimingArcSets(cell, other)) {
       continue;
     }
     odb::dbMaster* other_master = network->staToDb(other);

@@ -86,6 +86,18 @@ bool isGateOf(const sta::FuncExpr* func, const sta::FuncExpr::Op op)
                  && func->right()->port() != func->left()->port()));
 }
 
+// A timing arc starts or ends at every signal pin of the cell.
+bool isTimed(const sta::LibertyCell* cell)
+{
+  return std::ranges::all_of(
+      libertyPorts(cell), [cell](const sta::LibertyPort* port) {
+        const sta::PortDirection* direction = port->direction();
+        return direction->isPowerGround() || direction->isInternal()
+               || !cell->timingArcSets(port, nullptr).empty()
+               || !cell->timingArcSets(nullptr, port).empty();
+      });
+}
+
 // The first pin of the master that is an output always driving the constant
 // (constantOutput); nullptr without one.
 odb::dbMTerm* constantPin(const sta::LibertyCell* cell,
@@ -119,7 +131,8 @@ odb::dbMaster* SequentialUnmapper::usableMaster(const sta::LibertyCell* cell,
 {
   odb::dbMaster* master = db_->findMaster(cell->name().c_str());
   const bool usable = isUsableCell(cell, tie ? nullptr : resizer_)
-                      && master != nullptr && hasLibertyPins(cell, master);
+                      && (tie || isTimed(cell)) && master != nullptr
+                      && hasLibertyPins(cell, master);
   return usable ? master : nullptr;
 }
 
@@ -474,10 +487,9 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
     skip(inst, "no gates for its next state");
     return;
   }
-  const bool outputs_read_state
-      = std::ranges::all_of(outputs, [](const LoadedOutput& output) {
-          return output.inverted.has_value();
-        });
+  const bool outputs_read_state = std::ranges::all_of(
+      outputs,
+      [](const LoadedOutput& output) { return output.inverted.has_value(); });
   if (!outputs_read_state) {
     skip(inst, "an output does not read the state");
     return;
@@ -579,9 +591,8 @@ bool SequentialUnmapper::makeBaseRegister(const BaseRegister& base,
 }
 
 std::vector<SequentialUnmapper::OutputMove>
-SequentialUnmapper::collectOutputMoves(
-    odb::dbInst* inst,
-    const std::vector<LoadedOutput>& outputs)
+SequentialUnmapper::collectOutputMoves(odb::dbInst* inst,
+                                       const std::vector<LoadedOutput>& outputs)
 {
   std::vector<OutputMove> moves;
   for (const LoadedOutput& output : outputs) {

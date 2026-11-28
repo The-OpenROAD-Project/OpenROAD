@@ -7,7 +7,8 @@
 /*   OR2_MISSING  LEF has no pin B */
 /*   TIE1_EXTRA   LEF has an input EN */
 /*   DFF_P_EXTRA  LEF has an input SE */
-/* No timing tables on purpose: decompose reads FUNCTIONS, not delays. */
+/* One scalar timing arc per signal pin: the unmapper builds only from cells */
+/* STA times.  It reads functions, not delays. */
 /* ========================================================================== */
 library (sequnmap_pin_mismatch) {
   delay_model : table_lookup;
@@ -31,6 +32,8 @@ library (sequnmap_pin_mismatch) {
     pin (Y) {
       direction : output;
       function : "!A";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -47,6 +50,10 @@ library (sequnmap_pin_mismatch) {
     pin (Y) {
       direction : output;
       function : "(A * B)";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -63,6 +70,10 @@ library (sequnmap_pin_mismatch) {
     pin (Y) {
       direction : output;
       function : "(A + B)";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -83,6 +94,8 @@ library (sequnmap_pin_mismatch) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -92,6 +105,9 @@ library (sequnmap_pin_mismatch) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 

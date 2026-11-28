@@ -1,8 +1,10 @@
 # The cell choice of the STA check only tries a cell with the pin names of
 # the register it replaces.  QDFF_X8 is DFF_X1 in liberty and faster, but its
 # LEF has one more input: the database refuses the swap after STA has dropped
-# the timing arcs of the register, which then looks as if it met timing.  The
-# design is that of retime_place_size, and so is the result.
+# the timing arcs of the register, which then looks as if it met timing.  Nor
+# does it try a cell whose timing arcs are not the register's: DFF_NOARC is
+# DFF_X1 without arcs, and the paths through it would look as if they met
+# timing.  The design is that of retime_place_size, and so is the result.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_liberty retime_swap_pins.lib

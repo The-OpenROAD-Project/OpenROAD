@@ -3,7 +3,8 @@
 /* outputs, for unit testing SequentialUnmapper: */
 /*   DFF_P_QQN  publishes the state on Q and !state on QN */
 /*   DFF_P_ODD  Q publishes the state, Y a function of the state and D */
-/* No timing tables on purpose: decompose reads FUNCTIONS, not delays. */
+/* One scalar timing arc per signal pin: the unmapper builds only from cells */
+/* STA times.  It reads functions, not delays. */
 /* ========================================================================== */
 library (sequnmap_two_outputs) {
   delay_model : table_lookup;
@@ -27,6 +28,8 @@ library (sequnmap_two_outputs) {
     pin (Y) {
       direction : output;
       function : "!A";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -43,6 +46,10 @@ library (sequnmap_two_outputs) {
     pin (Y) {
       direction : output;
       function : "(A * B)";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -59,6 +66,10 @@ library (sequnmap_two_outputs) {
     pin (Y) {
       direction : output;
       function : "(A + B)";
+      timing () { related_pin : "A"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "B"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -83,6 +94,12 @@ library (sequnmap_two_outputs) {
     pin (Y) {
       direction : output;
       function : "(A0 * !S) + (A1 * S)";
+      timing () { related_pin : "A0"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "A1"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
+      timing () { related_pin : "S"; cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -111,6 +128,8 @@ library (sequnmap_two_outputs) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -120,6 +139,9 @@ library (sequnmap_two_outputs) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -132,6 +154,8 @@ library (sequnmap_two_outputs) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -141,6 +165,9 @@ library (sequnmap_two_outputs) {
     pin (QN) {
       direction : output;
       function : "IQN";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -153,6 +180,8 @@ library (sequnmap_two_outputs) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -162,6 +191,9 @@ library (sequnmap_two_outputs) {
     pin (QN) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -174,10 +206,14 @@ library (sequnmap_two_outputs) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (EN) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -187,6 +223,9 @@ library (sequnmap_two_outputs) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -200,10 +239,14 @@ library (sequnmap_two_outputs) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (RN) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -213,6 +256,9 @@ library (sequnmap_two_outputs) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -225,6 +271,8 @@ library (sequnmap_two_outputs) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -234,10 +282,16 @@ library (sequnmap_two_outputs) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
     pin (QN) {
       direction : output;
       function : "IQN";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 
@@ -250,6 +304,8 @@ library (sequnmap_two_outputs) {
     pin (D) {
       direction : input;
       capacitance : 0.001;
+      timing () { related_pin : "CK"; timing_type : setup_rising;
+                  rise_constraint (scalar) { values ("0.01"); } }
     }
     pin (CK) {
       direction : input;
@@ -259,10 +315,16 @@ library (sequnmap_two_outputs) {
     pin (Q) {
       direction : output;
       function : "IQ";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
     pin (Y) {
       direction : output;
       function : "IQ & D";
+      timing () { related_pin : "CK"; timing_type : rising_edge;
+                  cell_rise (scalar) { values ("0.01"); }
+                  rise_transition (scalar) { values ("0.01"); } }
     }
   }
 

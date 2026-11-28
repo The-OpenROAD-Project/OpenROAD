@@ -568,9 +568,9 @@ void Retime::computeLaunch()
   for (int u = 0; u < n; ++u) {
     // The register a slide across u builds drives the net u drives today.
     odb::dbITerm* output = firstOutput(u);
-    const LaunchCell launch
-        = output != nullptr ? fastestLaunchCell(u, loadCap(output))
-                            : LaunchCell{};
+    const LaunchCell launch = output != nullptr
+                                  ? fastestLaunchCell(u, loadCap(output))
+                                  : LaunchCell{};
     launch_cell_[u] = launch.cell;
     new_launch_[u] = offset + launch.clock_to_q;
   }

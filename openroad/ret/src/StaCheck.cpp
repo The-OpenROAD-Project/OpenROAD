@@ -93,10 +93,9 @@ bool keepsTrial(const StaSlack& trial,
 
 NewCells::NewCells(odb::dbBlock* block)
 {
-  registers_ = static_cast<int>(
-      std::ranges::count_if(block->getInsts(), [](odb::dbInst* inst) {
-        return inst->getMaster()->isSequential();
-      }));
+  registers_ = static_cast<int>(std::ranges::count_if(
+      block->getInsts(),
+      [](odb::dbInst* inst) { return inst->getMaster()->isSequential(); }));
   addOwner(block);
 }
 
