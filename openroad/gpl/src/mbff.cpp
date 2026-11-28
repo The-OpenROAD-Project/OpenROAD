@@ -20,6 +20,7 @@
 #include "absl/container/inlined_vector.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "fmt/format.h"
 #include "lemon/core.h"
 #include "lemon/list_graph.h"
 #include "lemon/network_simplex.h"
@@ -72,22 +73,26 @@ using utl::GPL;
 
 std::string MBFF::Mask::to_string() const
 {
-  return fmt::format("{}{}{}{}{}{}{}{}",
-                     (int) clock_polarity,
-                     (int) has_clear,
-                     (int) has_preset,
-                     (int) pos_output,
-                     (int) inv_output,
+  return fmt::format("{}{}{}{}{}{}{}{}{}{}",
+                     static_cast<int>(clock_polarity),
+                     static_cast<int>(has_clear),
+                     static_cast<int>(clear_active_high),
+                     static_cast<int>(has_preset),
+                     static_cast<int>(preset_active_high),
+                     static_cast<int>(pos_output),
+                     static_cast<int>(inv_output),
                      func_idx,
-                     (int) is_scan_cell,
-                     (int) is_register);
+                     static_cast<int>(is_scan_cell),
+                     static_cast<int>(is_register));
 }
 
 bool MBFF::Mask::operator<(const Mask& rhs) const
 {
   return std::tie(clock_polarity,
                   has_clear,
+                  clear_active_high,
                   has_preset,
+                  preset_active_high,
                   pos_output,
                   inv_output,
                   func_idx,
@@ -95,7 +100,9 @@ bool MBFF::Mask::operator<(const Mask& rhs) const
                   is_register)
          < std::tie(rhs.clock_polarity,
                     rhs.has_clear,
+                    rhs.clear_active_high,
                     rhs.has_preset,
+                    rhs.preset_active_high,
                     rhs.pos_output,
                     rhs.inv_output,
                     rhs.func_idx,
@@ -246,6 +253,10 @@ MBFF::Mask MBFF::GetArrayMask(dbInst* inst, const bool isTray)
   ret.clock_polarity = network_->clockOn(inst);
   ret.has_clear = network_->hasClear(inst);
   ret.has_preset = network_->hasPreset(inst);
+  // Reset polarity must match: putting an active-low clear flop into an
+  // active-high clear tray (or vice versa) changes the circuit's function.
+  ret.clear_active_high = ret.has_clear && network_->isClearActiveHigh(inst);
+  ret.preset_active_high = ret.has_preset && network_->isPresetActiveHigh(inst);
 
   // check the existance of Q / QN pins
   for (dbITerm* iterm : inst->getITerms()) {

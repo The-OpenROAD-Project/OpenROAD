@@ -108,7 +108,11 @@ class MBFF
     int func_idx{0};
     bool clock_polarity{false};
     bool has_clear{false};
+    // Only meaningful when has_clear is set.
+    bool clear_active_high{false};
     bool has_preset{false};
+    // Only meaningful when has_preset is set.
+    bool preset_active_high{false};
     bool pos_output{false};
     bool inv_output{false};
     bool is_scan_cell{false};
