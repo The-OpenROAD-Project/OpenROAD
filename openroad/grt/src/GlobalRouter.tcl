@@ -154,6 +154,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-verbose] \
                                   [-start_incremental] \
                                   [-end_incremental] \
+                                  [-unguided_only] \
                                   [-use_cugr] \
                                   [-resistance_aware] \
                                   [-infinite_cap]
@@ -167,7 +168,7 @@ proc global_route { args } {
           -skip_large_fanout_nets -snapshot_batched_width
          } \
     flags {-allow_congestion -resistance_aware -infinite_cap -verbose -start_incremental \
-          -end_incremental -use_cugr -congestion_only}
+          -end_incremental -unguided_only -use_cugr -congestion_only}
 
   sta::check_argc_eq0 "global_route" $args
 
@@ -286,6 +287,17 @@ proc global_route { args } {
       utl::error GRT 344 "-congestion_only cannot be used with [join $conflicts {, }]."
     }
   }
+  if { [info exists flags(-unguided_only)] } {
+    set conflicts {}
+    foreach option {-start_incremental -end_incremental -congestion_only} {
+      if { [info exists flags($option)] } {
+        lappend conflicts $option
+      }
+    }
+    if { $conflicts != {} } {
+      utl::error GRT 345 "-unguided_only cannot be used with [join $conflicts {, }]."
+    }
+  }
   grt::set_congestion_only [info exists flags(-congestion_only)]
 
   set infinite_cap [info exists flags(-infinite_cap)]
@@ -300,6 +312,8 @@ proc global_route { args } {
     grt::start_incremental
   } elseif { $end_incremental } {
     grt::end_incremental
+  } elseif { [info exists flags(-unguided_only)] } {
+    grt::global_route_unguided
   } else {
     grt::global_route
   }

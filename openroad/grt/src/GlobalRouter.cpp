@@ -969,6 +969,62 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
   return total_diodes_count_;
 }
 
+// Every net with guides keeps them and holds its edges; only the nets
+// without guides are routed.
+void GlobalRouter::globalRouteUnguided(bool save_guides)
+{
+  clear();
+  block_ = db_->getChip()->getBlock();
+  ensureEngineSelected();
+  if (use_cugr_) {
+    logger_->error(GRT, 338, "-unguided_only routes with FastRoute, not CUGR.");
+  }
+
+  int min_layer, max_layer;
+  getMinMaxLayer(min_layer, max_layer);
+  std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+  fastroute_->clearNetsToRoute();
+  std::vector<Net*> unguided;
+  int restored = 0;
+  for (Net* net : nets) {
+    odb::dbNet* db_net = net->getDbNet();
+    net->setRestoreRouteFromGuides(true);
+    if (loadRoutingFromDBGuides(db_net)) {
+      restored++;
+      continue;
+    }
+    net->setRestoreRouteFromGuides(false);
+    makeFastrouteNet(net);
+    unguided.push_back(net);
+  }
+  fastroute_->initAuxVar();
+  logger_->info(GRT,
+                339,
+                "Kept the guides of {} nets, routing {} nets without guides.",
+                restored,
+                unguided.size());
+
+  computeInitialSteinerWirelengths(unguided);
+  try {
+    NetRouteMap routes = findRouting(unguided, min_layer, max_layer);
+    mergeResults(routes);
+  } catch (...) {
+    updateDbCongestion();
+    saveCongestion();
+    throw;
+  }
+  // the guides kept are left as they were read
+  finishGlobalRouting(false);
+  if (save_guides) {
+    std::vector<odb::dbNet*> routed;
+    routed.reserve(unguided.size());
+    for (Net* net : unguided) {
+      routed.push_back(net->getDbNet());
+    }
+    saveGuides(routed);
+  }
+}
+
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
                                       int min_routing_layer,
                                       int max_routing_layer)

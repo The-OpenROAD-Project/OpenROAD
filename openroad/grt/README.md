@@ -31,6 +31,7 @@ global_route
     [-verbose]
     [-start_incremental]
     [-end_incremental]
+    [-unguided_only]
     [-use_cugr]
     [-resistance_aware]
     [-res_aware_nets_percentage percent]
@@ -52,6 +53,7 @@ global_route
 | `-verbose` | This flag enables the full reporting of the global routing. |
 | `-start_incremental` | This flag initializes the GRT listener to get the net modified. The default is false. |
 | `-end_incremental` | This flag run incremental GRT with the nets modified. The default is false. |
+| `-unguided_only` | Keep the guides of every net that has them, with the resources they use, and route only the nets without guides. Nets whose guides were removed, or that were added since, are routed around the others. Not available with `-use_cugr` (GRT-0338), and cannot be combined with `-start_incremental`, `-end_incremental` or `-congestion_only` (GRT-0345). The default is false. |
 | `-use_cugr` | This flag run GRT using CUGR as the router solver. NOTE: this is not ready for production. |
 | `-resistance_aware` | FastRoute: this flag enables resistance-aware layer assignment and 3D routing. NOTE: this is not ready for production. CUGR always charges nets with negative slack for their wire delay, scaled by criticality, and ignores this flag. |
 | `-res_aware_nets_percentage` | FastRoute: set the percentage of resistance-aware nets (e.g. `-res_aware_nets_percentage 100` (for 100%)). The default value is `15` with resistance-aware enabled and `0` otherwise, and the allowed values are floats between `[0, 100]`. CUGR ignores it. |

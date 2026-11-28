@@ -217,6 +217,7 @@ class GlobalRouter
   void endIncremental(bool save_guides = false);
   void reportIncrementalCongestion();
   void globalRoute(bool save_guides = false);
+  void globalRouteUnguided(bool save_guides = false);
   void saveCongestion();
   NetRouteMap& getRoutes();
   NetRouteMap getPartialRoutes();
