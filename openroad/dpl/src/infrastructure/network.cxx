@@ -18,6 +18,7 @@
 #include "infrastructure/architecture.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 namespace dpl {
 
@@ -500,6 +501,20 @@ void Network::addFillerNode(const DbuX left,
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+odb::Rect Network::instBBox(odb::dbInst* inst) const
+{
+  const odb::dbMaster* master = inst->getMaster();
+  const odb::Point loc = inst->getLocation();
+  int width = master->getWidth();
+  int height = master->getHeight();
+  if (inst->getOrient().isRightAngleRotation()) {
+    std::swap(width, height);
+  }
+  const int x = loc.x() - core_.xMin();
+  const int y = loc.y() - core_.yMin();
+  return {x, y, x + width, y + height};
+}
+
 void Network::clear()
 {
   nodes_.clear();

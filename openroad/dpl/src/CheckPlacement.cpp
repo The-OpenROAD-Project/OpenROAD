@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "LegalSiteFinder.h"
 #include "PlacementDRC.h"
 #include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
@@ -53,7 +54,7 @@ void Opendp::checkPlacement(const bool verbose,
   };
   // Paint unchecked fixed cells so placeable cells are checked against them.
   if (!check_fixed) {
-    setFixedGridCells();
+    grid_->setFixedGridCells(*network_);
   }
   const auto& row_coords = grid_->getRowCoordinates();
   for (auto& cell : network_->getNodes()) {
@@ -379,7 +380,7 @@ bool Opendp::checkInRows(const Node& cell) const
     }
   }
   return !cell.getMaster()->isMultiRow()
-         || checkRowPowerCompatible(&cell, grid_rect.ylo);
+         || siteFinder().checkRowPowerCompatible(&cell, grid_rect.ylo);
 }
 
 // Return the cell this cell overlaps.
@@ -458,11 +459,11 @@ bool Opendp::checkRegionPlacement(const Node* cell) const
   const int site_width = grid_->getSiteWidth().v;
   const int height = cell->getHeight().v;
   return cell->getRegion()->contains(bbox)
-         && checkRegionOverlap(cell,
-                               GridX{bbox.xMin() / site_width},
-                               GridY{bbox.yMin() / height},
-                               GridX{bbox.xMax() / site_width},
-                               GridY{bbox.yMax() / height});
+         && siteFinder().checkRegionOverlap(cell,
+                                            GridX{bbox.xMin() / site_width},
+                                            GridY{bbox.yMin() / height},
+                                            GridX{bbox.xMax() / site_width},
+                                            GridY{bbox.yMax() / height});
 }
 
 }  // namespace dpl

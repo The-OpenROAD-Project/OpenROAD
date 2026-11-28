@@ -485,6 +485,31 @@ void Grid::paintPixel(Node* cell)
   paintPixel(cell, gridX(cell), gridSnapDownY(cell));
 }
 
+void Grid::setGridCell(Node& cell, Pixel* pixel)
+{
+  pixel->cell = &cell;
+  pixel->util = 1.0;
+  if (cell.isBlock()) {
+    // Try the is_hopeless strategy to get off of a block
+    pixel->is_hopeless = true;
+  }
+}
+
+void Grid::setFixedGridCells(Network& network)
+{
+  for (const auto& cell : network.getNodes()) {
+    if (cell->getType() == Node::CELL && cell->isFixed()) {
+      visitCellPixels(*cell, true, [&](Pixel* pixel, const bool padded) {
+        if (padded) {
+          pixel->padding_reserved_by = cell.get();
+        } else {
+          setGridCell(*cell, pixel);
+        }
+      });
+    }
+  }
+}
+
 void Grid::erasePixel(Node* cell)
 {
   const auto grid_rect = gridCoveringPadded(cell);

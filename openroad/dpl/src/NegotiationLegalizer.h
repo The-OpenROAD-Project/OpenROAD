@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "LegalSiteFinder.h"
 #include "infrastructure/Grid.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -18,7 +19,6 @@
 namespace dpl {
 
 class DplObserver;
-class Opendp;
 class PlacementDRC;
 class Node;
 class Network;
@@ -143,12 +143,14 @@ struct NegotiationStats
 class NegotiationLegalizer
 {
  public:
-  NegotiationLegalizer(Opendp* opendp,
-                       odb::dbDatabase* db,
+  NegotiationLegalizer(odb::dbDatabase* db,
                        utl::Logger* logger,
                        const NegotiationOptions& options,
-                       DplObserver* debug_observer = nullptr,
-                       Network* network = nullptr);
+                       Grid* grid,
+                       PlacementDRC* drc_engine,
+                       const LegalSiteFinder& site_finder,
+                       Network* network,
+                       DplObserver* debug_observer = nullptr);
   ~NegotiationLegalizer() = default;
 
   NegotiationLegalizer(const NegotiationLegalizer&) = delete;
@@ -317,13 +319,13 @@ class NegotiationLegalizer
   void addUsage(int cell_idx, int delta);
 
   // Data
-  Opendp* opendp_{nullptr};
   odb::dbDatabase* db_{nullptr};
   utl::Logger* logger_{nullptr};
   const NegotiationOptions options_;
   // Opendp's pixel grid and DRC engine, shared with this legalizer.
   Grid* dpl_grid_{nullptr};
   PlacementDRC* drc_engine_{nullptr};
+  const LegalSiteFinder site_finder_;
   DplObserver* debug_observer_{nullptr};
   Network* network_{nullptr};
 

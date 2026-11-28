@@ -8,16 +8,15 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <iterator>
 #include <memory>
 #include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "LegalSiteFinder.h"
 #include "NegotiationLegalizer.h"
 #include "PlacementDRC.h"
-#include "boost/geometry/index/predicates.hpp"
 #include "dpl/OptMirror.h"
 #include "graphics/DplObserver.h"
 #include "infrastructure/Coordinates.h"
@@ -261,7 +260,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     }
   } else {
     initGrid(pdn_aware_);
-    setFixedGridCells();
+    grid_->setFixedGridCells(*network_);
     // Populate pixel->group for each fence region so diamondRecovery's
     // underlying diamondSearch correctly enforces region constraints.
     if (!arch_->getRegions().empty()) {
@@ -292,8 +291,14 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     if (drc_penalty >= 0.0) {
       options.drc_penalty = drc_penalty;
     }
-    NegotiationLegalizer negotiation(
-        this, db_, logger_, options, debug_observer_.get(), network_.get());
+    NegotiationLegalizer negotiation(db_,
+                                     logger_,
+                                     options,
+                                     grid_.get(),
+                                     drc_engine_.get(),
+                                     siteFinder(),
+                                     network_.get(),
+                                     debug_observer_.get());
     negotiation.legalize();
     negotiation.commitNegotiationPosToDpl();
 
@@ -634,27 +639,20 @@ void Opendp::deleteGrid()
   grid_->clear();
 }
 
-void Opendp::findOverlapInRtree(const bgBox& queryBox,
-                                std::vector<bgBox>& overlaps) const
-{
-  overlaps.clear();
-  regions_rtree_.query(boost::geometry::index::intersects(queryBox),
-                       std::back_inserter(overlaps));
-}
-
 void Opendp::setInitialGridCells()
 {
   std::unordered_set<Node*> conflicted;
   const DbuX site_width = grid_->getSiteWidth();
 
   // Check which cells are missaligned with rows
+  const LegalSiteFinder site_finder = siteFinder();
   for (auto& node : network_->getNodes()) {
     if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
       const GridX x = grid_->gridX(node.get());
       const GridY y = grid_->gridSnapDownY(node.get());
       if (node->getLeft() != gridToDbu(x, site_width)
           || node->getBottom() != grid_->gridYToDbu(y)
-          || !canBePlaced(node.get(), x, y)) {
+          || !site_finder.canBePlaced(node.get(), x, y)) {
         conflicted.insert(node.get());
       }
     }
@@ -714,29 +712,19 @@ void Opendp::setInitialGridCells()
   }
 }
 
-void Opendp::setFixedGridCells()
+LegalSiteFinder Opendp::siteFinder() const
 {
-  for (auto& cell : network_->getNodes()) {
-    if (cell->getType() == Node::CELL && cell->isFixed()) {
-      grid_->visitCellPixels(*cell, true, [&](Pixel* pixel, bool padded) {
-        if (padded) {
-          pixel->padding_reserved_by = cell.get();
-        } else {
-          setGridCell(*cell, pixel);
-        }
-      });
-    }
-  }
-}
-
-void Opendp::setGridCell(Node& cell, Pixel* pixel)
-{
-  pixel->cell = &cell;
-  pixel->util = 1.0;
-  if (cell.isBlock()) {
-    // Try the is_hopeless strategy to get off of a block
-    pixel->is_hopeless = true;
-  }
+  return LegalSiteFinder(logger_,
+                         grid_.get(),
+                         arch_.get(),
+                         drc_engine_.get(),
+                         &regions_rtree_,
+                         debug_observer_.get(),
+                         {
+                             .max_displacement_x = max_displacement_x_,
+                             .max_displacement_y = max_displacement_y_,
+                             .disallow_one_site_gaps = disallow_one_site_gaps_,
+                         });
 }
 
 void Opendp::groupAssignCellRegions()
