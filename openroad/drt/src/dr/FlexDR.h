@@ -358,6 +358,7 @@ class FlexDRWorker
   void setMazeEndIter(int in) { mazeEndIter_ = in; }
   void setRipupMode(RipUpMode in) { ripupMode_ = in; }
   void setFollowGuide(bool in) { followGuide_ = in; }
+  void setStopOnMarkerGrowth(bool in) { stopOnMarkerGrowth_ = in; }
   void setCost(frUInt4 drcCostIn,
                frUInt4 markerCostIn,
                frUInt4 workerFixedShapeCostIn,
@@ -565,6 +566,9 @@ class FlexDRWorker
       boundaryPin_;
   int pinCnt_{0};
   int initNumMarkers_{0};
+  // stop routing once the markers grow far past initNumMarkers_ (stubborn
+  // tiles only, see route_queue_markersGrew)
+  bool stopOnMarkerGrowth_{false};
   std::map<FlexMazeIdx, drAccessPattern*> apSVia_;
   std::set<FlexMazeIdx> planarHistoryMarkers_;
   std::set<FlexMazeIdx> viaHistoryMarkers_;
@@ -795,6 +799,7 @@ class FlexDRWorker
   // route_queue
   void route_queue();
   void route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue);
+  bool route_queue_markersGrew(int num_routed);
   void addMinAreaPatches_poly(gcNet* drcNet, drNet* net);
   void cleanUnneededPatches_poly(gcNet* drcNet, drNet* net);
   void modEolCosts_poly(gcNet* net, ModCostType modType);
