@@ -129,6 +129,9 @@ class FlexPA
   int main();
 
  private:
+  friend class FlexPASparseViaTest;
+  struct SparseViaSearch;
+
   frDesign* design_;
   utl::Logger* logger_;
   dst::Distributed* dist_;
