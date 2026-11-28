@@ -41,15 +41,15 @@ class Edge;
 
 class Architecture;
 class Network;
-struct Pixel;
 
 class DplObserver;
 class Grid;
 class GridInfo;
 class Padding;
-class PixelPt;
 class PlacementDRC;
 class Journal;
+class LegalSiteFinder;
+struct NegotiationStats;
 
 template <typename T>
 struct TypedCoordinate;
@@ -196,7 +196,7 @@ class Opendp
 
   bool isUseNegotiationLegalizer() const { return !use_diamond_legalizer_; }
 
- private:
+  // Region R-tree types, shared with LegalSiteFinder.
   using bgPoint
       = boost::geometry::model::d2::point_xy<int,
                                              boost::geometry::cs::cartesian>;
@@ -206,6 +206,7 @@ class Opendp
       = boost::geometry::index::rtree<bgBox,
                                       boost::geometry::index::quadratic<16>>;
 
+ private:
   // gap -> sequence of masters to fill the gap
   using GapFillers = std::vector<dbMasterSeq>;
   // row height -> GapFillers, by implant layer
@@ -219,17 +220,14 @@ class Opendp
   friend class CheckPlacementTest_LegalCellPosRebuildsReleasedGridOnce_Test;
   friend class Graphics;
   friend class CellPlaceOrderLess;
-  friend class NegotiationLegalizer;
   void findDisplacementStats();
   DbuPt pointOffMacro(const Node& cell);
-  void convertDbToCell(odb::dbInst* db_inst, Node& cell);
   // Return error count.
   void saveViolations(const std::vector<Node*>& failures,
                       odb::dbMarkerCategory* category,
                       const std::string& violation_type = "") const;
   void importDb(bool fixed_only = false);
   void importClear();
-  odb::Rect getBbox(odb::dbInst* inst);
   void createNetwork(bool fixed_only);
   void createArchitecture();
   void setUpPlacementGroups();
@@ -252,21 +250,9 @@ class Opendp
   bool checkOverlap(const Node* cell, const DbuRect& rect) const;
   static bool isInside(const odb::Rect& cell, const odb::Rect& box);
   bool isInside(const Node* cell, const odb::Rect& rect) const;
-  PixelPt diamondSearch(const Node* cell, GridX x, GridY y) const;
-  int calcDist(GridPt p0, GridPt p1) const;
-  bool canBePlaced(const Node* cell, GridX bin_x, GridY bin_y) const;
-  bool checkRegionOverlap(const Node* cell,
-                          GridX x,
-                          GridY y,
-                          GridX x_end,
-                          GridY y_end) const;
-  bool checkPixels(const Node* cell,
-                   GridX x,
-                   GridY y,
-                   GridX x_end,
-                   GridY y_end) const;
-  bool checkMasterSym(unsigned masterSym, unsigned cellOri) const;
-  bool checkRowPowerCompatible(const Node* cell, GridY y) const;
+  // Site legality checks and diamond search over the current grid, DRC
+  // engine, and regions.
+  LegalSiteFinder siteFinder() const;
   bool ripUpAndReplace(Node* cell);
   bool diamondMove(Node* cell);
   bool diamondMove(Node* cell, const GridPt& grid_pt);
@@ -283,8 +269,6 @@ class Opendp
                          const DbuPt& legal_pt,
                          const odb::Rect& block_bbox) const;
 
-  void findOverlapInRtree(const bgBox& queryBox,
-                          std::vector<bgBox>& overlaps) const;
   bool moveHopeless(const Node* cell, GridX& grid_x, GridY& grid_y) const;
   void placeGroups();
   void prePlace();
@@ -296,8 +280,6 @@ class Opendp
   int groupRefine(const Group* group);
   int anneal(Group* group);
   int refine();
-  void setFixedGridCells();
-  void setGridCell(Node& cell, Pixel* pixel);
   void groupAssignCellRegions();
   void groupInitPixels();
   void groupInitPixels2();
@@ -443,11 +425,8 @@ class Opendp
   int64_t cumulative_displacement_max_ = 0;
   double cumulative_hpwl_delta_ = 0.0;
   double cumulative_runtime_ = 0.0;
-  int negotiation_iters_phase1_ = 0;
-  int negotiation_iters_phase2_ = 0;
-  int negotiation_converge_phase_ = 0;
-  int negotiation_diamond_recoveries_ = 0;
-  std::string negotiation_finish_ = "not run";
+  // Results of the last negotiation legalizer run; null before the first.
+  std::unique_ptr<NegotiationStats> negotiation_stats_;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

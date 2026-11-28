@@ -80,6 +80,18 @@ class Node
     MACROCELL,
     FILLER
   };
+
+  // A CELL node for `inst` with footprint `bbox`.
+  static Node makeCell(odb::dbInst* inst, const odb::Rect& bbox);
+  // A fixed TERMINAL node for `bterm`, positioned relative to `core`.
+  static Node makeTerminal(int id, odb::dbBTerm* bterm, const odb::Rect& core);
+  // A fixed FILLER node that blocks [left, left + width) on one row.
+  static Node makeFiller(int id,
+                         DbuX left,
+                         DbuY bottom,
+                         DbuX width,
+                         DbuY height);
+
   ~Node();
   int getId() const;
   DbuY getOrigBottom() const;
@@ -93,6 +105,8 @@ class Node
   DbuX getCenterX() const;
   DbuY getCenterY() const;
   odb::dbInst* getDbInst() const;
+  // Master of the instance; null unless this is a CELL node.
+  odb::dbMaster* getDbMaster() const;
   odb::dbOrientType getOrient() const;
   bool isFixed() const;
   bool isPlaced() const;

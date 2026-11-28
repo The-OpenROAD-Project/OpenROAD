@@ -123,20 +123,13 @@ class UnplacedScanCellMock : public ScanCell
 // Utility functions
 // ---------------------------------------------------------------------------
 
-// Manhattan distance between two points (avoids int overflow).
-int64_t manhattanDist(const odb::Point& a, const odb::Point& b)
-{
-  return std::abs(static_cast<int64_t>(a.x()) - b.x())
-         + std::abs(static_cast<int64_t>(a.y()) - b.y());
-}
-
 // Total scan chain wirelength: sum of |SO[i] -> SI[i+1]| for i in [0, n-2].
 int64_t chainWirelength(const std::vector<std::unique_ptr<ScanCell>>& cells)
 {
   int64_t total = 0;
   for (size_t i = 0; i + 1 < cells.size(); i++) {
-    total += manhattanDist(cells[i]->getScanOutLocation(),
-                           cells[i + 1]->getScanInLocation());
+    total += odb::Point::manhattanDistance(cells[i]->getScanOutLocation(),
+                                           cells[i + 1]->getScanInLocation());
   }
   return total;
 }
@@ -276,8 +269,9 @@ void expectLocalOptimum(const std::vector<odb::Point>& si,
                         const std::vector<odb::Point>& so)
 {
   const int n = static_cast<int>(si.size());
-  const auto D
-      = [&](const int a, const int b) { return manhattanDist(so[a], si[b]); };
+  const auto D = [&](const int a, const int b) {
+    return odb::Point::manhattanDistance(so[a], si[b]);
+  };
   const auto length = [&](const std::vector<int>& path) {
     int64_t total = 0;
     for (size_t m = 0; m + 1 < path.size(); m++) {
@@ -485,10 +479,11 @@ TEST(TestScanOptimizer, SourceAndSinkSetChainDirection)
   ASSERT_EQ(cells.size(), static_cast<size_t>(N));
   EXPECT_EQ(cells.front()->getName(), "c7");
   EXPECT_EQ(cells.back()->getName(), "c0");
-  const int64_t total
-      = manhattanDist(source, cells.front()->getScanInLocation())
-        + chainWirelength(cells)
-        + manhattanDist(cells.back()->getScanOutLocation(), sink);
+  const int64_t total = odb::Point::manhattanDistance(
+                            source, cells.front()->getScanInLocation())
+                        + chainWirelength(cells)
+                        + odb::Point::manhattanDistance(
+                            cells.back()->getScanOutLocation(), sink);
   EXPECT_EQ(total, 130);
 }
 

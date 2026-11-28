@@ -485,6 +485,31 @@ void Grid::paintPixel(Node* cell)
   paintPixel(cell, gridX(cell), gridSnapDownY(cell));
 }
 
+void Grid::setGridCell(Node& cell, Pixel* pixel)
+{
+  pixel->cell = &cell;
+  pixel->util = 1.0;
+  if (cell.isBlock()) {
+    // Try the is_hopeless strategy to get off of a block
+    pixel->is_hopeless = true;
+  }
+}
+
+void Grid::setFixedGridCells(Network& network)
+{
+  for (const auto& cell : network.getNodes()) {
+    if (cell->getType() == Node::CELL && cell->isFixed()) {
+      visitCellPixels(*cell, true, [&](Pixel* pixel, const bool padded) {
+        if (padded) {
+          pixel->padding_reserved_by = cell.get();
+        } else {
+          setGridCell(*cell, pixel);
+        }
+      });
+    }
+  }
+}
+
 void Grid::erasePixel(Node* cell)
 {
   const auto grid_rect = gridCoveringPadded(cell);
@@ -623,7 +648,7 @@ GridY Grid::gridHeight(const Node* cell) const
   if (!cell->getDbInst()) {
     return GridY{1};
   }
-  auto site = cell->getDbInst()->getMaster()->getSite();
+  auto site = cell->getSite();
   if (!site) {
     const int spanned_rows = (gridEndY(cell) - gridSnapDownY(cell)).v;
     return GridY{max(1, spanned_rows)};
@@ -759,20 +784,19 @@ DbuY Grid::gridYToDbu(GridY y) const
 GridX Grid::gridPaddedEndX(const Node* cell) const
 {
   const DbuX site_width = getSiteWidth();
-  const DbuX end_x = cell->getLeft() + cell->getWidth()
-                     + gridToDbu(padding_->padRight(cell), site_width);
+  const DbuX end_x
+      = cell->getRight() + gridToDbu(padding_->padRight(cell), site_width);
   return GridX{divCeil(end_x.v, site_width.v)};
 }
 
 GridX Grid::gridEndX(const Node* cell) const
 {
-  return GridX{
-      divCeil((cell->getLeft() + cell->getWidth()).v, getSiteWidth().v)};
+  return GridX{divCeil(cell->getRight().v, getSiteWidth().v)};
 }
 
 GridY Grid::gridEndY(const Node* cell) const
 {
-  return gridEndY(cell->getBottom() + cell->getHeight());
+  return gridEndY(cell->getTop());
 }
 
 bool Grid::cellFitsInCore(Node* cell) const

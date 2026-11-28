@@ -71,34 +71,8 @@ bool Detailed::improve(DetailedMgr& mgr)
   }
 
   // Different checks which are useful for debugging.
-  mgr.checkRegionAssignment();
-  mgr.checkRowAlignment();
-  mgr.checkSiteAlignment();
-  mgr.checkOverlapInSegments();
-  mgr.checkEdgeSpacingInSegments();
-
-  if (mgr.getDisallowOneSiteGaps()) {
-    std::vector<std::vector<int>> oneSiteViolations;
-    int temp_move_limit = mgr.getMoveLimit();
-    mgr.setMoveLimit(10000);
-    mgr.getOneSiteGapViolationsPerSegment(oneSiteViolations, true);
-    for (int i = 0; i < oneSiteViolations.size(); i++) {
-      if (!oneSiteViolations[i].empty()) {
-        std::string violating_node_ids = "[";
-        for (int nodeId : oneSiteViolations[i]) {
-          violating_node_ids += std::to_string(nodeId)
-                                + ",]"[nodeId == oneSiteViolations[i].back()];
-        }
-        mgr_->getLogger()->warn(
-            DPL,
-            323,
-            "One site gap violation in segment {:d} nodes: {}",
-            i,
-            violating_node_ids);
-      }
-    }
-    mgr.setMoveLimit(temp_move_limit);
-  }
+  mgr.checkAll();
+  mgr.repairOneSiteGaps();
 
   return true;
 }

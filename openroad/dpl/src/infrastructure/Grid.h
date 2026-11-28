@@ -136,6 +136,10 @@ class Grid
                         GridX grid_x_end,
                         GridY grid_y_end);
   void erasePixel(Node* cell);
+  // Occupy the pixel with the cell.
+  static void setGridCell(Node& cell, Pixel* pixel);
+  // Occupy the pixels of every fixed cell and reserve their padding.
+  void setFixedGridCells(Network& network);
   void visitCellPixels(
       Node& cell,
       bool padded,

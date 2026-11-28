@@ -18,6 +18,8 @@ cc_library(
         "src/CheckPlacement.cpp",
         "src/DecapPlacement.cpp",
         "src/FillerPlacement.cpp",
+        "src/LegalSiteFinder.cpp",
+        "src/LegalSiteFinder.h",
         "src/NegotiationLegalizer.cpp",
         "src/NegotiationLegalizer.h",
         "src/NegotiationLegalizerPass.cpp",

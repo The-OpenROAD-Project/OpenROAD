@@ -60,7 +60,7 @@ void Opendp::improvePlacement(const int seed,
   // (endcaps, tapcells, macros) are invisible to canBePlaced() and DRC
   // edge-spacing checks, so the DetailedMgr places movable cells into
   // positions that create violations against fixed neighbours.
-  setFixedGridCells();
+  grid_->setFixedGridCells(*network_);
 
   const bool disallow_one_site_gaps = !odb::hasOneSiteMaster(db_);
 

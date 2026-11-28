@@ -125,6 +125,7 @@ struct Edge  // An Edge is the routing track holder between two adjacent
   bool used_grid_dirty : 1;  // queued until the next run's reconciliation
   bool est_usage_dirty : 1;  // queued until InitEstUsage
   bool history_dirty : 1;    // queued until InitLastUsage(1)
+  bool in_used_grid : 1;     // in h_used_ggrid_ / v_used_ggrid_
   double est_usage;          // the estimated usage of the edge
 
   uint16_t usage_red() const { return usage + red; }

@@ -78,6 +78,8 @@ class Network
   // setting and getting core area
   void setCore(const odb::Rect& core) { core_ = core; }
   const odb::Rect& getCore() const { return core_; }
+  // The instance's oriented bounding box relative to the core origin.
+  odb::Rect instBBox(odb::dbInst* inst) const;
 
  private:
   Pin* addPin(odb::dbITerm* term);
