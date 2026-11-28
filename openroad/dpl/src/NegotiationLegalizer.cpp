@@ -264,7 +264,7 @@ void NegotiationLegalizer::pushNegotiationPixels()
                                             * grid_h_);
   for (int gy = 0; gy < grid_h_; ++gy) {
     for (int gx = 0; gx < grid_w_; ++gx) {
-      const Pixel& g = gridAt(gx, gy);
+      const NegPixel& g = gridAt(gx, gy);
       const int idx = gy * grid_w_ + gx;
       if (g.capacity == 0) {
         pixels[idx] = (g.usage > 0) ? NegotiationPixelState::kBlocked
@@ -489,14 +489,13 @@ void NegotiationLegalizer::buildGrid()
   // and padding pointers (including dummy_cell_ set by groupInitPixels2 for
   // region boundaries) — fixed cells and movable cells are re-painted later
   // by syncAllCellsToDplGrid() before any DRC check runs.
+  neg_pixels_.assign(static_cast<size_t>(grid_w_) * grid_h_, NegPixel{});
+  dplGrid->clearPaddingReservations();
   for (int gy = 0; gy < grid_h_; ++gy) {
     for (int gx = 0; gx < grid_w_; ++gx) {
       Pixel& pixel = dplGrid->pixel(GridY{gy}, GridX{gx});
-      pixel.capacity = pixel.is_valid ? 1 : 0;
-      pixel.usage = 0;
-      pixel.hist_cost = 1.0;
+      gridAt(gx, gy).capacity = pixel.is_valid ? 1 : 0;
       pixel.cell = nullptr;
-      pixel.padding_reserved_by = nullptr;
     }
   }
 
@@ -523,9 +522,11 @@ void NegotiationLegalizer::buildGrid()
       continue;
     }
     dplGrid->visitCellPixels(
-        *cell.node, /*padded=*/false, [](Pixel* pixel, bool /*padded*/) {
-          pixel->capacity = 0;
-          pixel->usage = 1;
+        *cell.node, /*padded=*/false, [&](Pixel* pixel, bool /*padded*/) {
+          const size_t idx = dplGrid->pixelIndex(pixel);
+          assert(idx < neg_pixels_.size());
+          neg_pixels_[idx].capacity = 0;
+          neg_pixels_[idx].usage = 1;
         });
   }
 }
@@ -1069,7 +1070,7 @@ bool NegotiationLegalizer::isCellLegal(int cell_idx) const
 
   for (int dy = 0; dy < cell.height; ++dy) {
     for (int gx = cell.x; gx < cell.x + cell.width; ++gx) {
-      const Pixel& g = gridAt(gx, cell.y + dy);
+      const NegPixel& g = gridAt(gx, cell.y + dy);
       if (g.capacity == 0 || g.overuse() > 0) {
         return false;
       }

@@ -5,6 +5,8 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -46,7 +48,6 @@ struct GridIntervalY
 struct Pixel
 {
   Node* cell = nullptr;
-  Group* group = nullptr;
   float util = 0.0;
   bool is_valid = false;     // false for dummy cells
   bool is_hopeless = false;  // too far from sites for diamond search
@@ -54,16 +55,8 @@ struct Pixel
   // Routing levels with power via or patch metal outside the stripes (plus
   // a min spacing halo) in this pixel; see Grid::overlapsPinBlockage
   uint8_t blocked_pin_layers = 0;
-  // Cell that reserved this pixel for padding
-  Node* padding_reserved_by = nullptr;
-
-  // Hybrid negotiation data
-  int capacity = 0;  // 1 if site exists, 0 if blockage
-  int usage = 0;
-  double hist_cost = 1.0;
-
-  [[nodiscard]] int overuse() const { return std::max(usage - capacity, 0); }
 };
+static_assert(sizeof(Pixel) <= 2 * sizeof(void*));
 
 // Return value for grid searches.
 class PixelPt
@@ -155,8 +148,62 @@ class Grid
   DbuX getSiteWidth() const { return site_width_; }
 
   Pixel* gridPixel(GridX x, GridY y) const;
-  Pixel& pixel(GridY y, GridX x) { return pixels_[y.v][x.v]; }
-  const Pixel& pixel(GridY y, GridX x) const { return pixels_[y.v][x.v]; }
+  Pixel& pixel(GridY y, GridX x)
+  {
+    assert(x >= 0 && x < row_site_count_ && y >= 0 && y < row_count_);
+    return pixels_[static_cast<size_t>(y.v) * row_site_count_.v + x.v];
+  }
+  const Pixel& pixel(GridY y, GridX x) const
+  {
+    assert(x >= 0 && x < row_site_count_ && y >= 0 && y < row_count_);
+    return pixels_[static_cast<size_t>(y.v) * row_site_count_.v + x.v];
+  }
+  size_t pixelIndex(const Pixel* pixel) const
+  {
+    assert(pixel != nullptr);
+    assert(pixel >= pixels_.data());
+    const auto idx = static_cast<size_t>(pixel - pixels_.data());
+    assert(idx < pixels_.size());
+    return idx;
+  }
+
+  Group* pixelGroup(const Pixel* pixel) const
+  {
+    const size_t idx = pixelIndex(pixel);
+    return pixel_groups_.empty() ? nullptr : pixel_groups_[idx];
+  }
+  void setPixelGroup(Pixel* pixel, Group* group)
+  {
+    const size_t idx = pixelIndex(pixel);
+    if (group == nullptr && pixel_groups_.empty()) {
+      return;
+    }
+    if (pixel_groups_.empty()) {
+      pixel_groups_.assign(pixels_.size(), nullptr);
+    }
+    pixel_groups_[idx] = group;
+  }
+
+  Node* paddingReservedBy(const Pixel* pixel) const
+  {
+    const size_t idx = pixelIndex(pixel);
+    return padding_reserved_by_.empty() ? nullptr : padding_reserved_by_[idx];
+  }
+  void setPaddingReservedBy(Pixel* pixel, Node* cell)
+  {
+    const size_t idx = pixelIndex(pixel);
+    if (cell == nullptr && padding_reserved_by_.empty()) {
+      return;
+    }
+    if (padding_reserved_by_.empty()) {
+      padding_reserved_by_.assign(pixels_.size(), nullptr);
+    }
+    padding_reserved_by_[idx] = cell;
+  }
+  void clearPaddingReservations()
+  {
+    std::vector<Node*>().swap(padding_reserved_by_);
+  }
 
   std::optional<odb::dbOrientType> getSiteOrientation(GridX x,
                                                       GridY y,
@@ -164,9 +211,6 @@ class Grid
   std::pair<odb::dbSite*, odb::dbOrientType> getShortestSite(GridX grid_x,
                                                              GridY grid_y);
 
-  void resize(int size) { pixels_.resize(size); }
-  void resize(GridY size) { pixels_.resize(size.v); }
-  void resize(GridY y, GridX size) { pixels_[y.v].resize(size.v); }
   void clear();
   // Frees the pixels and keeps the rows, which gridX() and the other
   // coordinate conversions read; allocateGrid() makes them again.
@@ -224,7 +268,7 @@ class Grid
                                                std::less,
                                                SitesCombiner>;
 
-  using Pixels = std::vector<std::vector<Pixel>>;
+  using Pixels = std::vector<Pixel>;
   using NetRect = std::pair<odb::Rect, odb::dbNet*>;
   using NetRectTree
       = boost::geometry::index::rtree<NetRect,
@@ -241,6 +285,9 @@ class Grid
   odb::dbBlock* block_ = nullptr;
   std::shared_ptr<Padding> padding_;
   Pixels pixels_;
+  // Lazily allocated only when placement regions or cell padding exist.
+  std::vector<Group*> pixel_groups_;
+  std::vector<Node*> padding_reserved_by_;
   // Contains all the rows' yLo plus the yHi of the last row.  The extra
   // value is useful for operations like region snapping to rows
   std::map<DbuY, GridY> row_y_dbu_to_index_;
@@ -258,6 +305,8 @@ class Grid
   odb::Rect core_;
 
   std::optional<DbuY> uniform_row_height_;  // unset if hybrid
+  // Set when every row has this height and row i starts at y = i * height.
+  std::optional<int> contiguous_row_height_;
   DbuX site_width_{0};
 
   GridY row_count_{0};

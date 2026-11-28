@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -53,14 +54,23 @@ PixelPt::PixelPt(Pixel* pixel1, GridX grid_x, GridY grid_y)
 
 void Grid::clear()
 {
-  pixels_.clear();
+  releasePixels();
   row_y_dbu_to_index_.clear();
   row_index_to_y_dbu_.clear();
+  row_index_to_pixel_height_.clear();
+  row_sites_.clear();
+  for (NetRectTree& tree : pin_blockages_) {
+    tree.clear();
+  }
+  uniform_row_height_.reset();
+  contiguous_row_height_.reset();
 }
 
 void Grid::releasePixels()
 {
   Pixels().swap(pixels_);
+  std::vector<Group*>().swap(pixel_groups_);
+  clearPaddingReservations();
 }
 
 void Grid::visitDbRows(odb::dbBlock* block,
@@ -76,26 +86,11 @@ void Grid::visitDbRows(odb::dbBlock* block,
 
 void Grid::allocateGrid()
 {
-  // Make pixel grid
-  if (pixels_.empty()) {
-    resize(row_count_);
-    for (GridY y{0}; y < row_count_; y++) {
-      resize(y, row_site_count_);
-    }
-  }
-
-  for (GridY y{0}; y < row_count_; y++) {
-    for (GridX x{0}; x < row_site_count_; x++) {
-      Pixel& pixel = pixels_[y.v][x.v];
-      pixel.cell = nullptr;
-      pixel.group = nullptr;
-      pixel.util = 0.0;
-      pixel.is_valid = false;
-      pixel.is_hopeless = false;
-      pixel.blocked_layers = 0;
-      pixel.blocked_pin_layers = 0;
-    }
-  }
+  const size_t total_pixels
+      = static_cast<size_t>(row_count_.v) * row_site_count_.v;
+  pixels_.assign(total_pixels, Pixel{});
+  std::vector<Group*>().swap(pixel_groups_);
+  clearPaddingReservations();
 
   row_sites_.clear();
   row_sites_.resize(row_count_.v);
@@ -111,6 +106,8 @@ void Grid::markHopeless(odb::dbBlock* block,
 
   gtl::polygon_90_set_data<int> hopeless;
   hopeless += gtl::rectangle_data<int>{0, 0, row_site_count_.v, row_count_.v};
+  std::vector<gtl::rectangle_data<int>> reachable_rects;
+  reachable_rects.reserve(block->getRows().size());
 
   const odb::Rect core = getCore();
 
@@ -121,30 +118,50 @@ void Grid::markHopeless(odb::dbBlock* block,
     const GridX x_start{(orig.x() - core.xMin()) / site_width_.v};
     const GridX x_end{x_start + db_row->getSiteCount()};
     const GridY y_row{gridSnapDownY(DbuY{orig.y() - core_.yMin()})};
-    for (GridX x{x_start}; x < x_end; x++) {
-      Pixel* pixel = gridPixel(x, y_row);
-      pixel->is_valid = true;
+    const int x_lo = max(0, x_start.v);
+    const int x_hi = min(row_site_count_.v, x_end.v);
+    if (x_lo < x_hi && y_row >= 0 && y_row < row_count_) {
+      Pixel* row_pixels = &pixel(y_row, GridX{0});
+      for (int x = x_lo; x < x_hi; x++) {
+        row_pixels[x].is_valid = true;
+      }
     }
     row_sites_[y_row.v].add(
         {{x_start.v, x_end.v}, {{db_row->getSite(), db_row->getOrient()}}});
 
     // The safety margin is to avoid having only a very few sites
     // within the diamond search that may still lead to failures.
+    // Clamp it for small displacement limits so valid sites and nearby
+    // gaps within the budget remain reachable.
     const int safety = 20;
-    const GridX xl = max(GridX{0}, x_start - max_displacement_x + safety);
-    const GridX xh = min(row_site_count_, x_end + max_displacement_x - safety);
+    const int x_margin
+        = max(0, max_displacement_x - min(safety, max_displacement_x / 2));
+    const int y_margin
+        = max(0, max_displacement_y - min(safety, max_displacement_y / 2));
+    const GridX xl = max(GridX{0}, x_start - x_margin);
+    const GridX xh = min(row_site_count_, x_end + x_margin);
 
-    const GridY yl = max(GridY{0}, y_row - max_displacement_y + safety);
-    const GridY yh = min(row_count_, y_row + max_displacement_y - safety);
-    hopeless -= gtl::rectangle_data<int>{xl.v, yl.v, xh.v, yh.v};
+    const GridY yl = max(GridY{0}, y_row - y_margin);
+    const GridY yh = min(row_count_, y_row + 1 + y_margin);
+    if (xl < xh && yl < yh) {
+      reachable_rects.emplace_back(xl.v, yl.v, xh.v, yh.v);
+    }
   });
+
+  gtl::polygon_90_set_data<int> reachable;
+  reachable.insert(reachable_rects.begin(), reachable_rects.end());
+  hopeless -= reachable;
 
   std::vector<gtl::rectangle_data<int>> rects;
   hopeless.get_rectangles(rects);
   for (const auto& rect : rects) {
+    if (gtl::xl(rect) >= gtl::xh(rect)) {
+      continue;
+    }
     for (int y = gtl::yl(rect); y < gtl::yh(rect); y++) {
+      Pixel* row_pixels = &pixel(GridY{y}, GridX{0});
       for (int x = gtl::xl(rect); x < gtl::xh(rect); x++) {
-        pixels_[y][x].is_hopeless = true;
+        row_pixels[x].is_hopeless = true;
       }
     }
   }
@@ -358,7 +375,7 @@ Pixel* Grid::gridPixel(GridX grid_x, GridY grid_y) const
 {
   if (grid_x >= 0 && grid_x < row_site_count_ && grid_y >= 0
       && grid_y < row_count_) {
-    return const_cast<Pixel*>(&pixels_[grid_y.v][grid_x.v]);
+    return const_cast<Pixel*>(&pixel(grid_y, grid_x));
   }
   return nullptr;
 }
@@ -501,7 +518,7 @@ void Grid::setFixedGridCells(Network& network)
     if (cell->getType() == Node::CELL && cell->isFixed()) {
       visitCellPixels(*cell, true, [&](Pixel* pixel, const bool padded) {
         if (padded) {
-          pixel->padding_reserved_by = cell.get();
+          setPaddingReservedBy(pixel, cell.get());
         } else {
           setGridCell(*cell, pixel);
         }
@@ -544,8 +561,8 @@ void Grid::erasePixel(Node* cell)
       }
 
       // Clear padding reservations made by this cell
-      if (pixel->padding_reserved_by == cell) {
-        pixel->padding_reserved_by = nullptr;
+      if (paddingReservedBy(pixel) == cell) {
+        setPaddingReservedBy(pixel, nullptr);
       }
     }
   }
@@ -597,7 +614,7 @@ void Grid::paintCellPadding(Node* cell,
       if (pixel == nullptr) {
         continue;
       }
-      pixel->padding_reserved_by = cell;
+      setPaddingReservedBy(pixel, cell);
     }
   }
 
@@ -608,7 +625,7 @@ void Grid::paintCellPadding(Node* cell,
       if (pixel == nullptr) {
         continue;
       }
-      pixel->padding_reserved_by = cell;
+      setPaddingReservedBy(pixel, cell);
     }
   }
 }
@@ -727,6 +744,16 @@ GridRect Grid::gridWithin(const DbuRect& rect) const
 
 GridY Grid::gridSnapDownY(DbuY y) const
 {
+  if (contiguous_row_height_) {
+    if (y.v <= 0) {
+      return GridY{0};
+    }
+    const int max_y = row_index_to_y_dbu_.back().v;
+    if (y.v >= max_y) {
+      return row_count_;
+    }
+    return GridY{y.v / *contiguous_row_height_};
+  }
   auto it = std::upper_bound(  // NOLINT(modernize-use-ranges)
       row_index_to_y_dbu_.begin(),
       row_index_to_y_dbu_.end(),
@@ -753,6 +780,16 @@ GridY Grid::gridRoundY(DbuY y) const
 
 GridY Grid::gridEndY(DbuY y) const
 {
+  if (contiguous_row_height_) {
+    if (y.v <= 0) {
+      return GridY{0};
+    }
+    const int max_y = row_index_to_y_dbu_.back().v;
+    if (y.v > max_y) {
+      return GridY{row_count_.v + 1};
+    }
+    return GridY{(y.v - 1) / *contiguous_row_height_ + 1};
+  }
   auto it = std::lower_bound(  // NOLINT(modernize-use-ranges)
       row_index_to_y_dbu_.begin(),
       row_index_to_y_dbu_.end(),
@@ -878,6 +915,21 @@ void Grid::examineRows(odb::dbBlock* block)
   });
   row_site_count_ = GridX{divFloor(getCore().dx(), getSiteWidth().v)};
   row_count_ = GridY{static_cast<int>(row_y_dbu_to_index_.size() - 1)};
+  contiguous_row_height_.reset();
+  if (uniform_row_height_ && uniform_row_height_->v > 0 && row_count_.v > 0
+      && row_index_to_y_dbu_.size() == static_cast<size_t>(row_count_.v) + 1) {
+    const int h = uniform_row_height_->v;
+    bool contiguous = true;
+    for (int i = 0; i <= row_count_.v; ++i) {
+      if (row_index_to_y_dbu_[i].v != i * h) {
+        contiguous = false;
+        break;
+      }
+    }
+    if (contiguous) {
+      contiguous_row_height_ = h;
+    }
+  }
 }
 
 std::unordered_set<int> Grid::getRowCoordinates() const

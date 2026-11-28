@@ -3,7 +3,10 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -306,11 +309,26 @@ class NegotiationLegalizer
   void eraseCellFromDplGrid(int cell_idx);
   void syncAllCellsToDplGrid();
 
-  // Pixel helpers – use the main DPL grid.
-  Pixel& gridAt(int x, int y) { return dpl_grid_->pixel(GridY{y}, GridX{x}); }
-  [[nodiscard]] const Pixel& gridAt(int x, int y) const
+  // Negotiation-specific per-site state kept separate from dpl::Pixel so
+  // check_placement and diamond legalization do not pay for it.
+  struct NegPixel
   {
-    return dpl_grid_->pixel(GridY{y}, GridX{x});
+    double hist_cost{1.0};
+    int capacity{0};
+    int usage{0};
+
+    [[nodiscard]] int overuse() const { return std::max(usage - capacity, 0); }
+  };
+
+  NegPixel& gridAt(int x, int y)
+  {
+    assert(gridExists(x, y));
+    return neg_pixels_[static_cast<size_t>(y) * grid_w_ + x];
+  }
+  [[nodiscard]] const NegPixel& gridAt(int x, int y) const
+  {
+    assert(gridExists(x, y));
+    return neg_pixels_[static_cast<size_t>(y) * grid_w_ + x];
   }
   [[nodiscard]] bool gridExists(int x, int y) const
   {
@@ -337,6 +355,7 @@ class NegotiationLegalizer
   int grid_w_{0};
   int grid_h_{0};
 
+  std::vector<NegPixel> neg_pixels_;
   std::vector<NegCell> cells_;
   std::vector<FenceRegion> fences_;
   std::vector<bool>

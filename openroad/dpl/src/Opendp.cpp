@@ -261,8 +261,8 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   } else {
     initGrid(pdn_aware_);
     grid_->setFixedGridCells(*network_);
-    // Populate pixel->group for each fence region so diamondRecovery's
-    // underlying diamondSearch correctly enforces region constraints.
+    // Set each pixel's group (Grid::setPixelGroup) for each fence region so
+    // diamondRecovery's underlying diamondSearch enforces region constraints.
     if (!arch_->getRegions().empty()) {
       groupInitPixels2();
       groupInitPixels();
@@ -739,7 +739,7 @@ void Opendp::groupAssignCellRegions()
       for (GridX x{0}; x < row_site_count; x++) {
         for (GridY y{0}; y < row_count; y++) {
           const Pixel* pixel = grid_->gridPixel(x, y);
-          if (pixel->is_valid && pixel->group == group) {
+          if (pixel->is_valid && grid_->pixelGroup(pixel) == group) {
             total_site_area += grid_->rowHeight(y).v * site_width;
           }
         }
@@ -907,7 +907,7 @@ void Opendp::groupInitPixels()
           // Assign group to each pixel.
           Pixel* pixel = grid_->gridPixel(l, k);
           if (pixel->util == 1.0) {
-            pixel->group = group;
+            grid_->setPixelGroup(pixel, group);
             pixel->is_valid = true;
             pixel->util = 1.0;
           } else if (pixel->util > 0.0 && pixel->util < 1.0) {
