@@ -150,6 +150,35 @@ TEST_F(OdbMultiPatternedTest, WireColorIsClearedOnNewPath)
   EXPECT_EQ(decoder.getColor().value(), /*mask_color=*/2);
 }
 
+TEST_F(OdbMultiPatternedTest, WireColorClearedOnNextPoint)
+{
+  dbNet* net = dbNet::create(block_, "net1");
+  dbTech* tech = lib_->getTech();
+  dbTechLayer* met1 = tech->findLayer("met1");
+  dbWire* wire = dbWire::create(net);
+
+  dbWireEncoder encoder;
+  encoder.begin(wire);
+  encoder.newPath(met1, dbWireType::ROUTED);
+  encoder.addPoint(50, 50);
+  encoder.setColor(/*mask_color=*/1);
+  encoder.addPoint(100, 50);
+  encoder.addPoint(150, 50);
+  encoder.end();
+
+  dbWireDecoder decoder;
+  decoder.begin(wire);
+  EXPECT_EQ(decoder.next(), dbWireDecoder::OpCode::PATH);
+  EXPECT_FALSE(decoder.getColor().has_value());
+  EXPECT_EQ(decoder.next(), dbWireDecoder::OpCode::POINT);
+  EXPECT_FALSE(decoder.getColor().has_value());
+  EXPECT_EQ(decoder.next(), dbWireDecoder::OpCode::POINT);
+  EXPECT_TRUE(decoder.getColor().has_value());
+  EXPECT_EQ(decoder.getColor().value(), /*mask_color=*/1);
+  EXPECT_EQ(decoder.next(), dbWireDecoder::OpCode::POINT);
+  EXPECT_FALSE(decoder.getColor().has_value());
+}
+
 // For a wire with two segments connected by a kColinear junction
 // with extensions, check if the shape of the second segment is
 // correctly computed.
