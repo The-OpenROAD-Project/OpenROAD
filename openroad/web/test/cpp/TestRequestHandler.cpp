@@ -733,17 +733,8 @@ static uint32_t pngWidth(const std::vector<unsigned char>& png)
          | static_cast<uint32_t>(png[19]);
 }
 
-// The device pixel ratio comes from the client — only the browser can know the
-// display's ratio — and the server honours it rather than snapping it to a
-// fixed ladder.  A snapped ratio renders a tile of the wrong size that the
-// browser then rescales, which is the moiré beat the tile pipeline exists to
-// avoid, and 1.75 and 2.5 are ordinary Windows scale factors.
-//
-// The client mirrors this in quantizeDpr() in tile-request.js and sizes its
-// merged canvas from its own copy, so a divergence here resamples every tile.
 // The viewer's options are query parameters, so the asset lookup must never
-// see them.  Without this the whole page 404s with "Resource not found." the
-// moment any option is used -- which is how ?mergetiles=0 shipped unusable.
+// see them; without this the page 404s with "Resource not found.".
 TEST(AssetPathFromTarget, StripsTheQueryString)
 {
   EXPECT_EQ(assetPathFromTarget("/?mergetiles=0"), "/index.html");
@@ -1658,6 +1649,8 @@ TEST(UrlDecode, ASignIsNotAHexDigit)
   EXPECT_EQ(urlDecode("%-1x"), "%-1x");
 }
 
+// The server keeps the client's dpr rather than snapping it to a ladder the
+// browser would rescale; quantizeDpr() in tile-request.js mirrors the rounding.
 TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
 {
   struct Case

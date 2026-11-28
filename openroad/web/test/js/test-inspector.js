@@ -69,6 +69,18 @@ describe('Inspector focus nets', () => {
     });
 
     describe('updateInspector toolbar buttons', () => {
+        it('lets a client-side object delete itself, in a saved report too',
+           () => {
+            app.websocketManager.isStaticMode = true;
+            let deleted = 0;
+            panel.updateInspector({ type: 'Ruler', name: 'R0',
+                                    properties: [{ name: 'Name', value: 'R0' }],
+                                    onDelete: () => deleted++ });
+            app.inspectorEl.querySelector('button[title="Delete ruler"]')
+                .click();
+            assert.equal(deleted, 1);
+        });
+
         it('shows focus button for Net type', () => {
             panel.updateInspector(netData('clk'));
             const btns = app.inspectorEl.querySelectorAll('.or-btn-icon');
@@ -880,6 +892,30 @@ describe('animateSelection', () => {
     }
 
     const anim = () => app.view.shapes('anim')[0];
+
+    it('stops the animation when Highlight selected is turned off', () => {
+        try {
+            panel.animateSelection([0, 0, 100, 100]);
+            assert.ok(app.view.overlays.has('anim'));
+            app.visibility = { highlight_selected: false };
+            app.renderSelectionOutline();
+            assert.equal(app.view.overlays.has('anim'), false);
+            assert.ok(timers.cleared > 0);
+        } finally {
+            restoreTimers();
+        }
+    });
+
+    it('draws nothing while Highlight selected is off', () => {
+        try {
+            app.visibility = { highlight_selected: false };
+            panel.animateSelection([0, 0, 100, 100]);
+            assert.equal(app.view.overlays.has('anim'), false);
+            assert.equal(timers.cb, null, 'no animation running');
+        } finally {
+            restoreTimers();
+        }
+    });
 
     it('draws the outline and cycles weight 1→2→3 with brush flash on 1', () => {
         try {

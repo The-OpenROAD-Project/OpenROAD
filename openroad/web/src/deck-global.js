@@ -10,7 +10,9 @@ import { PathStyleExtension } from '@deck.gl/extensions';
 import { BitmapLayer, PathLayer, ScatterplotLayer, SolidPolygonLayer }
     from '@deck.gl/layers';
 
+// Spread: @deck.gl/core put its version and logger on the global already.
 window.deck = {
+    ...window.deck,
     BitmapLayer,
     Deck,
     OrthographicView,

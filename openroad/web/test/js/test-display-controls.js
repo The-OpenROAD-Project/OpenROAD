@@ -1317,6 +1317,20 @@ describe('dies sharing a layer name', () => {
         assert.equal(app.baseSlot.refreshes, before + 1);
     });
 
+    it('refreshes the overlay when route guides lose a layer name', () => {
+        render();
+        const overlay = app.view.addTileSlot('overlay');
+        app.overlayLayer = overlay;
+        app.routeGuideNets = new Set([7]);
+        app.layerModel.check(rowId('die0', 'metal1'), false);
+        assert.equal(overlay.refreshes, 0, 'die1 still shows metal1');
+        app.layerModel.check(rowId('die1', 'metal1'), false);
+        assert.equal(overlay.refreshes, 1);
+        app.routeGuideNets.clear();
+        app.layerModel.check(rowId('die1', 'metal1'), true);
+        assert.equal(overlay.refreshes, 1, 'no route guides to redraw');
+    });
+
     it('restores a die\'s hidden row from the session', () => {
         window.sessionStorage.setItem(
             'or_hidden_layers', JSON.stringify([rowId('die0', 'metal1')]));

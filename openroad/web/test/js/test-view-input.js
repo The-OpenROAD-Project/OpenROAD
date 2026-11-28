@@ -23,11 +23,16 @@ function makeView() {
         getContainer: () => container,
         unproject: ([x, y]) => [x / 2, y / 2],
         zoom: 3,
+        // Where an animation under way is heading; null when at rest.
+        target: null,
         getZoom: () => view.zoom,
+        getTargetZoom: () => view.target ?? view.zoom,
         panByPx: (dx, dy, opts) => calls.push(['pan', dx, dy, opts]),
+        // From the level an animation is heading to, as layout-view does.
         zoomAround: (pt, delta, opts) => {
             calls.push(opts ? ['zoom', pt, delta, opts] : ['zoom', pt, delta]);
-            view.zoom += delta;
+            view.zoom = view.getTargetZoom() + delta;
+            view.target = null;
         },
         fitWorldRect: (rect) => calls.push(['fit', rect]),
         setGesture: (on) => gestures.push([on, calls.length]),
@@ -39,6 +44,12 @@ function fire(target, type, init = {}) {
     const Ctor = type === 'wheel' ? window.WheelEvent
         : type.startsWith('key') ? window.KeyboardEvent : window.MouseEvent;
     const event = new Ctor(type, { bubbles: true, cancelable: true, ...init });
+    // jsdom has no PointerEvent: a touch sets these by hand.
+    for (const key of ['pointerId', 'isPrimary']) {
+        if (key in init) {
+            Object.defineProperty(event, key, { value: init[key] });
+        }
+    }
     target.dispatchEvent(event);
     return event;
 }
@@ -68,7 +79,21 @@ describe('wheel', () => {
         const { view, container, calls } = makeView();
         installViewInput(view, { wheelZoom: () => false });
         fire(container, 'wheel', { deltaX: 25, deltaY: 0 });
-        assert.deepEqual(calls, [['pan', 25, 0, { animate: false }]]);
+        assert.deepEqual(calls,
+                         [['pan', 25, 0, { animate: false, settle: true }]]);
+    });
+
+    // A pinch comes as deltaY: Ctrl with a sideways scroll is still a scroll.
+    it('pans a sideways scroll with Ctrl held, whatever the wheel does', () => {
+        for (const zoomPref of [true, false]) {
+            const { view, container, calls } = makeView();
+            installViewInput(view, { wheelZoom: () => zoomPref });
+            fire(container, 'wheel', { deltaX: 30, deltaY: 0, ctrlKey: true });
+            fire(container, 'wheel', { deltaX: 3, deltaY: 0, deltaMode: 1,
+                                       ctrlKey: true });
+            assert.deepEqual(calls.map((c) => c.slice(0, 3)),
+                             [['pan', 30, 0], ['pan', 48, 0]], String(zoomPref));
+        }
     });
 
     it('does nothing in a saved report', () => {
@@ -132,6 +157,53 @@ describe('trackpad', () => {
         assert.equal(Math.abs(gestureSteps(-0.1)), 0);
     });
 
+    // A pinch that starts during an animation counts from where it heads.
+    it('ends a pinch begun mid-animation on the level past the target',
+       async () => {
+        const { view, container } = makeView();
+        installViewInput(view, { gestureIdleMs: 20 });
+        view.zoom = 3.49;
+        view.target = 4;
+        fire(container, 'wheel', { deltaY: -LEVEL / 4, ctrlKey: true,
+                                   clientX: 40, clientY: 20 });
+        await wait(40);
+        assert.ok(Math.abs(view.zoom - 5) < 1e-9, String(view.zoom));
+    });
+
+    it('pans a sideways scroll even when the wheel zooms', () => {
+        const { view, container, calls, gestures } = makeView();
+        installViewInput(view, { wheelZoom: () => true });
+        fire(container, 'wheel', { deltaX: 30, deltaY: 0 });
+        assert.deepEqual(calls,
+                         [['pan', 30, 0, { animate: false, settle: true }]]);
+        assert.ok(!calls.some((c) => c[0] === 'zoom'));
+        assert.deepEqual(gestures.map(([on]) => on), [true]);
+    });
+
+    // A scroll in the middle of a pinch leaves the zoom to the pinch, which
+    // settles at its own point once the fingers stop.
+    it('keeps a pinch going through a scroll', async () => {
+        const { view, container, calls } = makeView();
+        installViewInput(view, { wheelZoom: () => false, gestureIdleMs: 20 });
+        fire(container, 'wheel', { deltaY: -LEVEL / 2, ctrlKey: true,
+                                   clientX: 40, clientY: 20 });
+        fire(container, 'wheel', { deltaY: 10.5, clientX: 40, clientY: 20 });
+        assert.deepEqual(calls.map((c) => c[0]), ['zoom', 'pan']);
+        assert.deepEqual(calls[1][3], { animate: false, settle: false });
+        await wait(40);
+        assert.deepEqual(calls[2].slice(0, 2), ['zoom', [40, 20]]);
+        assert.ok(Math.abs(view.zoom - 4) < 1e-9, String(view.zoom));
+    });
+
+    it('ignores a wheel event that moves nothing', () => {
+        const { view, container, calls, gestures } = makeView();
+        installViewInput(view, { wheelZoom: () => true });
+        fire(container, 'wheel', { deltaX: 0, deltaY: 0 });
+        fire(container, 'wheel', { deltaX: 0, deltaY: 0, deltaMode: 1 });
+        assert.deepEqual(calls, []);
+        assert.deepEqual(gestures, []);
+    });
+
     it('zooms on a pinch even when the preference makes ctrl+wheel pan',
        async () => {
         const { view, container, calls } = makeView();
@@ -175,7 +247,8 @@ describe('trackpad', () => {
         const { view, container, calls } = makeView();
         installViewInput(view, { wheelZoom: () => false });
         fire(container, 'wheel', { deltaY: 12, deltaX: 5 });
-        assert.deepEqual(calls, [['pan', 5, 12, { animate: false }]]);
+        assert.deepEqual(calls,
+                         [['pan', 5, 12, { animate: false, settle: true }]]);
     });
 
     it('holds the view through a scroll pan until it pauses', async () => {
@@ -197,6 +270,21 @@ describe('trackpad', () => {
         fire(container, 'wheel', { deltaY: -LEVEL / 2, ctrlKey: true });
         assert.deepEqual(gestures, [[true, 0]]);
         await wait(40);
+        assert.deepEqual(gestures, [[true, 0], [false, 3]]);
+    });
+
+    it('holds the view through a scroll that outlasts a pinch', (t) => {
+        t.mock.timers.enable({ apis: ['setTimeout'] });
+        const { view, container, calls, gestures } = makeView();
+        installViewInput(view, { wheelZoom: () => false, gestureIdleMs: 20 });
+        fire(container, 'wheel', { deltaY: -LEVEL / 2, ctrlKey: true,
+                                   clientX: 40, clientY: 20 });
+        t.mock.timers.tick(10);
+        fire(container, 'wheel', { deltaY: 10.5 });
+        t.mock.timers.tick(15);   // the pinch settles at 20
+        assert.deepEqual(calls.map((c) => c[0]), ['zoom', 'pan', 'zoom']);
+        assert.deepEqual(gestures, [[true, 0]]);
+        t.mock.timers.tick(10);   // the scroll pauses at 30
         assert.deepEqual(gestures, [[true, 0], [false, 3]]);
     });
 
@@ -253,6 +341,46 @@ describe('left button', () => {
         fire(window, 'pointerup', { button: 0, clientX: 12, clientY: 11,
                                     shiftKey: true });
         assert.deepEqual(clicks, [[[6, 5.5], true]]);
+    });
+
+    const touch = (target, type, pointerId, isPrimary, x) => fire(
+        target, type, { button: 0, clientX: x, clientY: 10, pointerId,
+                        isPrimary });
+
+    it('makes a two-finger tap no click', () => {
+        const { view, container } = makeView();
+        const clicks = [];
+        installViewInput(view, { onClick: () => clicks.push(1) });
+        touch(container, 'pointerdown', 1, true, 10);
+        touch(container, 'pointerdown', 2, false, 60);
+        touch(window, 'pointerup', 2, false, 60);
+        touch(window, 'pointerup', 1, true, 10);
+        assert.deepEqual(clicks, []);
+    });
+
+    it('makes a two-finger tap no click when the second lands on a marker',
+       () => {
+        const { view, container } = makeView();
+        const clicks = [];
+        installViewInput(view, { onClick: () => clicks.push(1) });
+        const marker = document.createElement('div');
+        marker.className = 'or-view-marker';
+        container.appendChild(marker);
+        touch(container, 'pointerdown', 1, true, 10);
+        touch(marker, 'pointerdown', 2, false, 60);
+        touch(window, 'pointerup', 2, false, 60);
+        touch(window, 'pointerup', 1, true, 10);
+        assert.deepEqual(clicks, []);
+    });
+
+    it('lets a new touch click after a release that never came', () => {
+        const { view, container } = makeView();
+        const clicks = [];
+        installViewInput(view, { onClick: () => clicks.push(1) });
+        touch(container, 'pointerdown', 1, true, 10);
+        touch(container, 'pointerdown', 3, true, 20);
+        touch(window, 'pointerup', 3, true, 20);
+        assert.deepEqual(clicks, [1]);
     });
 
     // A label handle or ruler label handles its own clicks and drags.
@@ -360,6 +488,24 @@ describe('left button', () => {
         assert.deepEqual(clicks, [[[8, 5], true]]);
     });
 
+    // A band left by a press whose release was lost does not turn the next
+    // click into a zoom.
+    it('drops the band of a press that never ended', () => {
+        const { view, container, calls } = makeView();
+        const clicks = [];
+        installViewInput(view, { onClick: () => clicks.push(1) });
+        const canvas = shiftCanvas(container);
+        fire(canvas, 'pointerdown', { button: 0, shiftKey: true,
+                                      clientX: 10, clientY: 10 });
+        fire(window, 'pointermove', { clientX: 50, clientY: 30 });
+        assert.ok(document.querySelector('.rubber-band'));
+        fire(canvas, 'pointerdown', { button: 0, clientX: 20, clientY: 20 });
+        assert.equal(document.querySelector('.rubber-band'), null);
+        fire(window, 'pointerup', { button: 0, clientX: 20, clientY: 20 });
+        assert.deepEqual(calls, []);
+        assert.deepEqual(clicks, [1]);
+    });
+
     it('does nothing for a long Shift+drag along one axis', () => {
         const { view, container, calls } = makeView();
         const clicks = [];
@@ -434,6 +580,20 @@ describe('right button', () => {
         fire(container, 'pointerdown', { button: 2, clientX: 4, clientY: 2 });
         fire(window, 'pointerup', { button: 2, clientX: 5, clientY: 3 });
         assert.deepEqual(context, [[2.5, 1.5]]);
+    });
+
+    it('opens the context menu after a band whose release was lost', () => {
+        const { view, container, calls } = makeView();
+        const context = [];
+        installViewInput(view, { onContextClick: (w) => context.push(w) });
+        fire(container, 'pointerdown', { button: 2, clientX: 100, clientY: 80 });
+        fire(window, 'pointermove', { clientX: 60, clientY: 20 });
+        assert.ok(document.querySelector('.rubber-band'));
+        fire(container, 'pointerdown', { button: 2, clientX: 4, clientY: 2 });
+        assert.equal(document.querySelector('.rubber-band'), null);
+        fire(window, 'pointerup', { button: 2, clientX: 4, clientY: 2 });
+        assert.deepEqual(calls, []);
+        assert.deepEqual(context, [[2, 1]]);
     });
 
     it('skips the context menu while a ruler is placed', () => {

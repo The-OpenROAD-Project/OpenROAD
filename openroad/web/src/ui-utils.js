@@ -13,11 +13,8 @@ export function isStaticMode(app) {
 }
 
 // Visibility keys that drive other keys here and never reach the wire, marked
-// by name the way selectability keys are marked with `s_`.  A list of them
-// would be a fourth place to remember a new one, and forgetting is silent:
-// the tile cache is keyed on the request JSON minus the flags the server
-// recognizes (request_handler.cpp), so a key it has never heard of survives
-// that subtraction and turns its own toggle into a full-screen cache miss.
+// by name the way selectability keys are marked with `s_`, so a new one needs
+// no list of its own.
 const CLIENT_ONLY_PREFIX = 'ui_';
 
 // The one message both hierarchy views show when their overlay is switched

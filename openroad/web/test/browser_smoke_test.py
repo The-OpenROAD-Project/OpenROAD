@@ -12,6 +12,7 @@
 #
 # usage: browser_smoke_test.py OPENROAD LIBERTY LEF DEF
 
+import fcntl
 import json
 import os
 import pathlib
@@ -25,6 +26,8 @@ import time
 import unittest
 
 _OPENROAD, _LIBERTY, _LEF, _DEF = (None,) * 4
+# Headless: nothing of the desktop session reaches Chrome.
+_DESKTOP_VARS = ("DISPLAY", "WAYLAND_DISPLAY", "DBUS_SESSION_BUS_ADDRESS")
 
 # Pixels of the layout that differ from the view's background, once its tiles
 # have settled, and the tiles each slot holds.
@@ -76,8 +79,14 @@ class _Browser:
         self._from_chrome, from_chrome_w = os.pipe()
 
         def pipes():
-            os.dup2(to_chrome_r, 3)
-            os.dup2(from_chrome_w, 4)
+            # Above 4 first: dup2 onto its own number keeps O_CLOEXEC, and one
+            # end may already sit on 3 or 4.
+            ends = [
+                fcntl.fcntl(fd, fcntl.F_DUPFD, 5) for fd in (to_chrome_r, from_chrome_w)
+            ]
+            for target, fd in zip((3, 4), ends):
+                os.dup2(fd, target)
+                os.close(fd)
 
         flags = [
             "--headless=new",
@@ -96,13 +105,15 @@ class _Browser:
         ]
         if os.geteuid() == 0:
             flags.append("--no-sandbox")
+        env = {k: v for k, v in os.environ.items() if k not in _DESKTOP_VARS}
+        env["HOME"] = profile
         self._proc = subprocess.Popen(
             [_chrome(), *flags, "about:blank"],
             preexec_fn=pipes,
             close_fds=False,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            env={**os.environ, "HOME": profile},
+            env=env,
         )
         os.close(to_chrome_r)
         os.close(from_chrome_w)
@@ -115,8 +126,17 @@ class _Browser:
         )["sessionId"]
 
     def close(self):
-        self._proc.kill()
-        self._proc.wait()
+        # A clean exit takes the child processes and Chrome's own temp files
+        # with it; a killed Chrome leaves both behind.
+        try:
+            self.send("Browser.close", timeout=10)
+        except (OSError, RuntimeError, TimeoutError):
+            pass
+        try:
+            self._proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            self._proc.kill()
+            self._proc.wait()
         os.close(self._to_chrome)
         os.close(self._from_chrome)
 
@@ -182,6 +202,7 @@ def _free_port():
 class LayoutViewDraws(unittest.TestCase):
     def setUp(self):
         self.tmp = pathlib.Path(tempfile.mkdtemp(dir=os.environ.get("TEST_TMPDIR")))
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
         self.browser = _Browser(str(self.tmp / "profile"))
         self.addCleanup(self.browser.close)
         self.browser.page("Runtime.enable")
@@ -218,6 +239,7 @@ class LayoutViewDraws(unittest.TestCase):
                 stdout=out,
                 stderr=subprocess.STDOUT,
             )
+        self.addCleanup(server.stdin.close)
         self.addCleanup(server.wait)
         self.addCleanup(server.kill)
         deadline = time.monotonic() + 120

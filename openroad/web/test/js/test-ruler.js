@@ -9,9 +9,6 @@ import { beginSelection, formatDbu, formatDistance, onSelectionReset, parseDbu }
 import './setup-dom.js';
 import { makeFakeView } from './fake-view.js';
 
-// Node.js doesn't have requestAnimationFrame.
-globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
-
 const { RulerManager } = await import('../../src/ruler.js');
 
 // ─── Test helpers ────────────────────────────────────────────────────────────
@@ -395,6 +392,14 @@ describe('Ruler inspector data', () => {
         assert.equal(propMap['Delta y'], '4.000 \u00b5m');
         assert.equal(propMap['Length'], '5.000 \u00b5m');
         assert.equal(propMap['Euclidian'], 'True');
+    });
+
+    it('lets the Inspector delete the ruler', () => {
+        const { mgr, inspectorData } = makeManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 1000, y: 0 });
+        mgr._selectRuler(0);
+        inspectorData.at(-1).onDelete();
+        assert.equal(mgr._rulers.length, 0);
     });
 
     it('_selectRuler produces DBU values when showDbu is true', () => {

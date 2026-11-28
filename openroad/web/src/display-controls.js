@@ -544,6 +544,11 @@ export function populateDisplayControls(app, visibility, selectability,
         // rebuild-from-scratch pattern avoids incrementally dropping a
         // layer name still owned by a checked sibling in multi-tech
         // designs.
+        // Route guides draw only on the layers shown, so with some on screen a
+        // change of names redraws the overlay.
+        const guides = app.routeGuideNets?.size > 0
+            || (visibility.focused_nets_guides && app.focusNets?.size > 0);
+        const namesBefore = guides ? new Set(app.visibleLayerNames) : null;
         app.visibleLayerNames.clear();
         const allLayerIds = [];
         // Two-tier chiplet propagation: stateUpdates carries every
@@ -620,6 +625,11 @@ export function populateDisplayControls(app, visibility, selectability,
                     dirtySlots.add(under ? app.baseSlot : app.topSlot);
                 }
             }
+        }
+        if (namesBefore && app.overlayLayer
+            && (namesBefore.size !== app.visibleLayerNames.size
+                || [...namesBefore].some((n) => !app.visibleLayerNames.has(n)))) {
+            dirtySlots.add(app.overlayLayer);
         }
         // A die leaving the visible chiplets: the chiplet mirror below redraws
         // every slot.

@@ -223,15 +223,15 @@ Render a single 256×256 PNG tile of the layout.
 **Response:** PNG image (frame type `1`), or frame type `3` with no body
 when the layer has nothing to draw in this tile.
 
-**Caching:** the server caches the response under the tile, the rendered
-`dpr` and `tile_px`, the design and chiplet revisions, and the parsed fields
-that can change this layer's pixels. Selectability fields, keys the server
-does not parse, and fields that only another layer reads (for example
-`pin_markers` outside `_pins`, or `visible_layers` outside `_pins`,
-`_access_points` and, while pin names are shown, `_inst_labels`) do not split
-the cache. Tiles that depend on per-session state (a session's own module or
-group colors, focused nets, debug renderers) are not cached; the default
-color palette is.
+**Caching:** the server caches the response under the tile, the rendered `dpr`
+and `tile_px`, the design and chiplet revisions, and the parsed fields that can
+change this layer's pixels. Selectability fields, keys the server does not
+parse, and fields this layer does not read (for example `pin_markers` outside
+`_pins`, the routing flags and `pattern` outside the tech layers, or
+`visible_layers` outside `_pins`, `_access_points`, and, while pin names are
+shown, `_inst_labels`) do not split the cache. Tiles that depend on per-session state (a session's own
+module or group colors, focused nets, debug renderers) are not cached; the
+default color palette is.
 
 ### `overlay_tile`
 

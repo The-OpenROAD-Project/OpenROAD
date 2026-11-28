@@ -168,12 +168,36 @@ describe('LayoutView view state', () => {
         assert.deepEqual(events, [true, false]);
     });
 
+    // A pan inside a trackpad zoom leaves the fractional level to it.
+    it('keeps a gesture fractional zoom through a pan that does not settle',
+       () => {
+        const { view } = setup();
+        view.setView([120, 120], 3, { animate: false });
+        view.zoomAround([100, 100], 0.4, { animate: false, settle: false });
+        view.panByPx(10, 0, { animate: false, settle: false });
+        assert.ok(Math.abs(view.getZoom() - 3.4) < 1e-9, String(view.getZoom()));
+        assert.ok(view.debugSnapshot().moving);
+    });
+
     it('pans by screen pixels', () => {
         const { view, frames } = setup();
         view.setView([120, 120], 1);
         view.panByPx(20, -40);
         frames.flush();
         assert.deepEqual(view.getCenter(), [130, 140]);
+    });
+
+    it('does nothing when zooming past a limit at rest', () => {
+        const { view, frames } = setup({ smooth: true });
+        view.setLimits({ minZoom: 0, maxZoom: 3 });
+        view.setView([120, 120], 3, { animate: false });
+        frames.flush();
+        const events = [];
+        view.on('movestart moveend', () => events.push(1));
+        view.zoomAround([100, 100], 1);
+        view.zoomAround(null, 1);
+        assert.deepEqual(events, []);
+        assert.ok(!view.debugSnapshot().animating);
     });
 
     it('honors the zoom limits', () => {
@@ -596,7 +620,9 @@ describe('LayoutView prefetch of the level above', () => {
         await tick();
         frames.flush();
         assert.equal(builds, 0);
-        view.setOverlay('poke', []);   // any change that renders
+        // Any change that renders.
+        view.setOverlay('poke', [{ kind: 'rect', rect: [0, 0, 1, 1],
+                                   stroke: [255, 255, 0, 255], width: 1 }]);
         frames.flush();
         assert.equal(builds, 1);
     });
@@ -609,7 +635,9 @@ describe('LayoutView prefetch of the level above', () => {
         await tick();
         frames.flush();
         const tiles = view.debugSnapshot().slots[0].tiles;
-        view.setOverlay('poke', []);   // any change that renders
+        // Any change that renders.
+        view.setOverlay('poke', [{ kind: 'rect', rect: [0, 0, 1, 1],
+                                   stroke: [255, 255, 0, 255], width: 1 }]);
         frames.flush();
         assert.equal(view.debugSnapshot().slots[0].tiles, tiles);
     });
@@ -1115,6 +1143,27 @@ describe('LayoutView shapes, markers and capture', () => {
         assert.equal(copies, 1);
     });
 
+    // A deck that draws as soon as it is given the layers.
+    it('copies the frame drawn by the capture render', async () => {
+        const deck = makeFakeDeck();
+        const { view } = setup({ deck, copyCanvas: (c) => ({ of: c }) });
+        await tick();
+        const d = deck.decks[0];
+        const setProps = d.setProps.bind(d);
+        d.setProps = (props) => {
+            setProps(props);
+            d.frame();
+        };
+        let timer;
+        const late = new Promise((resolve) => {
+            timer = setTimeout(resolve, 100, 'late');
+        });
+        const shot = await Promise.race([view.captureCanvas(), late]);
+        clearTimeout(timer);
+        assert.notEqual(shot, 'late');
+        assert.equal(shot.image.of, d.canvas);
+    });
+
     it('keeps the drawing buffer only when asked to', () => {
         const webgl = (opts) => setup(opts).deck.decks[0]
             .props.deviceProps.webgl.preserveDrawingBuffer;
@@ -1228,6 +1277,23 @@ describe('LayoutView renderer', () => {
             new window.Event('webglcontextlost', { cancelable: true }));
         await tick();
         assert.deepEqual(seen.map((info) => info.gpuType), ['cpu', 'integrated']);
+    });
+
+    it('reports no renderer when the deck cannot even be made', async (t) => {
+        t.mock.method(console, 'error', () => {});
+        const deck = makeFakeDeck();
+        deck.Deck = class {
+            constructor() {
+                throw new Error('no canvas');
+            }
+        };
+        const { view } = setup({ deck });
+        const seen = [];
+        view.on('renderer', (info) => seen.push(info.gpuType));
+        await tick();
+        assert.deepEqual(seen, ['none']);
+        view.setView([1, 2], 3, { animate: false });
+        assert.equal(view.getZoom(), 3);
     });
 
     it('reports a browser without WebGL as no renderer at all', async (t) => {

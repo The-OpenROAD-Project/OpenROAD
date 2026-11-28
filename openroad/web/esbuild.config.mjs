@@ -32,8 +32,8 @@ const elkBrowserBuild = {
 };
 
 // loaders.gl fetches worker scripts and codec libraries from unpkg when it has
-// no copy of its own.  The layout view hands deck.gl decoded images and never
-// loads through it, so that fallback is pointed at nothing remote.
+// no copy of its own, so that fallback is pointed at nothing remote.  Only a
+// saved report's path overlay loads through it: a data: URL, decoded in page.
 const kLoadersCdn = 'https://unpkg.com/@loaders.gl';
 const noLoadersCdn = {
     name: 'no-loaders-cdn',

@@ -110,8 +110,8 @@ function updateStatus() {
     setTileProgress(pendingCount);
 }
 
-// Show the tile-request line while requests are outstanding.  A no-op when the
-// Layout panel is closed, which is the only place the line lives.
+// Show the tile-request line while requests are outstanding.  A no-op until
+// the Layout panel, the only place the line lives, is built.
 function setTileProgress(pendingCount) {
     const el = app.tileProgressEl;
     if (!el) return;
@@ -513,13 +513,10 @@ function redrawAllLayers() {
         app.heatMapLayer.refresh();
     }
     // The client-side selection outline follows the "Highlight selected"
-    // toggle; the server-side highlight is gated by the overlay refresh below.
-    // An in-flight selection pulse is cancelled on off.
+    // toggle, and turning it off stops a pulse or animation in flight; the
+    // server-side highlight is gated by the overlay refresh below.
     if (app.renderSelectionOutline) {
         app.renderSelectionOutline();
-    }
-    if (!visibility.highlight_selected && app.clearSelectionPulse) {
-        app.clearSelectionPulse();
     }
     // Overlay layer must also refresh on structural changes (e.g. design
     // reload changes the coordinate space).
@@ -613,25 +610,11 @@ function createLayoutViewer(container) {
 
     // Tile requests in flight, as a line along the top of the canvas.  Held on
     // app because updateStatus runs from the socket callbacks, which know
-    // nothing about this panel -- and the panel can be closed, so every write
-    // to it goes through setTileProgress below.
+    // nothing about this panel.
     const progress = document.createElement('div');
     progress.className = 'or-progress';
     mapDiv.appendChild(progress);
     app.tileProgressEl = progress;
-
-    // Closing the panel discards this DOM, so drop the references to it.  Both
-    // readers null-check (setTileProgress here, updateHeatMapLegend in
-    // display-controls.js), and createLayoutViewer sets them again if the panel
-    // is reopened.
-    //
-    // app.view is deliberately left alone: many call sites reach it unguarded
-    // (the View menu's zoom items, the inspector's zoom-to, the rulers), and a
-    // detached view is harmless while the panel is closed.
-    container.on('destroy', () => {
-        app.tileProgressEl = null;
-        app.heatMapLegendEl = null;
-    });
 
     app.view = createLayoutView(mapDiv, {
         preserveDrawingBuffer: app.preserveBuffer,
@@ -1497,6 +1480,15 @@ async function resyncBounds(inlineBounds, inlineFitBounds,
         window.location.reload();
         return true;
     }
+    // A page that booted with no design has no layer tree to redraw into;
+    // it reloads once there are bounds to place one on.
+    if (app.booted && !app.designScale) {
+        if (!computeBoundsTransforms(designBounds, tileSizeCss(), fitRect)) {
+            return false;
+        }
+        reloadKeepingConsole();
+        return true;
+    }
 
     // Keep the DBU point at the center of the view where it is.
     const hadDesign = !!app.designScale;
@@ -2021,7 +2013,8 @@ document.addEventListener('keydown', (e) => {
         if (app.labelManager) app.labelManager.toggleLabelMode();
     } else if (key === 'f' && !e.ctrlKey && !e.metaKey && app.fitRect) {
         app.view.fitWorldRect(app.fitRect);
-    } else if (key === 'z' && !e.ctrlKey && app.view) {
+    } else if (key === 'z' && !e.ctrlKey && !e.metaKey && !e.altKey
+               && app.view) {
         // Around the pointer when it is over the layout, else the center.
         const delta = e.shiftKey ? -1 : 1;
         app.view.zoomAround(app.lastMouseWorld

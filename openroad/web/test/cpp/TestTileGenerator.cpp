@@ -3007,15 +3007,16 @@ TEST_F(TileGeneratorTest, TileVisibilityParsesChipletScopeAndExceptions)
   EXPECT_TRUE(vis.isLayerShown("metal3"));
   vis.hidden_here = nullptr;
 
-  // The entry cap counts paths too, not only the names under them.
+  // The entry cap counts paths too, and running out on a name leaves no empty
+  // entry for its path.
   std::string many = R"({"chiplet_hidden_layers":{)";
-  for (int i = 0; i < 20000; ++i) {
-    many += (i ? ",\"p" : "\"p") + std::to_string(i) + "\":[]";
+  for (int i = 0; i < 9999; ++i) {
+    many += "\"p" + std::to_string(i) + "\":[],";
   }
-  many += "}}";
+  many += R"("last":["metal1"]}})";
   TileVisibility capped;
   capped.parseFromJson(parseObj(many));
-  EXPECT_LE(capped.chiplet_hidden_layers.size(), 10000u);
+  EXPECT_TRUE(capped.chiplet_hidden_layers.empty());
 
   // A request without the fields leaves nothing behind from the last one.
   vis.parseFromJson(parseObj("{}"));
@@ -8303,46 +8304,114 @@ bool keyCounts(const std::string& on,
          != TileGenerator::tileCacheKey(visWith(off), layer);
 }
 
-// The flags only one layer draws, with that layer.
-const std::pair<std::string_view, std::string_view> kOwnedFlags[]
-    = {{"access_points", "_access_points"},
-       {"regions", "_regions"},
-       {"mfg_grid", "_mfg_grid"},
-       {"gcell_grid", "_gcell_grid"},
-       {"rudy", "_rudy"},
-       {"routing_congestion", "_routing_congestion"},
-       {"module_view", "_modules"},
-       {"cluster_view", "_clusters"},
-       {"inst_names", "_inst_labels"},
-       {"inst_pin_names", "_inst_labels"},
-       {"pin_markers", "_pins"},
-       {"pin_names", "_pins"},
-       {"rows", "_instances"},
-       {"placement_blockages", "_instances"}};
+// One layer per kind of tile: metal1 for the tech layers, then each pseudo
+// layer.
+const std::string_view kTileLayers[] = {"metal1",
+                                        "_instances",
+                                        "_pins",
+                                        "_inst_labels",
+                                        "_access_points",
+                                        "_regions",
+                                        "_mfg_grid",
+                                        "_gcell_grid",
+                                        "_rudy",
+                                        "_routing_congestion",
+                                        "_modules",
+                                        "_clusters"};
 
-// Pins the exclusions in TileGenerator::tileCacheKey: every other flag, a new
-// one included, must count for a tech layer.
-TEST(TileCacheKeyTest, EveryFlagCountsForATechLayerButTheExcludedOnes)
+// The tiles each flag can change, for the flags that leave some tile alone.
+// Any other flag, a new one included, counts for every tile.
+std::map<std::string_view, std::set<std::string_view>> flagTiles()
 {
-  std::set<std::string_view> excluded = {"labels"};
-  for (const auto& [flag, layer] : kOwnedFlags) {
-    excluded.insert(flag);
+  const std::set<std::string_view> insts
+      = {"metal1", "_instances", "_inst_labels", "_modules", "_clusters"};
+  const std::set<std::string_view> nets = {"metal1", "_pins", "_access_points"};
+  std::map<std::string_view, std::set<std::string_view>> tiles
+      = {{"labels", {}},
+         {"pins", {"metal1", "_pins"}},
+         {"pin_markers", {"_pins"}},
+         {"pin_names", {"_pins"}},
+         {"access_points", {"_access_points"}},
+         {"regions", {"_regions"}},
+         {"mfg_grid", {"_mfg_grid"}},
+         {"gcell_grid", {"_gcell_grid"}},
+         {"rudy", {"_rudy"}},
+         {"routing_congestion", {"_routing_congestion"}},
+         {"inst_names", {"_inst_labels"}},
+         {"inst_pins", {"metal1", "_inst_labels", "_access_points"}},
+         {"inst_pin_names", {"_inst_labels"}},
+         {"placement_blockages", {"_instances"}},
+         {"rows", {"_instances"}},
+         {"module_view", {"_modules"}},
+         {"cluster_view", {"_clusters"}}};
+  for (const std::string_view flag :
+       {"stdcells",          "macros",           "pad_input",
+        "pad_output",        "pad_inout",        "pad_power",
+        "pad_spacer",        "pad_areaio",       "pad_other",
+        "phys_fill",         "phys_endcap",      "phys_welltap",
+        "phys_tie",          "phys_antenna",     "phys_cover",
+        "phys_bump",         "phys_other",       "std_bufinv",
+        "std_bufinv_timing", "std_clock_bufinv", "std_clock_gate",
+        "std_level_shift",   "std_sequential",   "std_combinational",
+        "std_physical",      "std_other"}) {
+    tiles[flag] = insts;
   }
+  for (const std::string_view flag : {"net_signal",
+                                      "net_power",
+                                      "net_ground",
+                                      "net_clock",
+                                      "net_reset",
+                                      "net_tieoff",
+                                      "net_scan",
+                                      "net_analog"}) {
+    tiles[flag] = nets;
+  }
+  for (const std::string_view flag : {"routing",
+                                      "routing_segments",
+                                      "routing_vias",
+                                      "special_nets",
+                                      "srouting_segments",
+                                      "srouting_vias",
+                                      "blockages",
+                                      "routing_obstructions",
+                                      "fills",
+                                      "tracks_pref",
+                                      "tracks_non_pref"}) {
+    tiles[flag] = {"metal1"};
+  }
+  return tiles;
+}
+
+// Pins TileGenerator::tileCacheKey to the tiles that read each flag.
+TEST(TileCacheKeyTest, EachFlagCountsForTheTilesThatReadIt)
+{
+  const auto tiles = flagTiles();
   for (const std::string_view flag : TileVisibility::flagKeys()) {
-    EXPECT_EQ(keyCounts(flagJson(flag, true), flagJson(flag, false), "metal1"),
-              !excluded.contains(flag))
+    const auto it = tiles.find(flag);
+    for (const std::string_view layer : kTileLayers) {
+      EXPECT_EQ(keyCounts(flagJson(flag, true), flagJson(flag, false), layer),
+                it == tiles.end() || it->second.contains(layer))
+          << flag << " on " << layer;
+    }
+  }
+}
+
+TEST(TileCacheKeyTest, APseudoLayerTheKeyDoesNotKnowCountsEveryFlag)
+{
+  for (const std::string_view flag : TileVisibility::flagKeys()) {
+    EXPECT_EQ(keyCounts(flagJson(flag, true), flagJson(flag, false), "_new"),
+              flag != "labels")
         << flag;
   }
 }
 
-TEST(TileCacheKeyTest, ExcludedFlagsCountForTheirOwnLayer)
+TEST(TileCacheKeyTest, AnEmptyPerDieListIsNoList)
 {
-  for (const auto& [flag, layer] : kOwnedFlags) {
-    EXPECT_TRUE(keyCounts(flagJson(flag, true), flagJson(flag, false), layer))
-        << flag << " on " << layer;
-  }
-  EXPECT_FALSE(keyCounts(
-      flagJson("regions", true), flagJson("regions", false), "_pins"));
+  const std::string pins = R"("visible_layers":["metal1"])";
+  EXPECT_FALSE(
+      keyCounts("{" + pins + R"(,"chiplet_hidden_layers":{"top/die0":[]}})",
+                "{" + pins + "}",
+                "_pins"));
 }
 
 TEST(TileCacheKeyTest, VisibleLayersCountOnlyForPinsAndLayerOverlays)
@@ -8368,7 +8437,12 @@ TEST(TileCacheKeyTest, VisibleLayersCountOnlyForPinsAndLayerOverlays)
 
 TEST(TileCacheKeyTest, PatternChipletsAndSitesCount)
 {
-  EXPECT_TRUE(keyCounts(R"({"pattern":1})", R"({"pattern":3})", "metal1"));
+  // The pattern, only on the tech layers.
+  for (const std::string_view layer : kTileLayers) {
+    EXPECT_EQ(keyCounts(R"({"pattern":1})", R"({"pattern":3})", layer),
+              layer == "metal1")
+        << layer;
+  }
   EXPECT_TRUE(keyCounts(R"({"visible_chiplets":["a"]})",
                         R"({"visible_chiplets":["b"]})",
                         "metal1"));
@@ -8398,6 +8472,9 @@ TEST_F(TileGeneratorTest, FieldsLeftOutOfTheCacheKeyDoNotChangeTheTile)
   makeBTermAtEdge("pin_m1", "metal1", 0, 4000, 200, 200);
   makeBTermAtEdge("pin_m3", "metal3", 7800, 4000, 200, 200);
   ASSERT_NE(makeMetal1AccessPoint(), nullptr);
+  // Power and ground pins, so the net flags have something to change there.
+  block_->findNet("pin_m3")->setSigType(odb::dbSigType::POWER);
+  block_->findNet("ap_pin")->setSigType(odb::dbSigType::GROUND);
   odb::dbGCellGrid* grid = odb::dbGCellGrid::create(block_);
   ASSERT_NE(grid, nullptr);
   grid->addGridPatternX(0, 4, 2000);
@@ -8455,19 +8532,9 @@ TEST_F(TileGeneratorTest, FieldsLeftOutOfTheCacheKeyDoNotChangeTheTile)
                boost::json::object{{die, boost::json::array{"metal1"}}}}});
   changes.emplace_back(hidden_m1, with({}));
 
-  const std::string_view layers[] = {"metal1",
-                                     "metal3",
-                                     "_instances",
-                                     "_pins",
-                                     "_regions",
-                                     "_inst_labels",
-                                     "_access_points",
-                                     "_mfg_grid",
-                                     "_gcell_grid",
-                                     "_rudy",
-                                     "_routing_congestion",
-                                     "_modules",
-                                     "_clusters"};
+  std::vector<std::string_view> layers(std::begin(kTileLayers),
+                                       std::end(kTileLayers));
+  layers.emplace_back("metal3");
   for (const auto& [a, b] : changes) {
     for (const std::string_view layer : layers) {
       if (!keyCounts(a, b, layer)) {
@@ -8477,23 +8544,28 @@ TEST_F(TileGeneratorTest, FieldsLeftOutOfTheCacheKeyDoNotChangeTheTile)
     }
   }
 
-  // The scene gives each exclusion something to switch on its own layer, but
-  // pin names need a closer zoom, no RUDY or congestion source is in this
-  // binary, and the color overlays draw only with owner colors.
+  // What the scene shows on a pseudo layer, so the check above has pixels to
+  // compare there.  Pin names need a closer zoom, no RUDY or congestion source
+  // is in this binary, and the color overlays draw only with owner colors.
   const auto lit = [&](std::string_view layer, std::string_view flag) {
     return render(layer, with({{flag, true}}))
            != render(layer, with({{flag, false}}));
   };
-  const std::set<std::string_view> unlit = {"pin_names",
-                                            "inst_pin_names",
-                                            "rudy",
-                                            "routing_congestion",
-                                            "module_view",
-                                            "cluster_view"};
-  for (const auto& [flag, layer] : kOwnedFlags) {
-    if (!unlit.contains(flag)) {
-      EXPECT_TRUE(lit(layer, flag)) << flag << " on " << layer;
-    }
+  const std::pair<std::string_view, std::string_view> shown[]
+      = {{"access_points", "_access_points"},
+         {"regions", "_regions"},
+         {"mfg_grid", "_mfg_grid"},
+         {"gcell_grid", "_gcell_grid"},
+         {"inst_names", "_inst_labels"},
+         {"pin_markers", "_pins"},
+         {"rows", "_instances"},
+         {"placement_blockages", "_instances"},
+         {"pins", "_pins"},
+         {"net_signal", "_pins"},
+         {"net_power", "_pins"},
+         {"net_ground", "_access_points"}};
+  for (const auto& [flag, layer] : shown) {
+    EXPECT_TRUE(lit(layer, flag)) << flag << " on " << layer;
   }
   EXPECT_NE(render("_pins", m1), render("_pins", m5));
   EXPECT_NE(render("_pins", hidden_m1), render("_pins", with({})));

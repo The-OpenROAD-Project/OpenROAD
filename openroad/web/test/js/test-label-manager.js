@@ -7,8 +7,6 @@ import assert from 'node:assert/strict';
 import './setup-dom.js';
 import { makeFakeView } from './fake-view.js';
 
-globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
-
 const { LabelManager } = await import('../../src/label-manager.js');
 const { beginSelection, onSelectionReset } = await import('../../src/ui-utils.js');
 
@@ -315,6 +313,18 @@ describe('LabelManager', () => {
         beginSelection(app);
         await edit;
         assert.equal(shown, 0);
+    });
+
+    it('lets the Inspector delete the label', async () => {
+        const { mgr, requests } = makeManager();
+        mgr._applyLabels([{ name: 'L0', x: 5, y: 6, text: 'a' }]);
+        let shown = null;
+        mgr._updateInspector = (data) => { shown = data; };
+        mgr._select('L0');
+        shown.onDelete();
+        await flush();
+        assert.ok(requests.some((r) => r.type === 'delete_label'
+                                       && r.name === 'L0'));
     });
 
     it('_edit sends a single atomic update_label with the patched fields',

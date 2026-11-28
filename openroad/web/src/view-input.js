@@ -103,7 +103,7 @@ export function installViewInput(view, opts = {}) {
 
     // The view holds deferred tile updates while a gesture streams in.
     let holding = false;
-    let panTimer;
+    let panTimer = null;
     function hold(on) {
         if (holding !== on) {
             holding = on;
@@ -117,7 +117,8 @@ export function installViewInput(view, opts = {}) {
     function zoomGesture(pt, levels) {
         hold(true);
         if (!gesture) {
-            gesture = { z0: view.getZoom() };
+            // Where an animation under way is heading, as zoomAround counts.
+            gesture = { z0: view.getTargetZoom() };
         }
         gesture.pt = pt;
         clearTimeout(gesture.timer);
@@ -133,8 +134,10 @@ export function installViewInput(view, opts = {}) {
         clearTimeout(g.timer);
         const z = view.getZoom();
         view.zoomAround(g.pt, g.z0 + gestureSteps(z - g.z0) - z);
-        clearTimeout(panTimer);
-        hold(false);
+        // A scroll still under way keeps the view held until it pauses.
+        if (panTimer === null) {
+            hold(false);
+        }
     }
     listeners.push(() => {
         clearTimeout(gesture?.timer);
@@ -148,22 +151,29 @@ export function installViewInput(view, opts = {}) {
     // A pinch always zooms.
     on(container, 'wheel', (e) => {
         e.preventDefault();
-        if (isStatic()) {
+        if (isStatic() || (e.deltaX === 0 && e.deltaY === 0)) {
             return;
         }
         const notch = isWheelNotch(e);
-        if (!notch && e.ctrlKey) {
+        if (!notch && e.ctrlKey && e.deltaY !== 0) {
             // Chrome and Firefox send a pinch as ctrl+wheel with
             // deltaY = -100 ln(scale).
             zoomGesture(local(e), -e.deltaY / (100 * Math.LN2));
             return;
         }
-        if (wheelZoom() === e.ctrlKey) {
+        // A sideways scroll pans, Ctrl or not, whatever the wheel does.  A
+        // zoom gesture under way keeps going and settles once the fingers stop.
+        if (wheelZoom() === e.ctrlKey || e.deltaY === 0) {
             const [dx, dy] = wheelDeltaPx(e, () => container.clientHeight);
             hold(true);
             clearTimeout(panTimer);
-            panTimer = setTimeout(() => !gesture && hold(false), gestureIdleMs);
-            view.panByPx(dx, dy, { animate: false });
+            panTimer = setTimeout(() => {
+                panTimer = null;
+                if (!gesture) {
+                    hold(false);
+                }
+            }, gestureIdleMs);
+            view.panByPx(dx, dy, { animate: false, settle: !gesture });
             return;
         }
         if (!notch) {
@@ -199,11 +209,21 @@ export function installViewInput(view, opts = {}) {
     let press = null;
     let box = null;
     on(container, 'pointerdown', (e) => {
+        // A second finger makes it no click, wherever it lands.
+        if (e.isPrimary === false) {
+            if (press) {
+                press.moved = true;
+            }
+            return;
+        }
         if (e.button !== 0 || !onView(e)) {
             return;
         }
+        // A new first finger replaces a press whose release was lost, bands
+        // and all.
+        endDrags();
         container.focus({ preventScroll: true });
-        press = { x: e.clientX, y: e.clientY, moved: false,
+        press = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false,
                   box: e.shiftKey && !isStatic() };
         if (press.box) {
             e.stopPropagation();   // keep the renderer from panning
@@ -211,7 +231,7 @@ export function installViewInput(view, opts = {}) {
     }, { capture: true });
 
     on(window, 'pointermove', (e) => {
-        if (!press) {
+        if (!press || e.pointerId !== press.id) {
             return;
         }
         const dx = e.clientX - press.x;
@@ -229,7 +249,7 @@ export function installViewInput(view, opts = {}) {
     });
 
     on(window, 'pointerup', (e) => {
-        if (!press || e.button !== 0) {
+        if (!press || e.button !== 0 || e.pointerId !== press.id) {
             return;
         }
         const p = press;
@@ -268,6 +288,9 @@ export function installViewInput(view, opts = {}) {
             return;
         }
         e.stopPropagation();
+        // A new press replaces a band whose release was lost.
+        bandEl?.remove();
+        bandEl = null;
         band = { x: e.clientX, y: e.clientY };
     }, { capture: true });
     on(window, 'pointermove', (e) => {

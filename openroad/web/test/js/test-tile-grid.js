@@ -228,6 +228,50 @@ describe('TileGrid.refresh', () => {
         assert.deepEqual(released, [{ id: 'v1' }]);
     });
 
+    // A load from before a second refresh, kept while another level was
+    // shown, is asked for again when its level comes back.
+    it('reloads a tile still loading from before the last refresh', async () => {
+        const { source, loads, released } = makeSource();
+        const grid = new TileGrid({ source });
+        grid.update({ z: 1, range: R(0, 0, 0, 0, 1) });
+        loads[0].resolve({ id: 'gen0' });
+        await tick();
+        grid.refresh();
+        const gen1 = loads.at(-1);
+        grid.update({ z: 2, range: R(0, 0, 0, 0, 2) });
+        grid.refresh();
+        grid.update({ z: 1, range: R(0, 0, 0, 0, 1) });
+        assert.ok(gen1.cancelled, 'the stale load');
+        const gen2 = loads.at(-1);
+        assert.deepEqual([gen2.z, gen2.x, gen2.y], [1, 0, 0]);
+        gen1.resolve({ id: 'gen1' });
+        gen2.resolve({ id: 'gen2' });
+        await tick();
+        assert.deepEqual(grid.tiles.get('1/0/0').drawable, { id: 'gen2' });
+        assert.ok(!released.some((d) => d && d.id === 'gen2'));
+    });
+
+    it('reloads a stale ring tile that comes on screen, without promoting it',
+       async () => {
+        const { source, loads } = makeSource();
+        const grid = new TileGrid({ source });
+        grid.update({ z: 1, range: R(0, 0, 0, 0, 1), ring: R(0, 1, 0, 0, 1) });
+        for (const l of loads) {
+            l.resolve({ key: l.key });
+        }
+        await tick();
+        grid.refresh();
+        const ring = loads.at(-1);
+        assert.deepEqual([ring.key, ring.background], ['1/1/0', true]);
+        grid.update({ z: 2, range: R(0, 0, 0, 0, 2) });
+        grid.refresh();   // level 1 goes stale
+        grid.update({ z: 1, range: R(1, 1, 0, 0, 1) });
+        assert.ok(ring.cancelled);
+        assert.ok(!ring.promoted);
+        const again = loads.at(-1);
+        assert.deepEqual([again.key, again.background], ['1/1/0', false]);
+    });
+
     it('discards a superseded result', async () => {
         const { source, loads, released } = makeSource();
         const grid = new TileGrid({ source });

@@ -180,6 +180,18 @@ export function createLayoutView(container, opts = {}) {
         return { target: [vs.target[0], vs.target[1], 0], zoom: vs.zoom,
                  minZoom: limits.minZoom, maxZoom: limits.maxZoom };
     }
+    // An error before onLoad means the device was never created: the browser
+    // gave no WebGL, or a lost context could not be restored.
+    function deckError(error) {
+        console.error('Layout view:', error);
+        if (restoring) {
+            restoring = false;
+            events.emit('contextfailed', error);
+        } else if (!rendererInfo) {
+            rendererInfo = { gpuType: 'none', renderer: '', vendor: '' };
+            events.emit('renderer', rendererInfo);
+        }
+    }
     function createDeck() {
         return new deckApi.Deck({
             parent: canvasWrap,
@@ -242,18 +254,7 @@ export function createLayoutView(container, opts = {}) {
                 }
                 scheduleRender();
             },
-            // An error before onLoad means the device was never created: the
-            // browser gave no WebGL, and nothing will be drawn.
-            onError: (error) => {
-                console.error('Layout view:', error);
-                if (restoring) {
-                    restoring = false;
-                    events.emit('contextfailed', error);
-                } else if (!rendererInfo) {
-                    rendererInfo = { gpuType: 'none', renderer: '', vendor: '' };
-                    events.emit('renderer', rendererInfo);
-                }
-            },
+            onError: deckError,
             onAfterRender: () => {
                 const waiting = afterFrame;
                 afterFrame = [];
@@ -285,15 +286,19 @@ export function createLayoutView(container, opts = {}) {
                 restoring = true;
                 deckgl = createDeck();
             } catch (err) {
-                restoring = false;
-                events.emit('contextfailed', err);
+                deckError(err);
             }
             scheduleRender();
         });
     }
 
     if (deckApi && typeof deckApi.Deck === 'function') {
-        deckgl = createDeck();
+        try {
+            deckgl = createDeck();
+        } catch (err) {
+            // Once the caller is listening.
+            queueMicrotask(() => deckError(err));
+        }
     }
 
     // ─── Size ───────────────────────────────────────────────────────────
@@ -510,7 +515,8 @@ export function createLayoutView(container, opts = {}) {
             const to = anim.to;
             flightTrail = anim.flight ? anim.flight.apex : null;
             anim = null;
-            setViewState(to.target, to.zoom);
+            // settleView updates the tiles at rest, as animateTo's cut does.
+            setViewState(to.target, to.zoom, { tiles: interacting });
             settleView();
             return;
         }
@@ -1072,6 +1078,10 @@ export function createLayoutView(container, opts = {}) {
         // a gesture still under way; a later call settles it.
         zoomAround(screenPt, delta, { animate, settle = true } = {}) {
             const zoom = clampZoom(view.getTargetZoom() + delta, limits);
+            // At rest on a zoom limit there is nothing to move.
+            if (!anim && !moving && zoom === vs.zoom) {
+                return;
+            }
             // An anchor holds what is under it now, as stepAnimation does.
             const base = screenPt ? vs : tileView();
             const pt = screenPt || [vs.width / 2, vs.height / 2];
@@ -1083,12 +1093,14 @@ export function createLayoutView(container, opts = {}) {
         zoomIn: () => view.zoomAround(null, 1),
         zoomOut: () => view.zoomAround(null, -1),
 
-        panByPx(dx, dy, { animate } = {}) {
+        // `settle: false` (with `animate: false`) leaves a gesture's
+        // fractional zoom for the gesture to settle.
+        panByPx(dx, dy, { animate, settle = true } = {}) {
             const base = tileView();
             const s = Math.pow(2, base.zoom);
             const target = [base.target[0] + dx / s, base.target[1] - dy / s];
             const ms = (animate === false || !prefs.smooth()) ? 0 : ANIMATION_MS;
-            animateTo({ target, zoom: base.zoom }, { ms });
+            animateTo({ target, zoom: base.zoom }, { ms, settle });
         },
 
         invalidateSize,
@@ -1113,7 +1125,10 @@ export function createLayoutView(container, opts = {}) {
 
         setOverlay(id, shapes, { order = DRAW_ORDER.selection } = {}) {
             if (!shapes || shapes.length === 0) {
-                overlays.delete(id);
+                // Clearing what is not there changes nothing on screen.
+                if (!overlays.delete(id)) {
+                    return;
+                }
             } else {
                 overlays.set(id, overlaySpecs(id, shapes, order));
             }
@@ -1215,9 +1230,7 @@ export function createLayoutView(container, opts = {}) {
             if (!deckgl?.getCanvas()) {
                 return Promise.resolve(null);
             }
-            render();
             return new Promise((resolve) => {
-                let timer = null;
                 let finished = false;
                 // The timeout's redraw may itself run done() through
                 // onAfterRender; one copy is enough.
@@ -1233,12 +1246,13 @@ export function createLayoutView(container, opts = {}) {
                                        rect: canvas.getBoundingClientRect() }
                         : null);
                 };
-                afterFrame.push(done);
                 // A hidden page gets no frames.
-                timer = setTimeout(() => {
+                const timer = setTimeout(() => {
                     deckgl?.redraw('capture');
                     done();
                 }, timeoutMs);
+                afterFrame.push(done);
+                render();
             });
         },
 

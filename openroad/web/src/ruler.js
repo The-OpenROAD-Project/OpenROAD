@@ -547,30 +547,13 @@ export class RulerManager {
                 this._renderAll();
                 this.refreshInspector();
             },
+            onDelete: () => this.deleteRuler(rulerId),
         };
 
         this._updateInspector(data);
         if (focus) {
             this._focusComponent('Inspector');
         }
-
-        // Add delete button after inspector renders
-        requestAnimationFrame(() => {
-            const toolbar = this._app.inspectorEl?.querySelector('.inspector-toolbar');
-            if (!toolbar) return;
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'or-btn or-btn-icon';
-            deleteBtn.title = 'Delete ruler';
-            deleteBtn.innerHTML =
-                '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
-                '<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>' +
-                '</svg>';
-            deleteBtn.addEventListener('click', () => {
-                this.deleteRuler(rulerId);
-            });
-            toolbar.appendChild(deleteBtn);
-        });
     }
 
     deleteRuler(rulerId) {

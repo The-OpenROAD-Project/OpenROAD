@@ -1065,87 +1065,138 @@ inline int hairlineCss(const TileFrame& frame)
   return std::max(1, static_cast<int>(std::lround(frame.px_per_css)));
 }
 
+// The tiles a flag can change: the tech layers and each pseudo layer.
+enum TileBit : uint32_t
+{
+  kTechTiles = 1U << 0,
+  kInstancesTile = 1U << 1,
+  kPinsTile = 1U << 2,
+  kInstLabelsTile = 1U << 3,
+  kAccessPointsTile = 1U << 4,
+  kRegionsTile = 1U << 5,
+  kMfgGridTile = 1U << 6,
+  kGcellGridTile = 1U << 7,
+  kRudyTile = 1U << 8,
+  kCongestionTile = 1U << 9,
+  kModulesTile = 1U << 10,
+  kClustersTile = 1U << 11,
+};
+constexpr uint32_t kAllTiles = ~0U;
+// What isInstVisible and isNetVisible are read by.
+constexpr uint32_t kInstTiles = kTechTiles | kInstancesTile | kInstLabelsTile
+                                | kModulesTile | kClustersTile;
+constexpr uint32_t kNetTiles = kTechTiles | kPinsTile | kAccessPointsTile;
+constexpr uint32_t kBTermTiles = kTechTiles | kPinsTile;
+constexpr uint32_t kITermTiles
+    = kTechTiles | kInstLabelsTile | kAccessPointsTile;
+
+// The bit of a tile's layer.  A pseudo layer missing here gets every bit, so
+// every flag counts for it.
+uint32_t tileBitOf(const std::string_view layer)
+{
+  if (!layer.starts_with('_')) {
+    return kTechTiles;
+  }
+  static const std::map<std::string_view, uint32_t> kPseudoLayers = {
+      {"_instances", kInstancesTile},
+      {"_pins", kPinsTile},
+      {kInstLabelsLayer, kInstLabelsTile},
+      {"_access_points", kAccessPointsTile},
+      {"_regions", kRegionsTile},
+      {"_mfg_grid", kMfgGridTile},
+      {"_gcell_grid", kGcellGridTile},
+      {"_rudy", kRudyTile},
+      {"_routing_congestion", kCongestionTile},
+      {"_modules", kModulesTile},
+      {"_clusters", kClustersTile},
+  };
+  if (const auto it = kPseudoLayers.find(layer); it != kPseudoLayers.end()) {
+    return it->second;
+  }
+  return kAllTiles;
+}
+
 struct BoolField
 {
   const char* key;
   bool TileVisibility::* field;
   bool default_val;
-  // The one layer whose tiles the flag can change: null for every layer, ""
-  // for none.
-  const char* owner = nullptr;
+  // The tiles whose pixels the flag can change.
+  uint32_t tiles = kAllTiles;
 };
 
-// Every visibility flag a tile render reads, with its default and owner.
+// Every visibility flag a tile render reads, with its default and the tiles it
+// can change.
 // Parsing and the tile-cache key walk the same list.
 // clang-format off
 // NOLINTBEGIN(modernize-use-designated-initializers)
 const BoolField kVisibilityFields[] = {
-  {"stdcells",           &TileVisibility::stdcells,           true},
-  {"macros",             &TileVisibility::macros,             true},
-  {"pad_input",          &TileVisibility::pad_input,          true},
-  {"pad_output",         &TileVisibility::pad_output,         true},
-  {"pad_inout",          &TileVisibility::pad_inout,          true},
-  {"pad_power",          &TileVisibility::pad_power,          true},
-  {"pad_spacer",         &TileVisibility::pad_spacer,         true},
-  {"pad_areaio",         &TileVisibility::pad_areaio,         true},
-  {"pad_other",          &TileVisibility::pad_other,          true},
-  {"phys_fill",          &TileVisibility::phys_fill,          true},
-  {"phys_endcap",        &TileVisibility::phys_endcap,        true},
-  {"phys_welltap",       &TileVisibility::phys_welltap,       true},
-  {"phys_tie",           &TileVisibility::phys_tie,           true},
-  {"phys_antenna",       &TileVisibility::phys_antenna,       true},
-  {"phys_cover",         &TileVisibility::phys_cover,         true},
-  {"phys_bump",          &TileVisibility::phys_bump,          true},
-  {"phys_other",         &TileVisibility::phys_other,         true},
-  {"std_bufinv",         &TileVisibility::std_bufinv,         true},
-  {"std_bufinv_timing",  &TileVisibility::std_bufinv_timing,  true},
-  {"std_clock_bufinv",   &TileVisibility::std_clock_bufinv,   true},
-  {"std_clock_gate",     &TileVisibility::std_clock_gate,     true},
-  {"std_level_shift",    &TileVisibility::std_level_shift,    true},
-  {"std_sequential",     &TileVisibility::std_sequential,     true},
-  {"std_combinational",  &TileVisibility::std_combinational,  true},
-  {"std_physical",       &TileVisibility::std_physical,       true},
-  {"std_other",          &TileVisibility::std_other,          true},
-  {"net_signal",         &TileVisibility::net_signal,         true},
-  {"net_power",          &TileVisibility::net_power,          true},
-  {"net_ground",         &TileVisibility::net_ground,         true},
-  {"net_clock",          &TileVisibility::net_clock,          true},
-  {"net_reset",          &TileVisibility::net_reset,          true},
-  {"net_tieoff",         &TileVisibility::net_tieoff,         true},
-  {"net_scan",           &TileVisibility::net_scan,           true},
-  {"net_analog",         &TileVisibility::net_analog,         true},
-  {"routing",            &TileVisibility::routing,            true},
-  {"routing_segments",   &TileVisibility::routing_segments,   true},
-  {"routing_vias",       &TileVisibility::routing_vias,       true},
-  {"special_nets",       &TileVisibility::special_nets,       true},
-  {"srouting_segments",  &TileVisibility::srouting_segments,  true},
-  {"srouting_vias",      &TileVisibility::srouting_vias,      true},
-  {"labels",             &TileVisibility::labels,             true,  ""},  // overlay tile
-  {"pins",               &TileVisibility::pins,               true},
-  {"pin_markers",        &TileVisibility::pin_markers,        true,  "_pins"},
-  {"pin_names",          &TileVisibility::pin_names,          true,  "_pins"},
-  {"access_points",      &TileVisibility::access_points,      false, "_access_points"},
-  {"regions",            &TileVisibility::regions,            true,  "_regions"},
-  {"mfg_grid",           &TileVisibility::mfg_grid,           false, "_mfg_grid"},
-  {"gcell_grid",         &TileVisibility::gcell_grid,         false, "_gcell_grid"},
-  {"rudy",               &TileVisibility::rudy,               false, "_rudy"},
-  {"routing_congestion", &TileVisibility::routing_congestion, false, "_routing_congestion"},
-  {"inst_names",         &TileVisibility::inst_names,         true,  kInstLabelsLayer},
-  {"inst_pins",          &TileVisibility::inst_pins,          true},  // cell pins on tech layers too
-  {"inst_pin_names",     &TileVisibility::inst_pin_names,     false, kInstLabelsLayer},
-  {"blockages",              &TileVisibility::blockages,              true},
-  {"placement_blockages",    &TileVisibility::placement_blockages,    true,  "_instances"},
-  {"routing_obstructions",   &TileVisibility::routing_obstructions,   true},
-  {"fills",                  &TileVisibility::fills,                  false},
-  {"rows",                   &TileVisibility::rows,                   false, "_instances"},
-  {"tracks_pref",            &TileVisibility::tracks_pref,            false},
-  {"tracks_non_pref",        &TileVisibility::tracks_non_pref,        false},
-  {"detailed",               &TileVisibility::detailed,               false},
-  {"module_view",            &TileVisibility::module_view,            false, "_modules"},
-  {"cluster_view",           &TileVisibility::cluster_view,           false, "_clusters"},
-  {"debug",                  &TileVisibility::debug,                  false},
-  {"debug_renderers",        &TileVisibility::debug_renderers,        false},
-  {"debug_live",             &TileVisibility::debug_live,             false},
+  {"stdcells",            &TileVisibility::stdcells,             true,  kInstTiles},
+  {"macros",              &TileVisibility::macros,               true,  kInstTiles},
+  {"pad_input",           &TileVisibility::pad_input,            true,  kInstTiles},
+  {"pad_output",          &TileVisibility::pad_output,           true,  kInstTiles},
+  {"pad_inout",           &TileVisibility::pad_inout,            true,  kInstTiles},
+  {"pad_power",           &TileVisibility::pad_power,            true,  kInstTiles},
+  {"pad_spacer",          &TileVisibility::pad_spacer,           true,  kInstTiles},
+  {"pad_areaio",          &TileVisibility::pad_areaio,           true,  kInstTiles},
+  {"pad_other",           &TileVisibility::pad_other,            true,  kInstTiles},
+  {"phys_fill",           &TileVisibility::phys_fill,            true,  kInstTiles},
+  {"phys_endcap",         &TileVisibility::phys_endcap,          true,  kInstTiles},
+  {"phys_welltap",        &TileVisibility::phys_welltap,         true,  kInstTiles},
+  {"phys_tie",            &TileVisibility::phys_tie,             true,  kInstTiles},
+  {"phys_antenna",        &TileVisibility::phys_antenna,         true,  kInstTiles},
+  {"phys_cover",          &TileVisibility::phys_cover,           true,  kInstTiles},
+  {"phys_bump",           &TileVisibility::phys_bump,            true,  kInstTiles},
+  {"phys_other",          &TileVisibility::phys_other,           true,  kInstTiles},
+  {"std_bufinv",          &TileVisibility::std_bufinv,           true,  kInstTiles},
+  {"std_bufinv_timing",   &TileVisibility::std_bufinv_timing,    true,  kInstTiles},
+  {"std_clock_bufinv",    &TileVisibility::std_clock_bufinv,     true,  kInstTiles},
+  {"std_clock_gate",      &TileVisibility::std_clock_gate,       true,  kInstTiles},
+  {"std_level_shift",     &TileVisibility::std_level_shift,      true,  kInstTiles},
+  {"std_sequential",      &TileVisibility::std_sequential,       true,  kInstTiles},
+  {"std_combinational",   &TileVisibility::std_combinational,    true,  kInstTiles},
+  {"std_physical",        &TileVisibility::std_physical,         true,  kInstTiles},
+  {"std_other",           &TileVisibility::std_other,            true,  kInstTiles},
+  {"net_signal",          &TileVisibility::net_signal,           true,  kNetTiles},
+  {"net_power",           &TileVisibility::net_power,            true,  kNetTiles},
+  {"net_ground",          &TileVisibility::net_ground,           true,  kNetTiles},
+  {"net_clock",           &TileVisibility::net_clock,            true,  kNetTiles},
+  {"net_reset",           &TileVisibility::net_reset,            true,  kNetTiles},
+  {"net_tieoff",          &TileVisibility::net_tieoff,           true,  kNetTiles},
+  {"net_scan",            &TileVisibility::net_scan,             true,  kNetTiles},
+  {"net_analog",          &TileVisibility::net_analog,           true,  kNetTiles},
+  {"routing",             &TileVisibility::routing,              true,  kTechTiles},
+  {"routing_segments",    &TileVisibility::routing_segments,     true,  kTechTiles},
+  {"routing_vias",        &TileVisibility::routing_vias,         true,  kTechTiles},
+  {"special_nets",        &TileVisibility::special_nets,         true,  kTechTiles},
+  {"srouting_segments",   &TileVisibility::srouting_segments,    true,  kTechTiles},
+  {"srouting_vias",       &TileVisibility::srouting_vias,        true,  kTechTiles},
+  {"labels",              &TileVisibility::labels,               true,  0},  // overlay tile
+  {"pins",                &TileVisibility::pins,                 true,  kBTermTiles},
+  {"pin_markers",         &TileVisibility::pin_markers,          true,  kPinsTile},
+  {"pin_names",           &TileVisibility::pin_names,            true,  kPinsTile},
+  {"access_points",       &TileVisibility::access_points,        false, kAccessPointsTile},
+  {"regions",             &TileVisibility::regions,              true,  kRegionsTile},
+  {"mfg_grid",            &TileVisibility::mfg_grid,             false, kMfgGridTile},
+  {"gcell_grid",          &TileVisibility::gcell_grid,           false, kGcellGridTile},
+  {"rudy",                &TileVisibility::rudy,                 false, kRudyTile},
+  {"routing_congestion",  &TileVisibility::routing_congestion,   false, kCongestionTile},
+  {"inst_names",          &TileVisibility::inst_names,           true,  kInstLabelsTile},
+  {"inst_pins",           &TileVisibility::inst_pins,            true,  kITermTiles},
+  {"inst_pin_names",      &TileVisibility::inst_pin_names,       false, kInstLabelsTile},
+  {"blockages",           &TileVisibility::blockages,            true,  kTechTiles},
+  {"placement_blockages", &TileVisibility::placement_blockages,  true,  kInstancesTile},
+  {"routing_obstructions",&TileVisibility::routing_obstructions, true,  kTechTiles},
+  {"fills",               &TileVisibility::fills,                false, kTechTiles},
+  {"rows",                &TileVisibility::rows,                 false, kInstancesTile},
+  {"tracks_pref",         &TileVisibility::tracks_pref,          false, kTechTiles},
+  {"tracks_non_pref",     &TileVisibility::tracks_non_pref,      false, kTechTiles},
+  {"detailed",            &TileVisibility::detailed,             false},
+  {"module_view",         &TileVisibility::module_view,          false, kModulesTile},
+  {"cluster_view",        &TileVisibility::cluster_view,         false, kClustersTile},
+  {"debug",               &TileVisibility::debug,                false},
+  {"debug_renderers",     &TileVisibility::debug_renderers,      false},
+  {"debug_live",          &TileVisibility::debug_live,           false},
 };
 // NOLINTEND(modernize-use-designated-initializers)
 // clang-format on
@@ -1276,13 +1327,18 @@ void TileVisibility::assignFromJson(const boost::json::object& json)
               return;
             }
             --budget;
-            std::set<std::string>& layers = out[std::string(path)];
+            // Made on the first name: an empty list hides nothing, as no
+            // entry does.
+            std::set<std::string>* layers = nullptr;
             for (const auto& name : names.as_array()) {
               if (budget == 0) {
                 return;
               }
               --budget;
-              layers.emplace(name.as_string());
+              if (!layers) {
+                layers = &out[std::string(path)];
+              }
+              layers->emplace(name.as_string());
             }
           }
         };
@@ -1887,7 +1943,7 @@ void TileGenerator::onDesignChanged()
 bool TileGenerator::tileCacheGet(const std::string& key,
                                  std::vector<unsigned char>& out) const
 {
-  std::lock_guard lock(tile_cache_mutex_);
+  std::scoped_lock lock(tile_cache_mutex_);
   const auto it = tile_cache_index_.find(key);
   if (it == tile_cache_index_.end()) {
     return false;
@@ -1912,7 +1968,7 @@ void TileGenerator::tileCachePut(std::string key,
   if (png.size() > kTileCacheBytesCap) {
     return;
   }
-  std::lock_guard lock(tile_cache_mutex_);
+  std::scoped_lock lock(tile_cache_mutex_);
   if (epoch != tile_cache_epoch_) {
     return;
   }
@@ -1948,7 +2004,7 @@ void TileGenerator::clearTileCache()
 
 size_t TileGenerator::tileCacheSize() const
 {
-  std::lock_guard lock(tile_cache_mutex_);
+  std::scoped_lock lock(tile_cache_mutex_);
   return tile_cache_lru_.size();
 }
 
@@ -1962,10 +2018,11 @@ size_t TileGenerator::tileCacheBytes() const
 std::string TileGenerator::tileCacheKey(const TileVisibility& vis,
                                         const std::string_view layer)
 {
+  const uint32_t tile = tileBitOf(layer);
   std::string flags;
   flags.reserve(std::size(kVisibilityFields));
   for (const BoolField& f : kVisibilityFields) {
-    if (f.owner != nullptr && layer != f.owner) {
+    if ((f.tiles & tile) == 0) {
       flags += '-';
     } else {
       flags += vis.*f.field ? '1' : '0';
@@ -1974,7 +2031,10 @@ std::string TileGenerator::tileCacheKey(const TileVisibility& vis,
 
   boost::json::object key;
   key["v"] = flags;
-  key["p"] = static_cast<int>(vis.fill_pattern);
+  // Only the tech layers fill shapes with the layer's pattern.
+  if ((tile & kTechTiles) != 0) {
+    key["p"] = static_cast<int>(vis.fill_pattern);
+  }
   // A tile scoped to a die depends on that die being shown, not the others.
   if (!vis.chiplet.empty()) {
     key["d"] = vis.chiplet;

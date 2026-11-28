@@ -637,15 +637,20 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     // selected" toggle (Misc) is on, so turning it back on shows the current
     // selection's outline again (redrawAllLayers -> renderSelectionOutline).
     let selectionBBox = null;
+    // The toggle gates the outline, the pulse and the animation alike.
+    const highlightOff = () => app.visibility?.highlight_selected === false;
 
     function renderSelectionOutline() {
-        const show = selectionBBox && app.designScale
-            && !(app.visibility && app.visibility.highlight_selected === false);
+        const show = selectionBBox && app.designScale && !highlightOff();
         setShapes('selection', show ? [{
             kind: 'rect',
             rect: worldRect(...selectionBBox),
             stroke: toRgba('#ff0'), width: 2, dash: [6, 4],
         }] : null, DRAW_ORDER.selection);
+        if (highlightOff()) {
+            clearPulse();
+            stopSelectionAnimation();
+        }
     }
 
     function clearSelectionOutline() {
@@ -683,8 +688,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         // while highlighting is off doesn't leave a stale pulse behind.
         if (animTimer !== null) stopSelectionAnimation();
         clearPulse();
-        // Honor the "Highlight selected" toggle (Misc).
-        if (app.visibility && app.visibility.highlight_selected === false) {
+        if (highlightOff()) {
             return;
         }
         // A net's bbox spans the whole net; don't pulse a giant rectangle.
@@ -725,8 +729,10 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         setShapes('anim', null);
     }
     function animateSelection(bbox, { repeats = 6, intervalMs = 300 } = {}) {
-        if (!bbox || !app.view || !app.designScale) return;
         stopSelectionAnimation();
+        if (!bbox || !app.view || !app.designScale || highlightOff()) {
+            return;
+        }
         if (prefersReducedMotion()) {
             pulseHighlight(bbox);
             return;
@@ -745,9 +751,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         }, intervalMs);
     }
 
-    // Let redrawAllLayers cancel an in-flight pulse when the "Highlight
-    // selected" toggle is turned off, and keep the outline in step with it.
-    app.clearSelectionPulse = clearPulse;
+    // redrawAllLayers keeps the outline, and what the toggle stops, in step.
     app.renderSelectionOutline = renderSelectionOutline;
     app.clearSelectionOutline = clearSelectionOutline;
 
@@ -1142,6 +1146,17 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                     btn.addEventListener('click', () => triggerAction(name, data));
                     toolbar.appendChild(btn);
                 }
+            }
+
+            // A client-side object (ruler, label) deletes itself, saved
+            // reports included.
+            if (data.onDelete) {
+                const btn = document.createElement('button');
+                btn.className = 'or-btn or-btn-icon or-btn-danger-hover';
+                btn.title = `Delete ${data.type.toLowerCase()}`;
+                btn.innerHTML = DELETE_SVG;
+                btn.addEventListener('click', () => data.onDelete());
+                toolbar.appendChild(btn);
             }
 
             app.inspectorEl.appendChild(toolbar);

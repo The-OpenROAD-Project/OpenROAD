@@ -61,7 +61,8 @@ export class TileGrid {
                 continue;
             }
             if (inRange(ring, tile.x, tile.y)) {
-                if (tile.loading && tile.background
+                // A stale load is replaced below, not promoted.
+                if (tile.loading && tile.background && !this._stale(tile)
                     && inRange(range, tile.x, tile.y)) {
                     tile.background = false;
                     tile.handle?.promote?.();
@@ -110,7 +111,6 @@ export class TileGrid {
                 continue;
             }
             if (inRange(r, tile.x, tile.y)) {
-                tile.handle?.cancel?.();
                 this._load(tile, e ? e.background !== false
                                    : !inRange(this.range, tile.x, tile.y));
             } else if (tile.loading) {
@@ -207,6 +207,7 @@ export class TileGrid {
     }
 
     _load(tile, background) {
+        this._cancelLoad(tile);
         const generation = this._generation;
         const current = () => this.tiles.get(tile.key) === tile
                               && tile.generation === generation;
@@ -260,19 +261,25 @@ export class TileGrid {
         tile.drawable = drawable || null;
     }
 
+    // From before a refresh, loading or not: a load still in flight asked for
+    // what the refresh replaced.
     _stale(tile) {
-        return !tile.loading && tile.generation !== this._generation;
+        return tile.generation !== this._generation;
     }
 
     _inKeepBuffer(tile, r = this.range) {
         return inRange(growRange(r, this.keepBuffer), tile.x, tile.y);
     }
 
-    _drop(tile) {
+    _cancelLoad(tile) {
         if (tile.loading) {
             this._cancels++;
             tile.handle?.cancel?.();
         }
+    }
+
+    _drop(tile) {
+        this._cancelLoad(tile);
         if (tile.drawable) {
             this.source.release?.(tile.drawable);
         }

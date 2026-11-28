@@ -276,28 +276,12 @@ export class LabelManager {
                 else if (propName === 'Anchor') patch.anchor = newValue.trim();
                 this._edit(label, patch);
             },
+            onDelete: () => this.deleteLabel(name),
         };
         this._updateInspector(data);
         if (focus) {
             this._focusComponent('Inspector');
         }
-
-        requestAnimationFrame(() => {
-            const toolbar
-                = this._app.inspectorEl?.querySelector('.inspector-toolbar');
-            if (!toolbar) return;
-            // Avoid stacking duplicate delete buttons across re-selections.
-            if (toolbar.querySelector('.delete-label-btn')) return;
-            const btn = document.createElement('button');
-            btn.className = 'or-btn or-btn-icon delete-label-btn';
-            btn.title = 'Delete label';
-            btn.innerHTML =
-                '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">'
-                + '<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>'
-                + '</svg>';
-            btn.addEventListener('click', () => this.deleteLabel(name));
-            toolbar.appendChild(btn);
-        });
     }
 
     // Apply an edit atomically, keeping the same name/position.
