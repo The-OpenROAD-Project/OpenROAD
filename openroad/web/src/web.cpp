@@ -48,6 +48,7 @@
 #include "color.h"
 #include "group_report.h"
 #include "hierarchy_report.h"
+#include "image_overlays.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbChipCallBackObj.h"
@@ -2349,14 +2350,21 @@ struct ScriptImage
 {
   TileVisibility vis;
   Color background;
+  ImageOverlays overlays;
 };
 
 ScriptImage scriptImage(ScriptView& view,
                         const WebViewerHook* hook,
                         const std::map<std::string, bool>& display_settings)
 {
-  const ScriptView::Frame frame = view.frame(display_settings);
-  return {.vis = frame.vis, .background = imageBackground(frame, hook)};
+  ScriptView::Frame frame = view.frame(display_settings);
+  TileVisibility vis = frame.vis;
+  const Color background = imageBackground(frame, hook);
+  return {
+      .vis = std::move(vis),
+      .background = background,
+      .overlays = buildImageOverlays(std::move(frame)),
+  };
 }
 }  // namespace
 
@@ -2380,7 +2388,8 @@ void WebServer::saveImage(const std::string& filename,
                         width_px,
                         dbu_per_pixel,
                         image.vis,
-                        image.background);
+                        image.background,
+                        &image.overlays);
 }
 
 namespace {
@@ -2802,8 +2811,15 @@ void WebServer::gifAddFrame(std::optional<int> key,
       = scriptImage(*script_view_, viewer_hook_.get(), display_settings);
   int w = 0;
   int h = 0;
-  std::vector<unsigned char> rgba = generator_->renderImageBuffer(
-      region, width_px, dbu_per_pixel, image.vis, image.background, &w, &h);
+  std::vector<unsigned char> rgba
+      = generator_->renderImageBuffer(region,
+                                      width_px,
+                                      dbu_per_pixel,
+                                      image.vis,
+                                      image.background,
+                                      &w,
+                                      &h,
+                                      &image.overlays);
 
   const int d = delay.value_or(kDefaultGifDelay);
   if (gif->frame_count == 0) {

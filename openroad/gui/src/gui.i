@@ -100,7 +100,7 @@ bool has_ui()
 void
 selection_add_net(const std::string& name)
 {
-  if (!check_gui("selection_add_net")) {
+  if (!check_gui("selection_add_net", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -110,7 +110,7 @@ selection_add_net(const std::string& name)
 void
 selection_add_nets(const char* name)
 {
-  if (!check_gui("selection_add_nets")) {
+  if (!check_gui("selection_add_nets", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -120,7 +120,7 @@ selection_add_nets(const char* name)
 void
 selection_add_inst(const std::string& name)
 {
-  if (!check_gui("selection_add_inst")) {
+  if (!check_gui("selection_add_inst", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -130,7 +130,7 @@ selection_add_inst(const std::string& name)
 void
 selection_add_insts(const char* name)
 {
-  if (!check_gui("selection_add_insts")) {
+  if (!check_gui("selection_add_insts", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -139,7 +139,7 @@ selection_add_insts(const char* name)
 
 void highlight_inst(const std::string& name, int highlight_group = 0)
 {
-  if (!check_gui("highlight_inst")) {
+  if (!check_gui("highlight_inst", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -148,7 +148,7 @@ void highlight_inst(const std::string& name, int highlight_group = 0)
 
 void highlight_net(const std::string& name, int highlight_group = 0)
 {
-  if (!check_gui("highlight_net")) {
+  if (!check_gui("highlight_net", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -384,7 +384,7 @@ void clear_rulers()
 
 void clear_selections()
 {
-  if (!check_gui("clear_selections")) {
+  if (!check_gui("clear_selections", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -393,7 +393,7 @@ void clear_selections()
 
 void clear_highlights(int highlight_group = 0)
 {
-  if (!check_gui("clear_highlights")) {
+  if (!check_gui("clear_highlights", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -672,7 +672,7 @@ int select(const std::string& type,
            bool case_sensitive = true,
            int highlight_group = -1)
 {
-  if (!check_gui("select")) {
+  if (!check_gui("select", true)) {
     return 0;
   }
 

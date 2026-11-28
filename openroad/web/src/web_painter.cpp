@@ -36,8 +36,11 @@ int penCullMarginDbu(const PenState& pen, double pixels_per_dbu)
 
 }  // namespace
 
-WebPainter::WebPainter(const odb::Rect& bounds, double pixels_per_dbu)
-    : web::Painter(nullptr, bounds, pixels_per_dbu)
+WebPainter::WebPainter(const odb::Rect& bounds,
+                       double pixels_per_dbu,
+                       bool cull_subpixel)
+    : web::Painter(nullptr, bounds, pixels_per_dbu),
+      cull_subpixel_(cull_subpixel)
 {
   pen_.color = kBlack;
   brush_.color = Color(0, 0, 0, 0);
@@ -118,7 +121,7 @@ void WebPainter::drawRect(const odb::Rect& rect, int round_x, int round_y)
   if (!rect.overlaps(expanded_bounds)) {
     return;
   }
-  if (rect.dx() * ppd < 1.0 && rect.dy() * ppd < 1.0
+  if (cull_subpixel_ && rect.dx() * ppd < 1.0 && rect.dy() * ppd < 1.0
       && penWidthPx(pen_, ppd) <= 1) {
     return;
   }
@@ -154,7 +157,7 @@ void WebPainter::drawCircle(int x, int y, int r)
       || y + r < bounds.yMin() - margin || y - r > bounds.yMax() + margin) {
     return;
   }
-  if (r * ppd < 0.5 && penWidthPx(pen_, ppd) <= 1) {
+  if (cull_subpixel_ && r * ppd < 0.5 && penWidthPx(pen_, ppd) <= 1) {
     return;
   }
   ops_.emplace_back(

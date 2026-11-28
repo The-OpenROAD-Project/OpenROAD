@@ -2,10 +2,12 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <algorithm>
+#include <any>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+#include "dbDescriptors.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "script_view.h"
@@ -279,6 +281,177 @@ TEST_F(ScriptViewTest, StdcellsTakesThePhysicalAndOtherCells)
   vis = view_.frame({{"stdcells", false}, {"std_physical", true}}).vis;
   EXPECT_TRUE(vis.std_physical);
   EXPECT_FALSE(vis.std_other);
+}
+
+class ScriptViewSelectionTest : public ScriptViewTest
+{
+ protected:
+  void SetUp() override
+  {
+    DescriptorRegistry::instance()->initDescriptors(getDb(), getSta());
+    inst_ = odb::dbInst::create(block_, lib_->findMaster("BUF_X1"), "b1");
+    selected_ = DescriptorRegistry::instance()->makeSelected(std::any(inst_));
+  }
+
+  odb::dbInst* inst_ = nullptr;
+  Selected selected_;
+};
+
+// MainWindow's rules: a selection only shows with Misc/Highlight selected, an
+// object can be in any of the groups, and -1 clears every group.
+TEST_F(ScriptViewSelectionTest, FollowsMainWindowRules)
+{
+  ASSERT_TRUE(selected_);
+  view_.addSelected(selected_);
+  EXPECT_EQ(view_.frame().selection.size(), 1);
+  view_.setDisplayControlVisible("Misc/Highlight selected", false);
+  EXPECT_TRUE(view_.frame().selection.empty());
+  view_.setDisplayControlVisible("Misc/Highlight selected", true);
+  EXPECT_EQ(view_.frame().selection.size(), 1) << "hidden, not dropped";
+  view_.setSelected(Selected());
+  EXPECT_TRUE(view_.frame().selection.empty());
+
+  view_.addHighlighted({selected_}, 3);
+  view_.addHighlighted({selected_}, 5);
+  view_.addHighlighted({selected_}, -1);
+  view_.addHighlighted({selected_}, kNumHighlightSet);
+  ScriptView::Frame frame = view_.frame();
+  EXPECT_EQ(frame.highlights[3].size(), 1);
+  EXPECT_EQ(frame.highlights[5].size(), 1);
+  view_.clearHighlighted(3);
+  EXPECT_TRUE(view_.frame().highlights[3].empty());
+  EXPECT_EQ(view_.frame().highlights[5].size(), 1);
+  view_.clearHighlighted(-1);
+  EXPECT_TRUE(view_.frame().highlights[5].empty());
+}
+
+// The Selected holds the raw dbInst*, so destroying it drops everything.
+TEST_F(ScriptViewSelectionTest, DestroyingAnObjectDropsTheSelection)
+{
+  view_.addSelected(selected_);
+  view_.addHighlighted({selected_}, 0);
+  odb::dbInst::destroy(inst_);
+  EXPECT_TRUE(view_.frame().selection.empty());
+  EXPECT_TRUE(view_.frame().highlights[0].empty());
+}
+
+// Whatever a select can hold is watched, the markers on the chip included.
+TEST_F(ScriptViewSelectionTest, DestroyingARowOrAMarkerDropsTheSelection)
+{
+  odb::dbSite* site = lib_->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
+  ASSERT_NE(site, nullptr);
+  odb::dbRow* row = odb::dbRow::create(block_,
+                                       "row0",
+                                       site,
+                                       0,
+                                       0,
+                                       odb::dbOrientType::R0,
+                                       odb::dbRowDir::HORIZONTAL,
+                                       1,
+                                       site->getWidth());
+  view_.addSelected(DescriptorRegistry::instance()->makeSelected(row));
+  ASSERT_EQ(view_.frame().selection.size(), 1);
+  odb::dbRow::destroy(row);
+  EXPECT_TRUE(view_.frame().selection.empty());
+
+  odb::dbMarker* marker
+      = odb::dbMarker::create(odb::dbMarkerCategory::create(block_, "DRC"));
+  view_.addSelected(DescriptorRegistry::instance()->makeSelected(marker));
+  ASSERT_EQ(view_.frame().selection.size(), 1);
+  odb::dbMarker::destroy(marker);
+  EXPECT_TRUE(view_.frame().selection.empty());
+}
+
+// Groups, and boxes removed one at a time from a pin or a special wire.
+TEST_F(ScriptViewSelectionTest, DestroyingAGroupOrABoxDropsTheSelection)
+{
+  auto* registry = DescriptorRegistry::instance();
+  odb::dbGroup* group = odb::dbGroup::create(block_, "g0");
+  view_.setSelected(registry->makeSelected(group));
+  ASSERT_EQ(view_.frame().selection.size(), 1);
+  odb::dbGroup::destroy(group);
+  EXPECT_TRUE(view_.frame().selection.empty());
+
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbNet* vdd = odb::dbNet::create(block_, "vdd");
+  odb::dbSWire* swire = odb::dbSWire::create(vdd, odb::dbWireType::ROUTED);
+  odb::dbSBox* sbox = odb::dbSBox::create(
+      swire, metal1, 0, 0, 100, 100, odb::dbWireShapeType::STRIPE);
+  view_.setSelected(registry->makeSelected(sbox));
+  ASSERT_EQ(view_.frame().selection.size(), 1);
+  odb::dbSBox::destroy(sbox);
+  EXPECT_TRUE(view_.frame().selection.empty());
+
+  odb::dbBPin* bpin = odb::dbBPin::create(odb::dbBTerm::create(vdd, "vdd"));
+  odb::dbBox* box = odb::dbBox::create(bpin, metal1, 0, 0, 100, 100);
+  view_.setSelected(registry->makeSelected(box));
+  ASSERT_EQ(view_.frame().selection.size(), 1);
+  odb::dbBox::destroy(box);
+  EXPECT_TRUE(view_.frame().selection.empty());
+}
+
+// As detailed_route does: the master's access points go with no callback,
+// then each iterm gets its new ones.
+TEST_F(ScriptViewSelectionTest, RewritingAccessPointsDropsTheSelection)
+{
+  odb::dbITerm* iterm = inst_->findITerm("A");
+  ASSERT_NE(iterm, nullptr);
+  odb::dbMPin* mpin = *iterm->getMTerm()->getMPins().begin();
+  odb::dbAccessPoint* ap = odb::dbAccessPoint::create(block_, mpin, 0);
+  view_.addSelected(DescriptorRegistry::instance()->makeSelected(
+      std::any(DbTermAccessPoint{ap, iterm})));
+  ASSERT_EQ(view_.frame().selection.size(), 1);
+  inst_->getMaster()->clearPinAccess(0);
+  iterm->setAccessPoint(mpin, odb::dbAccessPoint::create(block_, mpin, 0));
+  EXPECT_TRUE(view_.frame().selection.empty());
+}
+
+// As insert_dft does again: the scan chains and their scan insts all go.
+TEST_F(ScriptViewSelectionTest, ResettingTheScanChainsDropsTheSelection)
+{
+  odb::dbScanChain* chain = odb::dbScanChain::create(block_->getDft());
+  odb::dbScanList* list
+      = odb::dbScanList::create(odb::dbScanPartition::create(chain));
+  odb::dbScanInst* scan_inst = list->add(inst_);
+  auto* registry = DescriptorRegistry::instance();
+  view_.addSelected(registry->makeSelected(scan_inst));
+  view_.addSelected(registry->makeSelected(chain));
+  ASSERT_EQ(view_.frame().selection.size(), 2);
+  block_->getDft()->reset();
+  EXPECT_TRUE(view_.frame().selection.empty());
+}
+
+// Renderers read Gui::selection() from the render threads, so with no Qt
+// window it is not the script view's.
+TEST_F(ScriptViewSelectionTest, GuiSelectionIsNotTheScriptViews)
+{
+  Gui* gui = Gui::get();
+  GuiBackend* previous = gui->getScriptView();
+  gui->setScriptView(&view_);
+
+  view_.addSelected(selected_);
+  EXPECT_EQ(view_.frame().selection.size(), 1);
+  EXPECT_TRUE(gui->selection().empty());
+
+  gui->setScriptView(previous);
+}
+
+// In 3DBlox the top chip has no block: a destroy in a chiplet's block drops
+// the selection all the same.
+TEST_F(ScriptViewSelectionTest, ADestroyInAChipletDropsTheSelection)
+{
+  odb::dbChip* root = odb::dbChip::create(
+      getDb(), nullptr, "root", odb::dbChip::ChipType::HIER);
+  getDb()->setTopChip(root);
+  odb::dbChipInst::create(root, chip_, "die0");
+  ASSERT_EQ(getDb()->getChip()->getBlock(), nullptr);
+
+  view_.addSelected(selected_);
+  view_.addHighlighted({selected_}, 0);
+  odb::dbInst::destroy(inst_);
+  EXPECT_TRUE(view_.frame().selection.empty());
+  EXPECT_TRUE(view_.frame().highlights[0].empty());
 }
 
 }  // namespace
