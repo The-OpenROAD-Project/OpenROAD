@@ -43,6 +43,7 @@ class FlexGCWorker
   void setTargetObjs(const std::set<frBlockObject*>& targetObjs);
   void setIgnoreDB();
   void setIgnoreMinArea();
+  void setIgnoreMinStep();
   void setIgnoreLongSideEOL();
   void setIgnoreCornerSpacing();
   void setEnableSurgicalFix(bool in);

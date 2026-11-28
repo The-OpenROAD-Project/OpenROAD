@@ -557,6 +557,9 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable_main(gcRect* rect)
                       ->getLayer(rect->getLayerNum())
                       ->getMetalWidthViaConstraints()) {
     auto rule = con->getDbRule();
+    if (rule->isViaCutClass() || !getTech()->hasVia(rule->getViaName())) {
+      continue;
+    }
     auto required_viadef = getTech()->getVia(rule->getViaName());
     frVia required_via(required_viadef);
     if (rect->width() == required_via.getCutBBox().minDXDY()

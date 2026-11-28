@@ -12,6 +12,7 @@
 #include "db/obj/frNet.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frTrackPattern.h"
+#include "db/tech/frConstraint.h"
 #include "fixture.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
@@ -19,7 +20,11 @@
 #include "gtest/gtest.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "pa/FlexPA.h"
 #include "ta/FlexTA.h"
+
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
 namespace drt {
 
@@ -178,6 +183,67 @@ TEST_F(TAFixture, two_parallel_no_coupling)
       = static_cast<frPathSeg*>(g2->getRoutes().front().get());
   EXPECT_EQ(path_seg1->getPoints().first.y(), 500);
   EXPECT_EQ(path_seg2->getPoints().first.y(), 700);
+}
+
+TEST_F(TAFixture, pa_off_track_pin_with_min_step)
+{
+  auto* tech = design->getTech();
+  addLayer(tech, "v1", dbTechLayerType::CUT);
+  addLayer(tech, "m2", dbTechLayerType::ROUTING, dbTechLayerDir::VERTICAL);
+  addTrackPattern(2, false, 500, 3, 200);
+  addTrackPattern(4, true, 500, 3, 200);
+  tech->getLayer(3)->addViaDef(makeViaDef("V1", 3, {-50, -50}, {50, 50}));
+  frLef58RightWayOnGridOnlyConstraint rwo;
+  tech->getLayer(4)->setLef58RightWayOnGridOnlyConstraint(&rwo);
+  makeMinStep58Constraint(4)->setMinAdjacentLength(200);
+  router_cfg->VIAINPIN_BOTTOMLAYERNUM = router_cfg->VIAINPIN_TOPLAYERNUM = 2;
+  router_cfg->VIA_ACCESS_LAYERNUM = 2;
+  auto [blk, db_m] = makeMacro("C", 0, 0, 1000, 1000);
+  makeMacroPin(blk, "a", 150, 450, 250, 550, 2);
+  makeInst("i1", blk, db_m)->getInstTerms()[0]->addToNet(makeNet("n1"));
+  initRegionQuery();
+  FlexPA pa(design.get(), logger.get(), nullptr, router_cfg.get());
+  EXPECT_NO_THROW(pa.main());
+}
+
+TEST_F(TAFixture, pa_conflicting_pins_fallback_pattern)
+{
+  auto* tech = design->getTech();
+  addLayer(tech, "v1", dbTechLayerType::CUT);
+  addLayer(tech, "m2", dbTechLayerType::ROUTING, dbTechLayerDir::VERTICAL);
+  addTrackPattern(2, false, 500, 3, 200);
+  addTrackPattern(4, true, 500, 3, 200);
+  tech->getLayer(3)->addViaDef(makeViaDef("V1", 3, {-50, -50}, {50, 50}));
+  router_cfg->VIA_ACCESS_LAYERNUM = 2;
+  auto [blk, db_m] = makeMacro("C", 0, 0, 1000, 1000);
+  makeMacroPin(blk, "a", 450, 450, 550, 550, 2);
+  makeMacroPin(blk, "b", 500, 450, 600, 550, 2);
+  frInst* inst = makeInst("i1", blk, db_m);
+  inst->getInstTerms()[0]->addToNet(makeNet("n1"));
+  inst->getInstTerms()[1]->addToNet(makeNet("n2"));
+  initRegionQuery();
+  FlexPA pa(design.get(), logger.get(), nullptr, router_cfg.get());
+  EXPECT_NO_THROW(pa.main());
+}
+
+TEST_F(TAFixture, pa_nearby_grid_skips_half_track)
+{
+  auto* tech = design->getTech();
+  addLayer(tech, "v1", dbTechLayerType::CUT);
+  addLayer(tech, "m2", dbTechLayerType::ROUTING, dbTechLayerDir::VERTICAL);
+  addTrackPattern(2, false, 500, 3, 200);
+  addTrackPattern(4, true, 100, 2, 800);
+  tech->getLayer(3)->addViaDef(makeViaDef("V1", 3, {-50, -50}, {50, 50}));
+  frLef58RightWayOnGridOnlyConstraint rwo;
+  tech->getLayer(4)->setLef58RightWayOnGridOnlyConstraint(&rwo);
+  router_cfg->VIAINPIN_BOTTOMLAYERNUM = router_cfg->VIAINPIN_TOPLAYERNUM = 2;
+  auto [blk, db_m] = makeMacro("C", 0, 0, 1200, 1000);
+  auto* term = makeMacroPin(blk, "a", 620, 450, 720, 550, 2);
+  makeInst("i1", blk, db_m)->getInstTerms()[0]->addToNet(makeNet("n1"));
+  initRegionQuery();
+  FlexPA(design.get(), logger.get(), nullptr, router_cfg.get()).main();
+  const auto* pa = static_cast<frMTerm*>(term)->getPins()[0]->getPinAccess(0);
+  EXPECT_EQ(pa->getAccessPoint(0)->getPoint().x(), 900);
 }
 
 }  // namespace drt

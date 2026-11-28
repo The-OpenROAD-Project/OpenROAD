@@ -598,6 +598,7 @@ void FlexDRConnectivityChecker::finish(
 
     auto uPs2 = std::make_unique<frPathSeg>(*ps1);
     auto ps2 = uPs2.get();
+    ps2->resetApPathSeg();
     addedPS.push_back(ps2);
     std::unique_ptr<frShape> uShape(std::move(uPs2));
     if (save_updates_) {
@@ -619,6 +620,7 @@ void FlexDRConnectivityChecker::finish(
     ps1Style.setEndStyle(frEndStyle(frcTruncateEndStyle), 0);
     ps1->setStyle(ps1Style);
     ps1->setPoints(bp1, splitPt);
+    ps1->resetApPathSeg();
     if (save_updates_) {
       drUpdate update(drUpdate::UPDATE_SHAPE);
       update.setNet(ps1->getNet());
@@ -984,6 +986,7 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(
           ps->setHigh(splitPoints[s]);
           ps->setEndStyle(frcTruncateEndStyle);
         }
+        ps->resetApPathSeg();
         getRegionQuery()->addDRObj(ps);
       }
     }
@@ -1114,6 +1117,10 @@ void FlexDRConnectivityChecker::merge_commit(
 
     odb::Point bp, ep;
     frCoord high = victimPathSeg->high();
+    if (victimPathSeg->low() != newSegSpan.lo
+        || victimPathSeg->high() != newSegSpan.hi) {
+      victimPathSeg->resetApPathSeg();
+    }
     if (isHorz) {
       bp = {newSegSpan.lo, trackCoord};
       ep = {newSegSpan.hi, trackCoord};
@@ -1134,6 +1141,10 @@ void FlexDRConnectivityChecker::merge_commit(
         end_style = curr->getEndStyle();
         end_ext = curr->getEndExt();
         high = curr->high();
+      }
+      if (curr->isApPathSeg() && curr->low() == newSegSpan.lo
+          && curr->high() == newSegSpan.hi) {
+        victimPathSeg->setApPathSeg(curr->getApLoc());
       }
       if (save_updates_) {
         drUpdate update(drUpdate::REMOVE_FROM_NET);

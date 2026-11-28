@@ -1906,6 +1906,9 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_minAdjLength(
 // currently only support nobetweeneol
 void FlexGCWorker::Impl::checkMetalShape_lef58MinStep(gcPin* pin)
 {
+  if (ignoreMinStep_) {
+    return;
+  }
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
   // auto net = poly->getNet();
@@ -1922,6 +1925,9 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep(gcPin* pin)
 
 void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
 {
+  if (ignoreMinStep_) {
+    return;
+  }
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
   auto net = poly->getNet();
@@ -3590,8 +3596,9 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
   auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
   for (auto& marker : markers_) {
     results.clear();
-    if (marker->getConstraint()->typeId()
-        != frConstraintTypeEnum::frcLef58CornerSpacingConstraint) {
+    if (!marker->getConstraint()
+        || marker->getConstraint()->typeId()
+               != frConstraintTypeEnum::frcLef58CornerSpacingConstraint) {
       continue;
     }
     const auto lNum = marker->getLayerNum();
@@ -3695,10 +3702,11 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
   std::vector<drConnFig*> results;
   for (auto& marker : markers_) {
     results.clear();
-    if (marker->getConstraint()->typeId()
-            != frConstraintTypeEnum::frcMinStepConstraint
-        && marker->getConstraint()->typeId()
-               != frConstraintTypeEnum::frcLef58MinStepConstraint) {
+    if (!marker->getConstraint()
+        || (marker->getConstraint()->typeId()
+                != frConstraintTypeEnum::frcMinStepConstraint
+            && marker->getConstraint()->typeId()
+                   != frConstraintTypeEnum::frcLef58MinStepConstraint)) {
       continue;
     }
     auto lNum = marker->getLayerNum();

@@ -158,6 +158,7 @@ class FlexGCWorker::Impl
   std::set<frBlockObject*> targetObjs_;
   bool ignoreDB_;
   bool ignoreMinArea_;
+  bool ignoreMinStep_;
   bool ignoreLongSideEOL_;
   bool ignoreCornerSpacing_;
   bool surgicalFixEnabled_;
