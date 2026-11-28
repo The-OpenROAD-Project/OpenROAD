@@ -230,6 +230,8 @@ class dbBox : public dbObject
   ///
   bool isVia() const;
 
+  bool isSubVia() const;
+
   ///
   /// Get tech-via this box represents.
   /// returns nullptr if this box does not represent a tech-via
@@ -5878,7 +5880,8 @@ class dbMPin : public dbObject
   ///
   /// Get the geometry of this pin.
   ///
-  dbSet<dbBox> getGeometry(bool include_decomposed_polygons = true);
+  dbSet<dbBox> getGeometry(bool include_decomposed_polygons = true,
+                           bool substitute_via_boxes = true);
 
   ///
   /// Get the polygon geometry of this pin.

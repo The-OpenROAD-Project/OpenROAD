@@ -270,7 +270,20 @@ uint32_t dbBoxItr<page_size>::next(uint32_t id, ...) const
 
   if (!include_polygons_ || box->next_box_ != 0) {
     // return next box if available or when not considering polygons
-    return box->next_box_;
+    auto next_box_id = box->next_box_;
+    if (next_box_id == 0) {
+      return 0;
+    }
+    if (include_sub_vias_) {
+      return next_box_id;
+    } else {
+      auto next_box = box_tbl_->getPtr(next_box_id);
+      if (next_box->flags_.is_sub_via) {
+        return next(next_box_id);
+      } else {
+        return next_box_id;
+      }
+    }
   }
 
   if (box->flags_.owner_type == dbBoxOwner::PBOX) {
