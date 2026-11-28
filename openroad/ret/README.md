@@ -79,7 +79,7 @@ These registers never move:
   the `-reference_pin` of a port delay;
 - registers the SDC names as cells: in the `-from` or `-to` of
   `set_max_delay`, `set_min_delay` or `group_path`, or in a constraint on
-  the cell such as a derate, unless `-move_named_registers` is given;
+  the cell such as a derate, unless `-move_sdc_registers` is given;
 - a register chain whose output reaches a primary output, a bidirectional
   pin, a control pin of another register or a net with a second driver
   (those read the chain at its current depth), one that meets a second
@@ -104,7 +104,7 @@ These gates are never crossed:
   non-default routing rule, in a group or a region, named by any of
   those exceptions, with a constraint on one of its pins or on the net it
   drives (case analysis, for example), or with a timing edge that
-  `set_disable_timing` disables; `-move_named_registers` changes none of
+  `set_disable_timing` disables; `-move_sdc_registers` changes none of
   this.
 
 A register whose set or reset is tied inactive moves as the base flip-flop,
@@ -120,7 +120,7 @@ it are fine.
 retime
     [-max_moves count]
     [-margin fraction]
-    [-move_named_registers]
+    [-move_sdc_registers]
 ```
 
 #### Options
@@ -129,7 +129,7 @@ retime
 | ----- | ----- |
 | `-max_moves` | Stop after this many accepted register moves. `0` means unlimited. Default unlimited. |
 | `-margin` | The slack a move must gain, as a fraction of the clock period. Default `0.002`. |
-| `-move_named_registers` | Also move registers that the SDC names as cells in the `-from` or `-to` of a path delay or a path group, or in a constraint on the cell. Whatever names a register that moves is dropped with it. Meant for an SDC that lists every register, as `-to [all_registers]` does; see Limitations. |
+| `-move_sdc_registers` | Also move registers that the SDC names as cells in the `-from` or `-to` of a path delay or a path group, or in a constraint on the cell. Whatever names a register that moves is dropped with it. Meant for an SDC that lists every register, as `-to [all_registers]` does; see Limitations. |
 
 New registers are named `ret_ff_N`, their tie cells `ret_tie_N` and new
 nets `ret_net_N`. The log shows the slack after each round. `retime` stops
@@ -169,7 +169,7 @@ scan cell.
 
 An SDC that lists every register (`group_path -to [all_registers]`, or the
 path delays of the asap7 platform constraints) keeps every register in place
-unless `-move_named_registers` is given. With that option a register that
+unless `-move_sdc_registers` is given. With that option a register that
 moves leaves those lists, and a constraint on that cell goes with it. A new
 register is in none of them, so the paths that start or end at it are timed
 without that path delay, and `retime` judges its moves without it: a move

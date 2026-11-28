@@ -106,14 +106,14 @@ RetimingGraph::RetimingGraph(odb::dbDatabase* db,
 {
 }
 
-void RetimingGraph::build(const bool move_named_registers,
+void RetimingGraph::build(const bool move_sdc_registers,
                           std::vector<odb::dbMaster*> new_cells)
 {
   findClockPeriod();
   new_cells_ = std::move(new_cells);
   odb::dbBlock* block = db_->getChip()->getBlock();
   findSharedNets(block);
-  findSdcCells(block, move_named_registers);
+  findSdcCells(block, move_sdc_registers);
   addGates();
   const int n = size();
   for (int v = 0; v < n; ++v) {
@@ -155,13 +155,13 @@ void RetimingGraph::findSharedNets(odb::dbBlock* block)
 }
 
 void RetimingGraph::findSdcCells(odb::dbBlock* block,
-                                 const bool move_named_registers)
+                                 const bool move_sdc_registers)
 {
   for (odb::dbInst* inst : block->getInsts()) {
     // A gate keeps what names it as a cell; a register would lose it, which
     // the caller can allow.
     const bool named_register = inst->getMaster()->isSequential()
-                                && !move_named_registers
+                                && !move_sdc_registers
                                 && hasCellConstraint(sta_, inst);
     if (named_register || hasPinConstraint(sta_, inst)
         || hasDisabledEdge(sta_, inst)) {
@@ -173,17 +173,17 @@ void RetimingGraph::findSdcCells(odb::dbBlock* block,
   }
   for (const sta::Mode* mode : sta_->modes()) {
     for (const sta::ExceptionPath* exception : mode->sdc()->exceptions()) {
-      addExceptionCells(exception, move_named_registers);
+      addExceptionCells(exception, move_sdc_registers);
     }
   }
 }
 
 void RetimingGraph::addExceptionCells(const sta::ExceptionPath* exception,
-                                      const bool move_named_registers)
+                                      const bool move_sdc_registers)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   const bool releases
-      = move_named_registers
+      = move_sdc_registers
         && (exception->isPathDelay() || exception->isGroupPath());
   sta::ExceptionPtIterator pt_iter(exception);
   while (pt_iter.hasNext()) {

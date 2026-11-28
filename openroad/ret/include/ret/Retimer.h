@@ -43,7 +43,7 @@ struct RetimeOptions
   double margin = 0.002;  // the gain a slide must make, x the clock period
   // Registers named by a path delay, a path group, or a constraint on the
   // cell move too; what names a register that moves is dropped.
-  bool move_named_registers = false;
+  bool move_sdc_registers = false;
 };
 
 // Forward register retiming: Retime proposes slides on a delay model read

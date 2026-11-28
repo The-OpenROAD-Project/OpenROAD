@@ -1,7 +1,7 @@
 # A register that the SDC names as a cell stays.  With a path delay between
 # r1 and r2 nothing moves, and the requirement stays on that path.  A path
 # delay on every register ([all_registers]) gives OpenSTA the same kind of
-# list, so nothing moves either, until -move_named_registers releases the
+# list, so nothing moves either, until -move_sdc_registers releases the
 # listed registers.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
@@ -18,5 +18,5 @@ unset_path_exceptions -from [get_cells r1] -to [get_cells r2]
 
 set_max_delay 0.2 -from [all_inputs] -to [all_registers]
 retime
-retime -move_named_registers
+retime -move_sdc_registers
 report_worst_slack -max -digits 4

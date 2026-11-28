@@ -15,11 +15,11 @@ namespace ret {
 void
 retime_cmd(int max_moves,
            double margin,
-           bool move_named_registers)
+           bool move_sdc_registers)
 {
   const RetimeOptions options{.max_moves = max_moves,
                               .margin = margin,
-                              .move_named_registers = move_named_registers};
+                              .move_sdc_registers = move_sdc_registers};
   ord::OpenRoad::openRoad()->getRetimer()->retime(options);
 }
 

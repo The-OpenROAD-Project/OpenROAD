@@ -7,7 +7,7 @@
 # the other cone and is kept.  Round 2 proposes the slides behind r4 and r5
 # again: each trial unmaps them, STA rejects it and it is undone, so r4 and
 # r5 stay as they were, r4 still in the path group that lists every
-# register (-move_named_registers lets the listed registers move).  The
+# register (-move_sdc_registers lets the listed registers move).  The
 # result is proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
@@ -48,7 +48,7 @@ write_verilog_for_dsec retime_sta_unmap_undo before
 report_worst_slack -max -digits 4
 report_tns -digits 4
 
-retime -move_named_registers
+retime -move_sdc_registers
 
 estimate_parasitics -placement
 report_worst_slack -max -digits 4

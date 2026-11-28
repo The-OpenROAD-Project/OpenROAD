@@ -367,7 +367,7 @@ const RetimingGraph& Retimer::syncGraph()
 {
   if (graph_ == nullptr) {
     graph_ = std::make_unique<RetimingGraph>(db_, sta_, resizer_, logger_);
-    graph_->build(options_.move_named_registers, unmapper_->newCellMasters());
+    graph_->build(options_.move_sdc_registers, unmapper_->newCellMasters());
   } else {
     const bool gates_dropped
         = trial_undone_

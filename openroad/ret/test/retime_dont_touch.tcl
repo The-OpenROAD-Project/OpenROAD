@@ -5,7 +5,7 @@
 # the cell naming it, or a port delay measured from its clock pin.  A gate
 # in a group, or with a multicycle through it, is pinned (3 pinned gates,
 # not 2).  A path group that lists the registers as cells keeps them in
-# place too, until -move_named_registers releases them: the last retime
+# place too, until -move_sdc_registers releases them: the last retime
 # moves the register.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
@@ -69,4 +69,4 @@ unset_path_exceptions -through [get_pins g2/ZN]
 
 group_path -name registers -to [all_registers]
 retime
-retime -move_named_registers
+retime -move_sdc_registers

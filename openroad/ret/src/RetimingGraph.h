@@ -67,7 +67,7 @@ class RetimingGraph
                 utl::Logger* logger);
 
   // new_cells: the cells a retiming can create.
-  void build(bool move_named_registers, std::vector<odb::dbMaster*> new_cells);
+  void build(bool move_sdc_registers, std::vector<odb::dbMaster*> new_cells);
   // sources: the gates whose fanout registers changed.  Returns the gates
   // whose edges were read again.
   std::vector<int> update(std::vector<int> sources, bool gates_changed);
@@ -100,9 +100,9 @@ class RetimingGraph
  private:
   void findClockPeriod();
   void findSharedNets(odb::dbBlock* block);
-  void findSdcCells(odb::dbBlock* block, bool move_named_registers);
+  void findSdcCells(odb::dbBlock* block, bool move_sdc_registers);
   void addExceptionCells(const sta::ExceptionPath* exception,
-                         bool move_named_registers);
+                         bool move_sdc_registers);
   void addGates();
   bool isGate(odb::dbInst* inst) const;
   bool selfDual(odb::dbInst* gate);
