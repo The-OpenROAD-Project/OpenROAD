@@ -188,6 +188,7 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void connectPin(Instance* inst, Port* port, Net* net) override;
   void connectPin(Instance* inst, LibertyPort* port, Net* net) override;
   void disconnectPin(Pin* pin) override;
+  void connectModNetPinAfter(const Pin* pin);
 
   void updateComponentsState() override;
   void registerStaState(dbStaState* state);

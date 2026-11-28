@@ -174,12 +174,16 @@ class dbStaCbk : public odb::dbBlockCallBackObj
   void inDbModNetDestroy(odb::dbModNet* modnet) override;
   void inDbITermPostConnect(odb::dbITerm* iterm) override;
   void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
+  void inDbITermPostConnectModNet(odb::dbITerm* iterm) override;
+  void inDbITermPreDisconnectModNet(odb::dbITerm* iterm) override;
   void inDbITermDestroy(odb::dbITerm* iterm) override;
   void inDbModITermPostConnect(odb::dbModITerm* moditerm) override;
   void inDbModITermPreDisconnect(odb::dbModITerm* moditerm) override;
   void inDbModITermDestroy(odb::dbModITerm* moditerm) override;
   void inDbBTermPostConnect(odb::dbBTerm* bterm) override;
   void inDbBTermPreDisconnect(odb::dbBTerm* bterm) override;
+  void inDbBTermPostConnectModNet(odb::dbBTerm* bterm) override;
+  void inDbBTermPreDisconnectModNet(odb::dbBTerm* bterm) override;
   void inDbBTermCreate(odb::dbBTerm*) override;
   void inDbBTermDestroy(odb::dbBTerm* bterm) override;
   void inDbBTermSetIoType(odb::dbBTerm* bterm,
@@ -1230,6 +1234,59 @@ void dbSta::disconnectPin(Pin* pin)
   network->disconnectPin(pin);
 }
 
+void dbSta::connectModNetPinAfter(const Pin* pin)
+{
+  if (pin == nullptr) {
+    return;
+  }
+  for (Mode* mode : modes_) {
+    mode->sdc()->connectPinAfter(pin);
+    for (const auto& [corner, corner_sdc] : mode->cornerSdcs()) {
+      corner_sdc->connectPinAfter(pin);
+    }
+  }
+  if (graph_) {
+    if (network_->isHierarchical(pin)) {
+      EdgesThruHierPinIterator edge_iter(pin, network_, graph_);
+      while (edge_iter.hasNext()) {
+        Edge* edge = edge_iter.next();
+        if (edge->isWire()) {
+          Vertex* from_vertex = edge->from(graph_);
+          Vertex* to_vertex = edge->to(graph_);
+          search_->requiredInvalid(from_vertex);
+          search_->arrivalInvalid(to_vertex);
+          search_->endpointInvalid(to_vertex);
+        }
+      }
+    } else {
+      Vertex* vertex = nullptr;
+      Vertex* bidir_drvr_vertex = nullptr;
+      graph_->pinVertices(pin, vertex, bidir_drvr_vertex);
+      auto invalidate_vertex = [this](Vertex* v) {
+        if (v) {
+          search_->arrivalInvalid(v);
+          search_->requiredInvalid(v);
+          search_->endpointInvalid(v);
+        }
+      };
+      invalidate_vertex(vertex);
+      invalidate_vertex(bidir_drvr_vertex);
+      if (network_->isDriver(pin)) {
+        Vertex* drvr_vertex = bidir_drvr_vertex ? bidir_drvr_vertex : vertex;
+        if (drvr_vertex) {
+          VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
+          while (edge_iter.hasNext()) {
+            Edge* edge = edge_iter.next();
+            Vertex* to_vertex = edge->to(graph_);
+            search_->arrivalInvalid(to_vertex);
+            search_->endpointInvalid(to_vertex);
+          }
+        }
+      }
+    }
+  }
+}
+
 ////////////////////////////////////////////////////////////////
 
 void dbStaReport::setLogger(Logger* logger)
@@ -1459,6 +1516,21 @@ void dbStaCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
   network_->disconnectPinBefore(pin);
 }
 
+void dbStaCbk::inDbITermPostConnectModNet(odb::dbITerm* iterm)
+{
+  Pin* pin = network_->dbToSta(iterm);
+  network_->connectPinAfter(pin);
+  if (iterm->getNet() != nullptr) {
+    sta_->connectModNetPinAfter(pin);
+  }
+}
+
+void dbStaCbk::inDbITermPreDisconnectModNet(odb::dbITerm* iterm)
+{
+  Pin* pin = network_->dbToSta(iterm);
+  network_->disconnectModNetPinBefore(pin);
+}
+
 void dbStaCbk::inDbITermDestroy(odb::dbITerm* iterm)
 {
   sta_->deletePinBefore(network_->dbToSta(iterm));
@@ -1468,8 +1540,8 @@ void dbStaCbk::inDbModITermPostConnect(odb::dbModITerm* moditerm)
 {
   Pin* pin = network_->dbToSta(moditerm);
   network_->connectPinAfter(pin);
-  // Connection is made by odb::dbITerm callbacks. Calling this causes problem.
-  // sta_->connectPinAfter(pin);
+  // Wire edges are maintained by odb::dbITerm/dbBTerm callbacks on dbNet.
+  sta_->connectModNetPinAfter(pin);
 }
 
 void dbStaCbk::inDbModITermPreDisconnect(odb::dbModITerm* moditerm)
@@ -1477,7 +1549,7 @@ void dbStaCbk::inDbModITermPreDisconnect(odb::dbModITerm* moditerm)
   Pin* pin = network_->dbToSta(moditerm);
   // Connection is made by odb::dbITerm callbacks. Calling this causes problem.
   // sta_->disconnectPinBefore(pin);
-  network_->disconnectPinBefore(pin);
+  network_->disconnectModNetPinBefore(pin);
 }
 
 void dbStaCbk::inDbModITermDestroy(odb::dbModITerm* moditerm)
@@ -1497,6 +1569,21 @@ void dbStaCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
   Pin* pin = network_->dbToSta(bterm);
   sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
+}
+
+void dbStaCbk::inDbBTermPostConnectModNet(odb::dbBTerm* bterm)
+{
+  Pin* pin = network_->dbToSta(bterm);
+  network_->connectPinAfter(pin);
+  if (bterm->getNet() != nullptr) {
+    sta_->connectModNetPinAfter(pin);
+  }
+}
+
+void dbStaCbk::inDbBTermPreDisconnectModNet(odb::dbBTerm* bterm)
+{
+  Pin* pin = network_->dbToSta(bterm);
+  network_->disconnectModNetPinBefore(pin);
 }
 
 // 3DIC: these callbacks are hooked on chiplet blocks, whose bterms are
@@ -1584,10 +1671,19 @@ void dbStaCbk::inDbModInstDestroy(odb::dbModInst* modinst)
 
 void dbStaCbk::inDbModBTermPostConnect(odb::dbModBTerm* modbterm)
 {
+  if (odb::dbModITerm* parent_moditerm = modbterm->getParentModITerm()) {
+    Pin* pin = network_->dbToSta(parent_moditerm);
+    network_->connectPinAfter(pin);
+    sta_->connectModNetPinAfter(pin);
+  }
 }
 
 void dbStaCbk::inDbModBTermPreDisconnect(odb::dbModBTerm* modbterm)
 {
+  if (odb::dbModITerm* parent_moditerm = modbterm->getParentModITerm()) {
+    Pin* pin = network_->dbToSta(parent_moditerm);
+    network_->disconnectModNetPinBefore(pin);
+  }
 }
 
 ////////////////////////////////////////////////////////////////
