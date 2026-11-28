@@ -364,7 +364,7 @@ Pixel* Grid::gridPixel(GridX grid_x, GridY grid_y) const
 }
 
 void Grid::visitCellPixels(
-    Node& cell,
+    const Node& cell,
     bool padded,
     const std::function<void(Pixel* pixel, bool padded)>& visitor) const
 {

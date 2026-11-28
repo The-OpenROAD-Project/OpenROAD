@@ -137,7 +137,7 @@ class Grid
                         GridY grid_y_end);
   void erasePixel(Node* cell);
   void visitCellPixels(
-      Node& cell,
+      const Node& cell,
       bool padded,
       const std::function<void(Pixel* pixel, bool padded)>& visitor) const;
   void visitCellBoundaryPixels(

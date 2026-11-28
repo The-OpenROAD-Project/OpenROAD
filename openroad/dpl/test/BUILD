@@ -78,6 +78,7 @@ COMPULSORY_TESTS = [
     "pad07",
     "pad08",
     "pad09",
+    "rectilinear_macro",
     "regions1",
     "regions2",
     "regions3",

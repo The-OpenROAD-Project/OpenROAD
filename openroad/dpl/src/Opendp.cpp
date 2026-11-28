@@ -28,6 +28,8 @@
 #include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/util.h"
 #include "util/journal.h"
@@ -175,7 +177,8 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       }
     }
     // Area of fixed instances (macros, pads, endcaps, ...) clipped to the
-    // core: only the part that overlaps the core blocks placement sites.
+    // core: only the part that overlaps the core blocks placement sites. A
+    // rectilinear instance blocks only its OVERLAP obstruction rects.
     int64_t fixed_area = 0;
     for (odb::dbInst* inst : block_->getInsts()) {
       if (!inst->isFixed()) {
@@ -185,8 +188,24 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       if (!bbox.intersects(core_)) {
         continue;
       }
-      const odb::Rect overlap = bbox.intersect(core_);
-      fixed_area += overlap.area();
+      bool have_overlap_obs = false;
+      const odb::dbTransform xfm = inst->getTransform();
+      for (odb::dbBox* obs : inst->getMaster()->getObstructions()) {
+        odb::dbTechLayer* layer = obs->getTechLayer();
+        if (layer == nullptr
+            || layer->getType() != odb::dbTechLayerType::Value::OVERLAP) {
+          continue;
+        }
+        have_overlap_obs = true;
+        odb::Rect rect = obs->getBox();
+        xfm.apply(rect);
+        if (rect.intersects(core_)) {
+          fixed_area += rect.intersect(core_).area();
+        }
+      }
+      if (!have_overlap_obs) {
+        fixed_area += bbox.intersect(core_).area();
+      }
     }
 
     const int64_t used_area = inst_area + fixed_area;
